@@ -50,7 +50,7 @@ async function printScaResults(jsonFile) {
   if (Array.isArray(results.Vulnerabilities)) {
     info("The following SCA issues were found:")
     for (const vuln of results.Vulnerabilities) {
-      info(vuln)
+      info(JSON.stringify(vuln, null, 2))
     }
   } else {
     info("No SCA issues were found")
@@ -64,7 +64,7 @@ async function printSastResults(jsonFile) {
   if (results.length > 0) {
     info("The following SAST issues were found:")
     for (const vuln of results) {
-      info(vuln)
+      info(JSON.stringify(vuln, null, 2))
     }
   } else {
     info("No SAST issues were found")

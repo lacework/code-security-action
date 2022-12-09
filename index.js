@@ -44,20 +44,30 @@ async function downloadArtifact(artifactName) {
   endGroup()
 }
 
-async function printFile(name, file) {
-  startGroup(name)
-  info(await callCommand("cat", file))
-  endGroup()
-}
-
 async function printScaResults(jsonFile) {
   startGroup("Results for SCA")
   const results = JSON.parse(readFileSync(jsonFile, "utf8"))
   if (Array.isArray(results.Vulnerabilities)) {
     info("The following SCA issues were found:")
-    info(JSON.stringify(results.Vulnerabilities, null, 2))
+    for (const vuln of results.Vulnerabilities) {
+      info(vuln)
+    }
   } else {
     info("No SCA issues were found")
+  }
+  endGroup()
+}
+
+async function printSastResults(jsonFile) {
+  startGroup("Results for SAST")
+  const results = JSON.parse(readFileSync(jsonFile, "utf8"))
+  if (results.length > 0) {
+    info("The following SAST issues were found:")
+    for (const vuln of results) {
+      info(vuln)
+    }
+  } else {
+    info("No SAST issues were found")
   }
   endGroup()
 }
@@ -80,9 +90,9 @@ async function compareScaResults(oldReport, newReport) {
   const results = JSON.parse(readFileSync("sca-compare.json", "utf8"))
   if (Array.isArray(results.Vulnerabilities)) {
     info("There was changes in the following SCA issues:")
-    info(JSON.stringify(results.Vulnerabilities, null, 2))
     let alertsAdded = 0
     for (const vuln of results.Vulnerabilities) {
+      info(vuln)
       if (vuln.Status === "added") {
         alertsAdded++
       }
@@ -102,7 +112,7 @@ async function main() {
     info(await callLaceworkCli("sca", "dir", ".", "-o", "sca.json"))
     await printScaResults("sca.json")
     info(await callLaceworkCli("sast", "scan", "--verbose", "--classes", getInput('jar'), "-o", "sast.json"))
-    await printFile("Results for SAST", "sast.json")
+    await printSastResults("sast.json")
     await uploadArtifact("results-" + target, "sca.json", "sast.json")
     setOutput(`${target}-completed`, true)
   } else {

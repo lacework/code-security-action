@@ -92,14 +92,15 @@ async function main() {
     info(await callLaceworkCli("sast", "scan", "--verbose", "--classes", getInput('jar'), "-o", "sast.json"))
     await printFile("Results for SAST", "sast.json")
     await uploadArtifact("results-" + target, "sca.json", "sast.json")
+    setOutput(`${target}-completed`, true)
   } else {
     info("Displaying results")
     await downloadArtifact("results-parent")
     await downloadArtifact("results-merge")
     await compareScaResults("results-parent/sca.json", "results-merge/sca.json")
     await compareSastResults("results-parent/sast.json", "results-merge/sast.json")
+    setOutput(`display-completed`, true)
   }
-  setOutput("completed", true)
 }
 
 main().catch(

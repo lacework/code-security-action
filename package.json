@@ -1,0 +1,27 @@
+{
+  "name": "code-analysis-action",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "@actions/artifact": "^1.1.0",
+    "@actions/core": "^1.10.0"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lacework-dev/code-analysis-action.git"
+  },
+  "keywords": [],
+  "author": "Lacework",
+  "license": "",
+  "bugs": {
+    "url": "https://github.com/lacework-dev/code-analysis-action/issues"
+  },
+  "homepage": "https://github.com/lacework-dev/code-analysis-action#readme",
+  "devDependencies": {
+    "jest": "^29.3.1"
+  }
+}

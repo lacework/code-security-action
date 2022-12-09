@@ -50,6 +50,18 @@ async function printFile(name, file) {
   endGroup()
 }
 
+async function printScaResults(jsonFile) {
+  startGroup("Results for SCA")
+  const results = JSON.parse(readFileSync(jsonFile, "utf8"))
+  if (Array.isArray(results.Vulnerabilities)) {
+    info("The following SCA issues were found:")
+    info(JSON.stringify(results.Vulnerabilities, null, 2))
+  } else {
+    info("No SCA issues were found")
+  }
+  endGroup()
+}
+
 async function compareSastResults(oldReport, newReport) {
   startGroup("Comparing SAST results")
   const output = await callLaceworkCli("sast", "compare", "--old", oldReport, "--new", newReport)
@@ -88,7 +100,7 @@ async function main() {
   if (target !== "") {
     info("Analyzing " + target)
     info(await callLaceworkCli("sca", "dir", ".", "-o", "sca.json"))
-    await printFile("Results for SCA", "sca.json")
+    await printScaResults("sca.json")
     info(await callLaceworkCli("sast", "scan", "--verbose", "--classes", getInput('jar'), "-o", "sast.json"))
     await printFile("Results for SAST", "sast.json")
     await uploadArtifact("results-" + target, "sca.json", "sast.json")

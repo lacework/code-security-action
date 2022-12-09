@@ -1,0 +1,44 @@
+{
+  "name": "code-analysis-action",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "index.js",
+  "dependencies": {
+    "@actions/artifact": "^1.1.0",
+    "@actions/core": "^1.10.0",
+    "@actions/github": "^5.1.1",
+    "@types/sarif": "^2.1.4",
+    "prettier": "^2.8.1",
+    "ts-md5": "^1.3.1"
+  },
+  "scripts": {
+    "test": "npx jest",
+    "compile": "npx tsc",
+    "lint-check": "npx eslint **/*.ts",
+    "lint-fix": "npx eslint --fix **/*.ts",
+    "pretty-check": "npx prettier --check **/*.ts **/*.yml **/*.json",
+    "pretty-fix": "npx prettier --write **/*.ts **/*.yml **/*.json",
+    "prepare": "npx husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lacework-dev/code-analysis-action.git"
+  },
+  "keywords": [],
+  "author": "Lacework",
+  "license": "",
+  "bugs": {
+    "url": "https://github.com/lacework-dev/code-analysis-action/issues"
+  },
+  "homepage": "https://github.com/lacework-dev/code-analysis-action#readme",
+  "devDependencies": {
+    "@types/jest": "^29.2.4",
+    "@typescript-eslint/eslint-plugin": "^5.46.1",
+    "@typescript-eslint/parser": "^5.46.1",
+    "eslint": "^8.29.0",
+    "eslint-config-prettier": "^8.5.0",
+    "husky": "^8.0.0",
+    "ts-jest": "^29.0.3",
+    "typescript": "^4.9.4"
+  }
+}

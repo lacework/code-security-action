@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "type": "node",
+      "name": "Tests",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "cwd": "${workspaceFolder}/test",
+      "runtimeExecutable": "npm",
+      "args": ["run", "test", "--", "--runInBand", "--watchAll=false"]
+    }
+  ]
+}

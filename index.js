@@ -71,7 +71,7 @@ async function compareScaResults(oldReport, newReport) {
     info(JSON.stringify(results.Vulnerabilities, null, 2))
     let alertsAdded = 0
     for (const vuln of results.Vulnerabilities) {
-      if (vuln.VulnerabilityInfo !== undefined && vuln.VulnerabilityInfo.Status === "added") {
+      if (vuln.Status === "added") {
         alertsAdded++
       }
     }

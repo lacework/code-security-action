@@ -31,14 +31,14 @@ jobs:
     name: Run analysis
     strategy:
       matrix:
-        target: [merge, parent]
+        target: [new, old]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 2
-      - name: Checkout parent
-        if: ${{ matrix.target == 'parent' }}
+      - name: Checkout old
+        if: ${{ matrix.target == 'old' }}
         run: git checkout HEAD^1
       - name: Build
         run: mvn package # Replace as needed to build your code

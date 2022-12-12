@@ -6,7 +6,7 @@ inputs:
     description: "JAR to analyze"
     required: false
   target:
-    description: "One of merge or parent to represent which is being analyzed"
+    description: "One of old or new to represent which is being analyzed"
     required: false
   debug:
     description: "Set to true to enable debug logging"

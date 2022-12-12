@@ -110,32 +110,34 @@ async function compareScaResults(oldReport, newReport) {
 
 async function main() {
   const target = getInput('target')
+  const scaReport = "sca.json"
+  const sastReport = "sast.json"
   if (target !== "") {
     info("Analyzing " + target)
     const tools = (getInput('tools') || "sca").toLowerCase().split(",")
     let toUpload = []
     if (tools.includes("sca")) {
-      info(await callLaceworkCli("sca", "dir", ".", "-o", "sca.json"))
-      await printScaResults("sca.json")
-      toUpload.push("sca.json")
+      info(await callLaceworkCli("sca", "dir", ".", "-o", scaReport))
+      await printScaResults(scaReport)
+      toUpload.push(scaReport)
     }
     if (tools.includes("sast")) {
-      info(await callLaceworkCli("sast", "scan", "--verbose", "--classes", getInput('jar'), "-o", "sast.json"))
-      await printSastResults("sast.json")
-      toUpload.push("sast.json")
+      info(await callLaceworkCli("sast", "scan", "--verbose", "--classes", getInput('jar'), "-o", sastReport))
+      await printSastResults(sastReport)
+      toUpload.push(sastReport)
     }
     await uploadArtifact("results-" + target, ...toUpload)
     setOutput(`${target}-completed`, true)
   } else {
     info("Displaying results")
-    await downloadArtifact("results-parent")
-    await downloadArtifact("results-merge")
+    await downloadArtifact("results-old")
+    await downloadArtifact("results-new")
     let issuesIntroduced = 0
-    if (existsSync("results-parent/sca.json") && existsSync("results-merge/sca.json")) {
-      issuesIntroduced += await compareScaResults("results-parent/sca.json", "results-merge/sca.json")
+    if (existsSync(`results-old/${scaReport}`) && existsSync(`results-new/${scaReport}`)) {
+      issuesIntroduced += await compareScaResults(`results-old/${scaReport}`, `results-new/${scaReport}`)
     }
-    if (existsSync("results-parent/sast.json") && existsSync("results-merge/sast.json")) {
-      issuesIntroduced += await compareSastResults("results-parent/sast.json", "results-merge/sast.json")
+    if (existsSync(`results-old/${sastReport}`) && existsSync(`results-new/${sastReport}`)) {
+      issuesIntroduced += await compareSastResults(`results-old/${sastReport}`, `results-new/${sastReport}`)
     }
     if (issuesIntroduced > 0 && getInput('token').length > 0) {
       info("Posting comment to GitHub PR as there were new issues introduced")

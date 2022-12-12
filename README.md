@@ -40,13 +40,13 @@ jobs:
       - name: Checkout old
         if: ${{ matrix.target == 'old' }}
         run: git checkout HEAD^1
-      - name: Build
-        run: mvn package # Replace as needed to build your code
       - name: Analyze
         uses: lacework-dev/code-analysis-action@v0.1
         with:
-          jar: target # Replace as needed to point to a JAR or folder of JARs to scan
           target: ${{ matrix.target }}
+          tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca and sast.
+          # If using the SAST tool, uncomment the line below and point it to a built JAR for your project
+          # jar: target
   display-results:
     runs-on: ubuntu-22.04
     name: Display results
@@ -81,11 +81,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Build
-        run: mvn package # Replace as needed to build your code
       - name: Analyze
         uses: lacework-dev/code-analysis-action@v0.1
         with:
-          jar: target # Replace as needed to point to a JAR or folder of JARs to scan
           target: push
+          tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca and sast.
+          # If using the SAST tool, uncomment the line below and point it to a built JAR for your project
+          # jar: target
 ```

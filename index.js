@@ -75,34 +75,49 @@ async function printSastResults(jsonFile) {
 
 async function compareSastResults(oldReport, newReport) {
   startGroup("Comparing SAST results")
-  const output = await callLaceworkCli("sast", "compare", "--old", oldReport, "--new", newReport)
-  info(output)
-  const issuesIntroduced = output.match(/Introduced (\d+) issues/g)[0]
-  if (issuesIntroduced > 0) {
-    // TODO: Use setFailed once we want new alerts to cause a failure
-    error(`${issuesIntroduced} new SAST issues were introduced, see above in the logs for details`)
+  info(await callLaceworkCli("sast", "compare", "--old", oldReport, "--new", newReport, "-o", "sast-compare.json"))
+  const results = JSON.parse(readFileSync("sast-compare.json", "utf8"))
+  let alertsAdded = []
+  if (Array.isArray(results) && results.length > 0) {
+    info("There was changes in the following SAST issues:")
+    for (const vuln of results) {
+      info(JSON.stringify(vuln, null, 2))
+      if (vuln.status === "added") {
+        const fileName = `${vuln.file.split("/").pop()}:${vuln.line}`
+        const fileUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/blob/${context.sha}/${vuln.file}#L${vuln.line}`
+        alertsAdded.push(`[${fileName}](${fileUrl}): ${vuln.qualifier}`)
+      }
+    }
+    if (alertsAdded.length > 0) {
+      // TODO: Use setFailed once we want new alerts to cause a failure
+      error(`${alertsAdded.length} new SAST issues were introduced, see above in the logs for details`)
+    }
+  } else {
+    info("No changes in SAST issues")
   }
   endGroup()
-  return issuesIntroduced
+  return alertsAdded
 }
 
 async function compareScaResults(oldReport, newReport) {
   startGroup("Comparing SCA results")
   info(await callLaceworkCli("sca", "compare", "--old", oldReport, "--new", newReport, "-o", "sca-compare.json"))
   const results = JSON.parse(readFileSync("sca-compare.json", "utf8"))
-  let alertsAdded = 0
-  if (Array.isArray(results.Vulnerabilities)) {
+  let alertsAdded = []
+  if (Array.isArray(results.Vulnerabilities) && results.Vulnerabilities.length > 0) {
     info("There was changes in the following SCA issues:")
     for (const vuln of results.Vulnerabilities) {
-      info(vuln)
+      info(JSON.stringify(vuln, null, 2))
       if (vuln.Status === "added") {
-        alertsAdded++
+        alertsAdded.push(`[${vuln.Info.ExternalId}](${vuln.Info.Link}): ${vuln.Info.Description}`)
       }
     }
-    if (alertsAdded > 0) {
+    if (alertsAdded.length > 0) {
       // TODO: Use setFailed once we want new alerts to cause a failure
-      error(`${alertsAdded} new SCA issues were introduced, see above in the logs for details`)
+      error(`${alertsAdded.length} new SCA issues were introduced, see above in the logs for details`)
     }
+  } else {
+    info("No changes in SCA issues")
   }
   endGroup()
   return alertsAdded
@@ -132,16 +147,25 @@ async function main() {
     info("Displaying results")
     await downloadArtifact("results-old")
     await downloadArtifact("results-new")
-    let issuesIntroduced = 0
+    let issuesByTool = {}
     if (existsSync(`results-old/${scaReport}`) && existsSync(`results-new/${scaReport}`)) {
-      issuesIntroduced += await compareScaResults(`results-old/${scaReport}`, `results-new/${scaReport}`)
+      issuesByTool["sca"] = await compareScaResults(`results-old/${scaReport}`, `results-new/${scaReport}`)
     }
     if (existsSync(`results-old/${sastReport}`) && existsSync(`results-new/${sastReport}`)) {
-      issuesIntroduced += await compareSastResults(`results-old/${sastReport}`, `results-new/${sastReport}`)
+      issuesByTool["sast"] = await compareSastResults(`results-old/${sastReport}`, `results-new/${sastReport}`)
     }
-    if (issuesIntroduced > 0 && getInput('token').length > 0) {
+    if (Object.values(issuesByTool).some(x => x.length > 0) && getInput('token').length > 0) {
       info("Posting comment to GitHub PR as there were new issues introduced")
-      const message = `Lacework Code Analysis found ${issuesIntroduced} potential new issues in this PR which can be reviewed in the GitHub Actions run log.`;
+      let message = `Lacework Code Analysis found potential new issues in this PR.`;
+      for (const [tool, issues] of Object.entries(issuesByTool)) {
+        if (issues.length > 0) {
+          message += `\n\n<details><summary>${tool} found ${issues.length} potential new issues</summary>\n\n`
+          for (const issue in issues) {
+            message += `* ${issues[issue]}\n`
+          }
+          message += "\n</details>"
+        }
+      }
       if (context.payload.pull_request !== null) {
         await getOctokit(getInput('token')).rest.issues.createComment({
             ...context.repo,

@@ -15,6 +15,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 env:
   LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_CAT }}
   LW_API_KEY: ${{ secrets.LW_API_KEY_CAT }}
@@ -27,14 +31,14 @@ jobs:
     name: Run analysis
     strategy:
       matrix:
-        target: [merge, parent]
+        target: [new, old]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 2
-      - name: Checkout parent
-        if: ${{ matrix.target == 'parent' }}
+      - name: Checkout old
+        if: ${{ matrix.target == 'old' }}
         run: git checkout HEAD^1
       - name: Build
         run: mvn package # Replace as needed to build your code
@@ -51,6 +55,8 @@ jobs:
     steps:
       - name: Results
         uses: lacework-dev/code-analysis-action@v0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### On push

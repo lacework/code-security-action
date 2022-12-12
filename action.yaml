@@ -6,12 +6,19 @@ inputs:
     description: "JAR to analyze"
     required: false
   target:
-    description: "One of merge or parent to represent which is being analyzed"
+    description: "One of old or new to represent which is being analyzed"
     required: false
   debug:
     description: "Set to true to enable debug logging"
     required: false
     default: false
+  token:
+    description: "Set to a GitHub token for the repository with write permissions for PRs to enable PR comments"
+    required: false
+  tools:
+    description: "Comma separated list of tools to run"
+    required: false
+    default: "sca"
 runs:
   using: "docker"
   image: "Dockerfile"

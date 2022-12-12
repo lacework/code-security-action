@@ -5,7 +5,8 @@
   "main": "index.js",
   "dependencies": {
     "@actions/artifact": "^1.1.0",
-    "@actions/core": "^1.10.0"
+    "@actions/core": "^1.10.0",
+    "@actions/github": "^5.1.1"
   },
   "scripts": {
     "test": "jest"

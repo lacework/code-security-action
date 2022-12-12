@@ -12,6 +12,13 @@ inputs:
     description: "Set to true to enable debug logging"
     required: false
     default: false
+  token:
+    description: "Set to a GitHub token for the repository with write permissions for PRs to enable PR comments"
+    required: false
+  tools:
+    description: "Comma separated list of tools to run"
+    required: false
+    default: "sca"
 runs:
   using: "docker"
   image: "Dockerfile"

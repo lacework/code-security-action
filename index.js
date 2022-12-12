@@ -1,7 +1,8 @@
 import { error, info, startGroup, endGroup, getInput, setOutput, isDebug } from '@actions/core';
 import { create } from '@actions/artifact';
+import { context, getOctokit } from '@actions/github';
 import { spawnSync } from 'child_process';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 
 function getBooleanInput(name) {
   return getInput(name).toLowerCase() === "true"
@@ -82,15 +83,16 @@ async function compareSastResults(oldReport, newReport) {
     error(`${issuesIntroduced} new SAST issues were introduced, see above in the logs for details`)
   }
   endGroup()
+  return issuesIntroduced
 }
 
 async function compareScaResults(oldReport, newReport) {
   startGroup("Comparing SCA results")
   info(await callLaceworkCli("sca", "compare", "--old", oldReport, "--new", newReport, "-o", "sca-compare.json"))
   const results = JSON.parse(readFileSync("sca-compare.json", "utf8"))
+  let alertsAdded = 0
   if (Array.isArray(results.Vulnerabilities)) {
     info("There was changes in the following SCA issues:")
-    let alertsAdded = 0
     for (const vuln of results.Vulnerabilities) {
       info(vuln)
       if (vuln.Status === "added") {
@@ -103,24 +105,49 @@ async function compareScaResults(oldReport, newReport) {
     }
   }
   endGroup()
+  return alertsAdded
 }
 
 async function main() {
   const target = getInput('target')
   if (target !== "") {
     info("Analyzing " + target)
-    info(await callLaceworkCli("sca", "dir", ".", "-o", "sca.json"))
-    await printScaResults("sca.json")
-    info(await callLaceworkCli("sast", "scan", "--verbose", "--classes", getInput('jar'), "-o", "sast.json"))
-    await printSastResults("sast.json")
-    await uploadArtifact("results-" + target, "sca.json", "sast.json")
+    const tools = (getInput('tools') || "sca").toLowerCase().split(",")
+    let toUpload = []
+    if (tools.includes("sca")) {
+      info(await callLaceworkCli("sca", "dir", ".", "-o", "sca.json"))
+      await printScaResults("sca.json")
+      toUpload.push("sca.json")
+    }
+    if (tools.includes("sast")) {
+      info(await callLaceworkCli("sast", "scan", "--verbose", "--classes", getInput('jar'), "-o", "sast.json"))
+      await printSastResults("sast.json")
+      toUpload.push("sast.json")
+    }
+    await uploadArtifact("results-" + target, ...toUpload)
     setOutput(`${target}-completed`, true)
   } else {
     info("Displaying results")
     await downloadArtifact("results-parent")
     await downloadArtifact("results-merge")
-    await compareScaResults("results-parent/sca.json", "results-merge/sca.json")
-    await compareSastResults("results-parent/sast.json", "results-merge/sast.json")
+    let issuesIntroduced = 0
+    if (existsSync("results-parent/sca.json") && existsSync("results-merge/sca.json")) {
+      issuesIntroduced += await compareScaResults("results-parent/sca.json", "results-merge/sca.json")
+    }
+    if (existsSync("results-parent/sast.json") && existsSync("results-merge/sast.json")) {
+      issuesIntroduced += await compareSastResults("results-parent/sast.json", "results-merge/sast.json")
+    }
+    if (issuesIntroduced > 0 && getInput('token').length > 0) {
+      info("Posting comment to GitHub PR as there were new issues introduced")
+      const message = `Lacework Code Analysis found ${issuesIntroduced} potential new issues in this PR which can be reviewed in the GitHub Actions run log.`;
+      if (context.payload.pull_request !== null) {
+        await getOctokit(getInput('token')).rest.issues.createComment({
+            ...context.repo,
+            issue_number: context.payload.pull_request.number,
+            body: message
+          });
+      }
+    }
     setOutput(`display-completed`, true)
   }
 }

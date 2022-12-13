@@ -141,7 +141,7 @@ async function main() {
     const tools = (getInput('tools') || "sca").toLowerCase().split(",")
     const toUpload: string[] = []
     if (tools.includes("sca")) {
-      info(await callLaceworkCli("sca", "dir", ".", "-o", scaReport))
+      info(await callLaceworkCli("sca", "dir", ".", "--no-scr", "-o", scaReport))
       await printScaResults(scaReport)
       toUpload.push(scaReport)
     }

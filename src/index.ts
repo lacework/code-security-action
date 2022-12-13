@@ -117,7 +117,7 @@ async function compareScaResults(oldReport: string, newReport: string) {
     info("There was changes in the following SCA issues:")
     for (const vuln of results.Vulnerabilities) {
       info(JSON.stringify(vuln, null, 2))
-      if (vuln.hasOwnProperty('Compare') && vuln.Compare.hasOwnProperty('Status') && vuln.Compare.Status === "added") {
+      if (vuln.Compare?.Status === "added") {
         alertsAdded.push(`[${vuln.Info.ExternalId}](${vuln.Info.Link}): ${vuln.Info.Description}`)
       }
     }

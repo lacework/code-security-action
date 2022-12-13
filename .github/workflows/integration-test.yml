@@ -1,0 +1,63 @@
+name: Integration test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_CAT }}
+  LW_API_KEY: ${{ secrets.LW_API_KEY_CAT }}
+  LW_API_SECRET: ${{ secrets.LW_API_SECRET_CAT }}
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Move action
+        run: |
+          mkdir ../action
+          mv * ../action
+          mv ../action/sample-repo/* .
+      - name: Build sample repo
+        run: mvn package
+      - name: Run action
+        id: run-action
+        uses: ./../action
+        with:
+          target: push
+          tools: sca,sast
+          jar: target
+      - name: Check run succeeded
+        env:
+          RUN_OUTPUT: ${{ steps.run-action.outputs.push-completed }}
+        run: |
+          if [ "$RUN_OUTPUT" == "true" ]; then
+            echo "Test run succeeded!"
+          else
+            echo "::error Test run failed!"
+            exit 1
+          fi
+      - name: Download results
+        uses: actions/download-artifact@v3
+        with:
+          name: results-push
+          path: artifact
+      - name: Check results
+        working-directory: artifact
+        run: |
+          export SCA_RESULTS=`jq '.Vulnerabilities | length' sca.json`
+          echo "Got $SCA_RESULTS from SCA"
+          if [ "$SCA_RESULTS" == "0" ]; then
+            echo "::error Expected to have some SCA results!"
+            exit 1
+          fi
+          export SAST_RESULTS=`jq '.Vulnerabilities | length' sca.json`
+          echo "Got $SAST_RESULTS from SAST"
+          if [ "$SAST_RESULTS" == "0" ]; then
+            echo "::error Expected to have some SAST results!"
+            exit 1
+          fi

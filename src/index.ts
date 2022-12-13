@@ -4,7 +4,7 @@ import { context, getOctokit } from '@actions/github';
 import { spawnSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 
-function getBooleanInput(name) {
+function getBooleanInput(name: string) {
   return getInput(name).toLowerCase() === "true"
 }
 
@@ -12,7 +12,7 @@ function debug() {
   return getBooleanInput("debug") || isDebug()
 }
 
-async function callCommand(command, ...args) {
+async function callCommand(command: string, ...args: string[]) {
   const child = spawnSync(command, args)
   if (debug() && child.stderr.toString() !== "") {
     info(`stderr from command:\n${child.stderr.toString()}`)
@@ -24,28 +24,37 @@ async function callCommand(command, ...args) {
   return child.stdout.toString().trim()
 }
 
-async function callLaceworkCli(...args) {
-  const accountName = process.env.LW_ACCOUNT_NAME;
-  const apiKey = process.env.LW_API_KEY;
-  const apiSecret = process.env.LW_API_SECRET;
+function getRequiredEnvVariable(name: string) {
+  const value = process.env[name]
+  if (!value) {
+    error(`Missing required environment variable ${name}`)
+    process.exit(0) // TODO: Exit with 1 once we want failures to be fatal
+  }
+  return value
+}
+
+async function callLaceworkCli(...args: string[]) {
+  const accountName = getRequiredEnvVariable("LW_ACCOUNT_NAME");
+  const apiKey = getRequiredEnvVariable("LW_API_KEY");
+  const apiSecret = getRequiredEnvVariable("LW_API_SECRET");
   const expandedArgs = ["--noninteractive", "--account", accountName, "--api_key", apiKey, "--api_secret", apiSecret, ...args]
   info("Calling lacework " + expandedArgs.join(" "))
   return await callCommand("lacework", ...expandedArgs);
 }
 
-async function uploadArtifact(artifactName, ...files) {
+async function uploadArtifact(artifactName: string, ...files: string[]) {
   startGroup("Uploading artifact " + artifactName)
   await create().uploadArtifact(artifactName, files, ".")
   endGroup()
 }
 
-async function downloadArtifact(artifactName) {
+async function downloadArtifact(artifactName: string) {
   startGroup("Downloading artifact " + artifactName)
   await create().downloadArtifact(artifactName, ".", { createArtifactFolder: true })
   endGroup()
 }
 
-async function printScaResults(jsonFile) {
+async function printScaResults(jsonFile: string) {
   startGroup("Results for SCA")
   const results = JSON.parse(readFileSync(jsonFile, "utf8"))
   if (Array.isArray(results.Vulnerabilities)) {
@@ -59,7 +68,7 @@ async function printScaResults(jsonFile) {
   endGroup()
 }
 
-async function printSastResults(jsonFile) {
+async function printSastResults(jsonFile: string) {
   startGroup("Results for SAST")
   const results = JSON.parse(readFileSync(jsonFile, "utf8"))
   if (results.length > 0) {
@@ -73,11 +82,11 @@ async function printSastResults(jsonFile) {
   endGroup()
 }
 
-async function compareSastResults(oldReport, newReport) {
+async function compareSastResults(oldReport: string, newReport: string) {
   startGroup("Comparing SAST results")
   info(await callLaceworkCli("sast", "compare", "--old", oldReport, "--new", newReport, "-o", "sast-compare.json"))
   const results = JSON.parse(readFileSync("sast-compare.json", "utf8"))
-  let alertsAdded = []
+  const alertsAdded: string[] = []
   if (Array.isArray(results) && results.length > 0) {
     info("There was changes in the following SAST issues:")
     for (const vuln of results) {
@@ -99,11 +108,11 @@ async function compareSastResults(oldReport, newReport) {
   return alertsAdded
 }
 
-async function compareScaResults(oldReport, newReport) {
+async function compareScaResults(oldReport: string, newReport: string) {
   startGroup("Comparing SCA results")
   info(await callLaceworkCli("sca", "compare", "--old", oldReport, "--new", newReport, "-o", "sca-compare.json"))
   const results = JSON.parse(readFileSync("sca-compare.json", "utf8"))
-  let alertsAdded = []
+  const alertsAdded: string[] = []
   if (Array.isArray(results.Vulnerabilities) && results.Vulnerabilities.length > 0) {
     info("There was changes in the following SCA issues:")
     for (const vuln of results.Vulnerabilities) {
@@ -130,7 +139,7 @@ async function main() {
   if (target !== "") {
     info("Analyzing " + target)
     const tools = (getInput('tools') || "sca").toLowerCase().split(",")
-    let toUpload = []
+    const toUpload: string[] = []
     if (tools.includes("sca")) {
       info(await callLaceworkCli("sca", "dir", ".", "-o", scaReport))
       await printScaResults(scaReport)
@@ -147,7 +156,7 @@ async function main() {
     info("Displaying results")
     await downloadArtifact("results-old")
     await downloadArtifact("results-new")
-    let issuesByTool = {}
+    const issuesByTool: { [tool: string]: string[] } = {}
     if (existsSync(`results-old/${scaReport}`) && existsSync(`results-new/${scaReport}`)) {
       issuesByTool["sca"] = await compareScaResults(`results-old/${scaReport}`, `results-new/${scaReport}`)
     }
@@ -167,7 +176,7 @@ async function main() {
         }
       }
       info(message)
-      if (context.payload.pull_request !== null) {
+      if (context.payload.pull_request) {
         await getOctokit(getInput('token')).rest.issues.createComment({
             ...context.repo,
             issue_number: context.payload.pull_request.number,

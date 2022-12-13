@@ -1,7 +1,7 @@
 {
   "name": "code-analysis-action",
   "version": "1.0.0",
-  "type": "module",
+  "type": "commonjs",
   "main": "index.js",
   "dependencies": {
     "@actions/artifact": "^1.1.0",
@@ -23,6 +23,11 @@
   },
   "homepage": "https://github.com/lacework-dev/code-analysis-action#readme",
   "devDependencies": {
-    "jest": "^29.3.1"
+    "@types/jest": "^29.2.4",
+    "@typescript-eslint/eslint-plugin": "^5.46.1",
+    "@typescript-eslint/parser": "^5.46.1",
+    "eslint": "^8.29.0",
+    "ts-jest": "^29.0.3",
+    "typescript": "^4.9.4"
   }
 }

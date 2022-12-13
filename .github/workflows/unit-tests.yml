@@ -2,9 +2,9 @@ name: Unit tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
@@ -16,4 +16,6 @@ jobs:
         with:
           node-version: 16
       - run: npm ci
+      - run: npm run lint-check
+      - run: npm run pretty-check
       - run: npm test

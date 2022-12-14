@@ -2,9 +2,9 @@ name: Integration test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_CAT }}

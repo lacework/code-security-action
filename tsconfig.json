@@ -7,8 +7,5 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "dist"
-  },
-  "include": [
-    "./src/"
-  ]
+  }
 }

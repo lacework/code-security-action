@@ -6,7 +6,7 @@ import { compareScaResults, printScaResults } from './sca'
 import { callLaceworkCli } from './util'
 
 const scaReport = 'sca.json'
-const sastReport = 'sast.json'
+const sastReport = 'sast.sarif'
 
 async function runAnalysis() {
   const target = getInput('target')

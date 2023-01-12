@@ -55,7 +55,7 @@ jobs:
             echo "::error Expected to have some SCA results!"
             exit 1
           fi
-          export SAST_RESULTS=`jq '.Vulnerabilities | length' sca.json`
+          export SAST_RESULTS=`jq '.runs[0].results | length' sast.sarif`
           echo "Got $SAST_RESULTS from SAST"
           if [ "$SAST_RESULTS" == "0" ]; then
             echo "::error Expected to have some SAST results!"

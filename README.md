@@ -54,9 +54,19 @@ jobs:
       - run-analysis
     steps:
       - name: Results
+        id: code-analysis
         uses: lacework-dev/code-analysis-action@v0.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Notify Code Security team
+        if: ${{ steps.code-analysis.outputs.posted-comment }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: code-security-notify
+          SLACK_MESSAGE: "Posted an alert on a pull request: ${{ steps.code-analysis.outputs.posted-comment }}"
+          MSG_MINIMAL: true
+          SLACK_MSG_AUTHOR: Lacework
 ```
 
 ### On push

@@ -67,7 +67,10 @@ async function displayResults() {
       }
     }
     info(message)
-    await postCommentIfInPr(message)
+    const commentUrl = await postCommentIfInPr(message)
+    if (commentUrl !== undefined) {
+      setOutput('posted-comment', commentUrl)
+    }
   }
   setOutput(`display-completed`, true)
 }

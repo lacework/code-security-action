@@ -1,5 +1,6 @@
 import { error, info, startGroup, endGroup } from '@actions/core'
 import { readFileSync } from 'fs'
+import { Issue } from './types'
 import { callLaceworkCli } from './util'
 
 export async function printScaResults(jsonFile: string) {
@@ -16,7 +17,7 @@ export async function printScaResults(jsonFile: string) {
   endGroup()
 }
 
-export async function compareScaResults(oldReport: string, newReport: string) {
+export async function compareScaResults(oldReport: string, newReport: string): Promise<Issue[]> {
   startGroup('Comparing SCA results')
   info(
     await callLaceworkCli(
@@ -31,13 +32,15 @@ export async function compareScaResults(oldReport: string, newReport: string) {
     )
   )
   const results = JSON.parse(readFileSync('sca-compare.json', 'utf8'))
-  const alertsAdded: string[] = []
+  const alertsAdded: Issue[] = []
   if (Array.isArray(results.Vulnerabilities) && results.Vulnerabilities.length > 0) {
     info('There was changes in the following SCA issues:')
     for (const vuln of results.Vulnerabilities) {
       info(JSON.stringify(vuln, null, 2))
       if (vuln.Compare?.Status === 'added') {
-        alertsAdded.push(`[${vuln.Info.ExternalId}](${vuln.Info.Link}): ${vuln.Info.Description}`)
+        alertsAdded.push({
+          summary: `[${vuln.Info.ExternalId}](${vuln.Info.Link}): ${vuln.Info.Description}`,
+        })
       }
     }
     if (alertsAdded.length > 0) {

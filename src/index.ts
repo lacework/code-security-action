@@ -3,6 +3,7 @@ import { existsSync } from 'fs'
 import { downloadArtifact, postCommentIfInPr, uploadArtifact } from './actions'
 import { compareSastResults, printSastResults } from './sast'
 import { compareScaResults, printScaResults } from './sca'
+import { Issue } from './types'
 import { callLaceworkCli } from './util'
 
 const scaReport = 'sca.json'
@@ -41,7 +42,7 @@ async function displayResults() {
   info('Displaying results')
   await downloadArtifact('results-old')
   await downloadArtifact('results-new')
-  const issuesByTool: { [tool: string]: string[] } = {}
+  const issuesByTool: { [tool: string]: Issue[] } = {}
   if (existsSync(`results-old/${scaReport}`) && existsSync(`results-new/${scaReport}`)) {
     issuesByTool['sca'] = await compareScaResults(
       `results-old/${scaReport}`,
@@ -61,7 +62,11 @@ async function displayResults() {
       if (issues.length > 0) {
         message += `\n\n<details><summary>${tool} found ${issues.length} potential new issues</summary>\n\n`
         for (const issue in issues) {
-          message += `* ${issues[issue]}\n`
+          message += `* ${issues[issue].summary}\n`
+          const details = issues[issue].details?.replaceAll('\n', '\n  ')
+          if (details !== undefined) {
+            message += `  <details><summary>More details</summary>\n  ${details}\n  </details>\n`
+          }
         }
         message += '\n</details>'
       }

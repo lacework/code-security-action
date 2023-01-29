@@ -28,19 +28,20 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
     const stepHash = getStepHash()
     const foundComment = await findExistingComment(stepHash)
     const escapedMessage = message.replaceAll(/(\s)#([0-9]+\s)/g, '$1#&#8203;$2')
+    const messageWithHash = appendHash(escapedMessage, stepHash)
     if (foundComment === undefined) {
       return (
-        await getOctokit(getInput('token')).rest.issues.createComment({
+        await getIssuesApi().createComment({
           ...context.repo,
           issue_number: context.payload.pull_request.number,
-          body: appendHash(escapedMessage, stepHash),
+          body: messageWithHash,
         })
       ).data.html_url
     } else {
-      await getOctokit(getInput('token')).rest.issues.updateComment({
+      await getIssuesApi().updateComment({
         ...context.repo,
         comment_id: foundComment,
-        body: appendHash(escapedMessage, stepHash),
+        body: messageWithHash,
       })
     }
   }
@@ -52,7 +53,7 @@ export async function resolveExistingCommentIfFound() {
   const foundComment = await findExistingComment(stepHash)
   if (foundComment !== undefined) {
     const body = 'All issues previously detected by Lacework Code Analysis have been resolved!'
-    await getOctokit(getInput('token')).rest.issues.updateComment({
+    await getIssuesApi().updateComment({
       ...context.repo,
       comment_id: foundComment,
       body: appendHash(body, stepHash),
@@ -78,6 +79,7 @@ function getStepHash(): string {
   md5.appendStr(context.action)
   const result = md5.end()
   if (result === undefined) {
+    // Shouldn't actually happen, but check is needed to satisfy the compiler.
     throw new Error('Failed to produce a hash for our workflow step!')
   }
   return result.toString()
@@ -85,15 +87,15 @@ function getStepHash(): string {
 
 async function findExistingComment(stepHash: string): Promise<number | undefined> {
   if (context.payload.pull_request?.number) {
-    let page = 1
     // Limit ourselves to 5 pages of comments to avoid hitting API rate limits.
     // Our comment should be near the top anyways.
-    while (page <= 5) {
+    for (let page = 1; page <= 5; page++) {
+      const pageSize = 100
       const comments = (
-        await getOctokit(getInput('token')).rest.issues.listComments({
+        await getIssuesApi().listComments({
           ...context.repo,
           issue_number: context.payload.pull_request?.number,
-          per_page: 100,
+          per_page: pageSize,
           page,
         })
       ).data
@@ -102,13 +104,17 @@ async function findExistingComment(stepHash: string): Promise<number | undefined
           return comment.id
         }
       }
-      if (comments.length !== 100) {
+      if (comments.length !== pageSize) {
+        // We saw a partially empty page, so we know there are no more comments
         return undefined
       }
-      page += 1
     }
   }
   return undefined
+}
+
+function getIssuesApi() {
+  return getOctokit(getInput('token')).rest.issues
 }
 
 function appendHash(comment: string, hash: string): string {

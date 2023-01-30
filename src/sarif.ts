@@ -30,6 +30,7 @@ export async function compareSarifResults(
   newReport: string
 ): Promise<Issue[]> {
   startGroup(`Comparing ${componentName.toUpperCase()} results`)
+  const outputFile = `${componentName}$-compare.sarif`
   info(
     await callLaceworkCli(
       componentName,
@@ -39,10 +40,10 @@ export async function compareSarifResults(
       '--new',
       newReport,
       '-o',
-      componentName + '-compare.sarif'
+      outputFile
     )
   )
-  const results: Log = JSON.parse(readFileSync('sast-compare.sarif', 'utf8'))
+  const results: Log = JSON.parse(readFileSync(outputFile, 'utf8'))
   let sawChange = false
   const alertsAdded: Issue[] = []
   for (const run of results.runs) {

@@ -24,7 +24,11 @@ export async function printSarifResults(componentName: string, sarifFile: string
   endGroup()
 }
 
-export async function compareSarifResults(componentName: string, oldReport: string, newReport: string): Promise<Issue[]> {
+export async function compareSarifResults(
+  componentName: string,
+  oldReport: string,
+  newReport: string
+): Promise<Issue[]> {
   startGroup(`Comparing ${componentName.toUpperCase()} results`)
   info(
     await callLaceworkCli(
@@ -75,7 +79,9 @@ export async function compareSarifResults(componentName: string, oldReport: stri
       if (alertsAdded.length > 0) {
         // TODO: Use setFailed once we want new alerts to cause a failure
         error(
-          `${alertsAdded.length} new ${componentName.toUpperCase()} issues were introduced, see above in the logs for details`
+          `${
+            alertsAdded.length
+          } new ${componentName.toUpperCase()} issues were introduced, see above in the logs for details`
         )
       }
     }

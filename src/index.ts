@@ -6,12 +6,11 @@ import {
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import { compareSastResults, printSastResults } from './sast'
-import { compareScaResults, printScaResults } from './sca'
+import { printSarifResults, compareSarifResults } from './sarif'
 import { Issue } from './types'
 import { callLaceworkCli } from './util'
 
-const scaReport = 'sca.json'
+const scaReport = 'sca.sarif'
 const sastReport = 'sast.sarif'
 
 async function runAnalysis() {
@@ -20,8 +19,8 @@ async function runAnalysis() {
   const tools = (getInput('tools') || 'sca').toLowerCase().split(',')
   const toUpload: string[] = []
   if (tools.includes('sca')) {
-    info(await callLaceworkCli('sca', 'dir', '.', '--no-scr', '-o', scaReport))
-    await printScaResults(scaReport)
+    info(await callLaceworkCli('sca', 'dir', '.', '-o', scaReport, '-f', 'sarif'))
+    await printSarifResults('sca', scaReport)
     toUpload.push(scaReport)
   }
   if (tools.includes('sast')) {
@@ -36,7 +35,7 @@ async function runAnalysis() {
         sastReport
       )
     )
-    await printSastResults(sastReport)
+    await printSarifResults('sast', sastReport)
     toUpload.push(sastReport)
   }
   await uploadArtifact('results-' + target, ...toUpload)
@@ -49,13 +48,15 @@ async function displayResults() {
   await downloadArtifact('results-new')
   const issuesByTool: { [tool: string]: Issue[] } = {}
   if (existsSync(`results-old/${scaReport}`) && existsSync(`results-new/${scaReport}`)) {
-    issuesByTool['sca'] = await compareScaResults(
+    issuesByTool['sca'] = await compareSarifResults(
+      `sca`,
       `results-old/${scaReport}`,
       `results-new/${scaReport}`
     )
   }
   if (existsSync(`results-old/${sastReport}`) && existsSync(`results-new/${sastReport}`)) {
-    issuesByTool['sast'] = await compareSastResults(
+    issuesByTool['sast'] = await compareSarifResults(
+      `sast`,
       `results-old/${sastReport}`,
       `results-new/${sastReport}`
     )

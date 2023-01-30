@@ -1,6 +1,11 @@
 import { error, getInput, info, setOutput } from '@actions/core'
 import { existsSync } from 'fs'
-import { downloadArtifact, postCommentIfInPr, uploadArtifact } from './actions'
+import {
+  downloadArtifact,
+  postCommentIfInPr,
+  resolveExistingCommentIfFound,
+  uploadArtifact,
+} from './actions'
 import { compareSastResults, printSastResults } from './sast'
 import { compareScaResults, printScaResults } from './sca'
 import { Issue } from './types'
@@ -76,6 +81,8 @@ async function displayResults() {
     if (commentUrl !== undefined) {
       setOutput('posted-comment', commentUrl)
     }
+  } else {
+    await resolveExistingCommentIfFound()
   }
   setOutput(`display-completed`, true)
 }

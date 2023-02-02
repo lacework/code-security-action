@@ -71,10 +71,19 @@ export async function compareSarifResults(
               details += '\n'
             }
           }
-          alertsAdded.push({
-            summary: `${prettyPrintSarifLocation(vuln.locations?.[0])}: ${message}`,
-            details,
-          })
+          if (Array.isArray(vuln.locations) && vuln.locations.length > 0) {
+            for (const location of vuln.locations) {
+              alertsAdded.push({
+                summary: `${prettyPrintSarifLocation(location)}: ${message}`,
+                details,
+              })
+            }
+          } else {
+            alertsAdded.push({
+              summary: `Unknown location: ${message}`,
+              details,
+            })
+          }
         }
       }
       if (alertsAdded.length > 0) {

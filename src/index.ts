@@ -76,6 +76,9 @@ async function displayResults() {
         message += '\n</details>'
       }
     }
+    if (getInput('footer') !== '') {
+      message += '\n\n' + getInput('footer')
+    }
     info(message)
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {

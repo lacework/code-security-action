@@ -2,7 +2,7 @@ import { error, info, startGroup, endGroup } from '@actions/core'
 import { context } from '@actions/github'
 import { readFileSync } from 'fs'
 import { callLaceworkCli } from './util'
-import { Location, Log } from 'sarif'
+import { Location, Result, Log } from 'sarif'
 import { Issue } from './types'
 
 export async function printSarifResults(componentName: string, sarifFile: string) {
@@ -43,34 +43,47 @@ export async function compareSarifResults(
       outputFile
     )
   )
+
   const results: Log = JSON.parse(readFileSync(outputFile, 'utf8'))
   let sawChange = false
   const alertsAdded: Issue[] = []
+
   for (const run of results.runs) {
+    let prettyPrintDetails = undefined
+    let prettyPrintMessage = undefined
+    switch (componentName.toUpperCase()) {
+      case 'SAST': {
+        prettyPrintDetails = prettyPrintSastDetails
+        prettyPrintMessage = prettyPrintSastMessage
+      }
+      case 'SCA': {
+        let CveToDescription = new Map<string, string>()
+        if (Array.isArray(run.tool.driver.rules) && run.tool.driver.rules.length > 0) {
+          for (const rule of run.tool.driver.rules) {
+            if (rule.shortDescription) {
+              CveToDescription.set(rule.id, rule.shortDescription.text)
+            } else {
+              CveToDescription.set(rule.id, 'No information available on alert.')
+            }
+          }
+        }
+        prettyPrintDetails = prettyPrintScaDetails
+        prettyPrintMessage = function (vuln: Result) {
+          prettyPrintScaMessage(CveToDescription, vuln)
+        }
+      }
+    }
+    if (!prettyPrintDetails || !prettyPrintMessage) {
+      return []
+    }
+
     if (Array.isArray(run.results) && run.results.length > 0) {
       info('There was changes in ' + run.results.length + ' results from ' + run.tool.driver.name)
       for (const vuln of run.results) {
         info(JSON.stringify(vuln, null, 2))
         if (vuln.properties?.['status'] === 'added') {
-          const message =
-            vuln.message.markdown || vuln.message.text || 'No information available on alert'
-          let details = undefined
-          if (
-            vuln.codeFlows !== undefined &&
-            vuln.codeFlows.length > 0 &&
-            vuln.codeFlows[0].threadFlows.length > 0
-          ) {
-            const chosenFlow = vuln.codeFlows[0].threadFlows[0]
-            details = 'Example problematic flow of data:\n\n'
-            for (const flowLoc of chosenFlow.locations) {
-              const location = flowLoc.location
-              details += `  * ${prettyPrintSarifLocation(location)}`
-              if (location?.message?.text !== undefined) {
-                details += `: ${location.message.text}`
-              }
-              details += '\n'
-            }
-          }
+          let details = prettyPrintDetails(vuln)
+          let message = prettyPrintMessage(vuln)
           if (Array.isArray(vuln.locations) && vuln.locations.length > 0) {
             for (const location of vuln.locations) {
               alertsAdded.push({
@@ -101,6 +114,45 @@ export async function compareSarifResults(
   }
   endGroup()
   return alertsAdded
+}
+
+function prettyPrintSastDetails(vuln: Result) {
+  let details = undefined
+  if (
+    vuln.codeFlows !== undefined &&
+    vuln.codeFlows.length > 0 &&
+    vuln.codeFlows[0].threadFlows.length > 0
+  ) {
+    const chosenFlow = vuln.codeFlows[0].threadFlows[0]
+    details = 'Example problematic flow of data:\n\n'
+    for (const flowLoc of chosenFlow.locations) {
+      const location = flowLoc.location
+      details += `  * ${prettyPrintSarifLocation(location)}`
+      if (location?.message?.text !== undefined) {
+        details += `: ${location.message.text}`
+      }
+      details += '\n'
+    }
+  }
+  return details
+}
+
+function prettyPrintSastMessage(vuln: Result) {
+  return vuln.message.markdown || vuln.message.text || 'No information available on alert'
+}
+
+function prettyPrintScaDetails(vuln: Result) {
+  let details = vuln.message.markdown || vuln.message.text || 'No information available on alert'
+  details += `\n`
+  return details
+}
+
+function prettyPrintScaMessage(map: Map<string, string>, vuln: Result) {
+  if (vuln.ruleId) {
+    return map.get(vuln.ruleId) || vuln.message.text || 'No information available on alert'
+  } else {
+    return 'No information available on alert'
+  }
 }
 
 function prettyPrintSarifLocation(sarifLocation: Location | undefined) {

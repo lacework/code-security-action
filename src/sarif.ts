@@ -83,7 +83,7 @@ export async function compareSarifResults(
         info(JSON.stringify(vuln, null, 2))
         if (vuln.properties?.['status'] === 'added') {
           let details = prettyPrintDetails(vuln)
-          let message = prettyPrintMessage(vuln)
+          const message = prettyPrintMessage(vuln)
           if (Array.isArray(vuln.locations) && vuln.locations.length > 0) {
             for (const location of vuln.locations) {
               alertsAdded.push({

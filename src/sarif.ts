@@ -138,7 +138,7 @@ function prettyPrintSastDetails(vuln: Result) {
 }
 
 function prettyPrintSastMessage(vuln: Result) {
-  return vuln.message.markdown || vuln.message.text || 'No information available on alert'
+  return vuln.message.markdown ?? vuln.message.text ?? 'No information available on alert'
 }
 
 function prettyPrintScaDetails(vuln: Result) {
@@ -149,7 +149,7 @@ function prettyPrintScaDetails(vuln: Result) {
 
 function prettyPrintScaMessage(map: Map<string, string>, vuln: Result) {
   if (vuln.ruleId) {
-    return map.get(vuln.ruleId) || vuln.message.text || 'No information available on alert'
+    return map.get(vuln.ruleId) ?? vuln.message.text ?? 'No information available on alert'
   } else {
     return 'No information available on alert'
   }

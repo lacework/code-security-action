@@ -62,11 +62,14 @@ export async function compareSarifResults(
       case 'SCA': {
         if (Array.isArray(run.tool.driver.rules) && run.tool.driver.rules.length > 0) {
           for (const rule of run.tool.driver.rules) {
+            info(`Adding ${rule.id} to map with short description ${rule.shortDescription}`)
+
             if (rule.shortDescription) {
               CveToDescription.set(rule.id, rule.shortDescription.text)
             } else {
               CveToDescription.set(rule.id, 'No information available on alert.')
             }
+            info(`Map size: ${CveToDescription.size}`)
           }
         }
         prettyPrintDetails = prettyPrintScaDetails
@@ -143,19 +146,16 @@ function prettyPrintSastMessage(vuln: Result): string {
 }
 
 function prettyPrintScaDetails(vuln: Result) {
-  let details = vuln.message.markdown || vuln.message.text || 'No information available on alert'
+  let details = vuln.message.text || 'No information available on alert'
   details += `\n`
   return details
 }
 
 function prettyPrintScaMessage(map: Map<string, string>, vuln: Result): string {
   if (vuln.ruleId) {
-    let shortDescription = map.get(vuln.ruleId)
-    if (shortDescription !== undefined) {
-      return shortDescription
-    } else {
-      return 'Debuggg... No information available on alert'
-    }
+    info(`Map size: ${map.size}`)
+
+    return map.get(vuln.ruleId) || 'Debuggg... No information available on alert'
   } else {
     return 'No information available on alert'
   }

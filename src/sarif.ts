@@ -49,13 +49,15 @@ export async function compareSarifResults(
   const alertsAdded: Issue[] = []
 
   for (const run of results.runs) {
-    let prettyPrintDetails = undefined
-    let prettyPrintMessage = undefined
+    let prettyPrintDetails: (vuln: Result) => string | undefined
+    let prettyPrintMessage: (vuln: Result) => string
     switch (componentName.toUpperCase()) {
       case 'SAST': {
         prettyPrintDetails = prettyPrintSastDetails
         prettyPrintMessage = prettyPrintSastMessage
+        break
       }
+
       case 'SCA': {
         let CveToDescription = new Map<string, string>()
         if (Array.isArray(run.tool.driver.rules) && run.tool.driver.rules.length > 0) {
@@ -68,15 +70,14 @@ export async function compareSarifResults(
           }
         }
         prettyPrintDetails = prettyPrintScaDetails
-        prettyPrintMessage = function (vuln: Result) {
-          prettyPrintScaMessage(CveToDescription, vuln)
+        prettyPrintMessage = (vuln: Result) => {
+          return prettyPrintScaMessage(CveToDescription, vuln)
         }
+        break
       }
+      default:
+        return []
     }
-    if (!prettyPrintDetails || !prettyPrintMessage) {
-      return []
-    }
-
     if (Array.isArray(run.results) && run.results.length > 0) {
       info('There was changes in ' + run.results.length + ' results from ' + run.tool.driver.name)
       for (const vuln of run.results) {
@@ -137,8 +138,8 @@ function prettyPrintSastDetails(vuln: Result) {
   return details
 }
 
-function prettyPrintSastMessage(vuln: Result) {
-  return vuln.message.markdown ?? vuln.message.text ?? 'No information available on alert'
+function prettyPrintSastMessage(vuln: Result): string {
+  return vuln.message.markdown || vuln.message.text || 'No information available on alert'
 }
 
 function prettyPrintScaDetails(vuln: Result) {
@@ -147,9 +148,9 @@ function prettyPrintScaDetails(vuln: Result) {
   return details
 }
 
-function prettyPrintScaMessage(map: Map<string, string>, vuln: Result) {
+function prettyPrintScaMessage(map: Map<string, string>, vuln: Result): string {
   if (vuln.ruleId) {
-    return map.get(vuln.ruleId) ?? vuln.message.text ?? 'No information available on alert'
+    return map.get(vuln.ruleId) || vuln.message.text || 'No information available on alert'
   } else {
     return 'No information available on alert'
   }

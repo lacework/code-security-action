@@ -46,6 +46,7 @@ export async function compareSarifResults(
 
   const results: Log = JSON.parse(readFileSync(outputFile, 'utf8'))
   let sawChange = false
+  let CveToDescription = new Map<string, string>()
   const alertsAdded: Issue[] = []
 
   for (const run of results.runs) {
@@ -59,7 +60,6 @@ export async function compareSarifResults(
       }
 
       case 'SCA': {
-        let CveToDescription = new Map<string, string>()
         if (Array.isArray(run.tool.driver.rules) && run.tool.driver.rules.length > 0) {
           for (const rule of run.tool.driver.rules) {
             if (rule.shortDescription) {

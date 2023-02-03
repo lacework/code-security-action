@@ -153,8 +153,7 @@ function prettyPrintScaDetails(vuln: Result) {
 
 function prettyPrintScaMessage(map: Map<string, string>, vuln: Result): string {
   if (vuln.ruleId) {
-    info(`Map size: ${map.size}`)
-
+    info(`map[${vuln.ruleId}] has value ${map.get(vuln.ruleId)}`)
     return map.get(vuln.ruleId) || 'Debuggg... No information available on alert'
   } else {
     return 'No information available on alert'

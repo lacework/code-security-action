@@ -15,6 +15,9 @@ inputs:
   token:
     description: "Set to a GitHub token for the repository with write permissions for PRs to enable PR comments"
     required: false
+  footer:
+    description: "A block of Markdown that will be appended to any PR comments posted"
+    required: false
   tools:
     description: "Comma separated list of tools to run"
     required: false

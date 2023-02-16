@@ -30,6 +30,7 @@ async function runAnalysis() {
         'sast',
         'scan',
         '--verbose',
+        '--save-results',
         '--classes',
         getInput('jar'),
         '-o',

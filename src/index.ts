@@ -18,10 +18,12 @@ async function runAnalysis() {
   const target = getInput('target')
   info('Analyzing ' + target)
   const tools = (getInput('tools') || 'sca').toLowerCase().split(',')
+  const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
   if (tools.includes('sca')) {
     var args = ['sca', 'dir', '.', '--save-results', '-o', scaReport]
-    if (!getBooleanInput('eval-indirect-dependencies')) {
+    info('eval-indirect-dependencies: ' + indirectDeps)
+    if (indirectDeps.toLowerCase() === 'false') {
       args.push('--eval-direct-only')
     }
     info(await callLaceworkCli(...args))

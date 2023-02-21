@@ -1,27 +1,31 @@
-name: "code-analysis-action"
+name: 'code-analysis-action'
 description: "Scan code with Lacework's code analysis"
-author: "Lacework"
+author: 'Lacework'
 inputs:
   jar:
-    description: "JAR to analyze"
+    description: 'JAR to analyze'
     required: false
   target:
-    description: "One of old or new to represent which is being analyzed"
+    description: 'One of old or new to represent which is being analyzed'
     required: false
   debug:
-    description: "Set to true to enable debug logging"
+    description: 'Set to true to enable debug logging'
     required: false
     default: false
   token:
-    description: "Set to a GitHub token for the repository with write permissions for PRs to enable PR comments"
+    description: 'Set to a GitHub token for the repository with write permissions for PRs to enable PR comments'
     required: false
   footer:
-    description: "A block of Markdown that will be appended to any PR comments posted"
+    description: 'A block of Markdown that will be appended to any PR comments posted'
     required: false
   tools:
-    description: "Comma separated list of tools to run"
+    description: 'Comma separated list of tools to run'
     required: false
-    default: "sca"
+    default: 'sca'
+  eval-indirect-dependencies:
+    description: 'Show vulnerabilities found in transitive dependencies'
+    required: false
+    default: false
 runs:
-  using: "docker"
-  image: "Dockerfile"
+  using: 'docker'
+  image: 'Dockerfile'

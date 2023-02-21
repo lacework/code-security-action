@@ -3,6 +3,7 @@ import { error, info } from '@actions/core'
 import { spawnSync } from 'child_process'
 
 export function getBooleanInput(name: string) {
+  info(name + ': ' + getInput(name).toLowerCase())
   return getInput(name).toLowerCase() == 'true'
 }
 

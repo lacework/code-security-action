@@ -11,7 +11,7 @@ inputs:
   debug:
     description: 'Set to true to enable debug logging'
     required: false
-    default: false
+    default: 'false'
   token:
     description: 'Set to a GitHub token for the repository with write permissions for PRs to enable PR comments'
     required: false
@@ -25,7 +25,7 @@ inputs:
   eval-indirect-dependencies:
     description: 'Show vulnerabilities found in transitive dependencies'
     required: false
-    default: false
+    default: 'false'
 runs:
   using: 'docker'
   image: 'Dockerfile'

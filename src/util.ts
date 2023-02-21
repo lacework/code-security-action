@@ -2,8 +2,7 @@ import { getInput, isDebug } from '@actions/core'
 import { error, info } from '@actions/core'
 import { spawnSync } from 'child_process'
 
-export function getBooleanInput(name: string) {
-  info(name + ': ' + getInput(name).toLowerCase())
+function getBooleanInput(name: string) {
   return getInput(name).toLowerCase() == 'true'
 }
 

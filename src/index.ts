@@ -9,7 +9,7 @@ import {
 import { compareSastResults, printSastResults } from './sast'
 import { compareScaResults, printScaResults } from './sca'
 import { Issue } from './types'
-import { callLaceworkCli, getBooleanInput } from './util'
+import { callLaceworkCli } from './util'
 
 const scaReport = 'sca.json'
 const sastReport = 'sast.sarif'
@@ -22,7 +22,6 @@ async function runAnalysis() {
   const toUpload: string[] = []
   if (tools.includes('sca')) {
     var args = ['sca', 'dir', '.', '--save-results', '-o', scaReport]
-    info('eval-indirect-dependencies: ' + indirectDeps)
     if (indirectDeps.toLowerCase() === 'false') {
       args.push('--eval-direct-only')
     }

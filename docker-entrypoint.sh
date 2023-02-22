@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SCA_VERSION=0.0.16
+SCA_VERSION=0.0.18
 SAST_VERSION=0.0.30
 
 echo "::group::Installing Lacework CLI components"

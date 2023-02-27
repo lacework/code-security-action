@@ -9,7 +9,7 @@ import {
 import { compareSastResults, printSastResults } from './sast'
 import { compareScaResults, printScaResults } from './sca'
 import { Issue } from './types'
-import { callLaceworkCli } from './util'
+import { callLaceworkCli, debug } from './util'
 
 const scaReport = 'sca.json'
 const sastReport = 'sast.sarif'
@@ -25,23 +25,28 @@ async function runAnalysis() {
     if (indirectDeps.toLowerCase() === 'false') {
       args.push('--eval-direct-only')
     }
+    if (debug()) {
+      args.push('--debug')
+    }
     info(await callLaceworkCli(...args))
     await printScaResults(scaReport)
     toUpload.push(scaReport)
   }
   if (tools.includes('sast')) {
-    info(
-      await callLaceworkCli(
-        'sast',
-        'scan',
-        '--verbose',
-        '--save-results',
-        '--classes',
-        getInput('jar'),
-        '-o',
-        sastReport
-      )
-    )
+    var args = [
+      'sast',
+      'scan',
+      '--verbose',
+      '--save-results',
+      '--classes',
+      getInput('jar'),
+      '-o',
+      sastReport,
+    ]
+    if (debug()) {
+      args.push('--debug')
+    }
+    info(await callLaceworkCli(...args))
     await printSastResults(sastReport)
     toUpload.push(sastReport)
   }

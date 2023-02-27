@@ -2,8 +2,11 @@ name: 'code-analysis-action'
 description: "Scan code with Lacework's code analysis"
 author: 'Lacework'
 inputs:
-  jar:
-    description: 'JAR to analyze'
+  classes:
+    description: 'Classes directory or JAR file to analyze'
+    required: false
+  sources:
+    description: 'Sources directory to analyze'
     required: false
   target:
     description: 'One of old or new to represent which is being analyzed'

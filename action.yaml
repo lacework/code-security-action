@@ -1,5 +1,5 @@
-name: 'code-analysis-action'
-description: "Scan code with Lacework's code analysis"
+name: 'lacework-code-security'
+description: "Scan code with Lacework's Code Security offering"
 author: 'Lacework'
 inputs:
   classes:
@@ -31,6 +31,52 @@ inputs:
     description: 'Show vulnerabilities found in transitive dependencies'
     required: false
     default: false
+outputs:
+  old-completed:
+    description: 'If running a target called old, whether the analysis for this was completed'
+    value: ${{ steps.run-analysis.outputs.old-completed }}
+  new-completed:
+    description: 'If running a target called new, whether the analysis for this was completed'
+    value: ${{ steps.run-analysis.outputs.new-completed }}
+  push-completed:
+    description: 'If running a target called push, whether the analysis for this was completed'
+    value: ${{ steps.run-analysis.outputs.push-completed }}
+  display-completed:
+    description: 'If displaying results, whether this was completed'
+    value: ${{ steps.run-analysis.outputs.display-completed }}
+  comment-posted:
+    description: 'If a comment was posted, a link to this comment'
+    value: ${{ steps.run-analysis.outputs.comment-posted }}
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: 'composite'
+  steps:
+    - shell: bash
+      run: |
+        SCA_VERSION=0.0.20
+        SAST_VERSION=0.0.32
+        curl https://raw.githubusercontent.com/lacework/go-sdk/main/cli/install.sh | bash
+        echo "::group::Installing Lacework CLI components"
+        lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" component install sca --version "${SCA_VERSION}"
+        lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" component install sast --version "${SAST_VERSION}"
+        echo "::endgroup::"
+        echo "::group::Printing Lacework CLI information"
+        lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" version
+        lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" component list
+        echo "::endgroup::"
+        cp -r "${{ github.action_path }}" ../lacework-code-security
+        cd ../lacework-code-security
+        HUSKY=0 npm install
+        npm run compile
+        pip install yq
+        yq -yi 'del(.runs.steps) | del(.outputs) | .runs.using="node16" | .runs.main="dist/src/index.js"' action.yaml
+    - id: run-analysis
+      uses: './../lacework-code-security'
+      with:
+        classes: '${{ inputs.classes }}'
+        sources: '${{ inputs.sources }}'
+        target: '${{ inputs.target }}'
+        debug: '${{ inputs.debug }}'
+        token: '${{ inputs.token }}'
+        footer: '${{ inputs.footer }}'
+        tools: '${{ inputs.tools }}'
+        eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'

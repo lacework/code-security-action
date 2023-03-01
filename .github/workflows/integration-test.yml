@@ -23,7 +23,7 @@ jobs:
           mv * ../action
           mv ../action/sample-repo/* .
       - name: Build sample repo
-        run: mvn package
+        run: mvn --quiet package
       - name: Run action
         id: run-action
         uses: ./../action
@@ -54,12 +54,12 @@ jobs:
           export SCA_RESULTS=`jq '.Vulnerabilities | length' sca.json`
           echo "Got $SCA_RESULTS from SCA"
           if [ "$SCA_RESULTS" == "0" ]; then
-            echo "::error Expected to have some SCA results!"
+            echo "::error::Expected to have some SCA results!"
             exit 1
           fi
           export SAST_RESULTS=`jq '.runs[0].results | length' sast.sarif`
           echo "Got $SAST_RESULTS from SAST"
-          if [ "$SAST_RESULTS" != "0" ]; then
-            echo "::error Expected to have no SAST results!"
+          if [ "$SAST_RESULTS" == "0" ]; then
+            echo "::error::Expected to have some SAST results!"
             exit 1
           fi

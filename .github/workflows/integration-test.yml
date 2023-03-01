@@ -23,7 +23,9 @@ jobs:
           mv * ../action
           mv ../action/sample-repo/* .
       - name: Build sample repo
-        run: mvn --quiet package
+        run: |
+          mvn --quiet package
+          dotnet publish --output target/
       - name: Run action
         id: run-action
         uses: ./../action
@@ -58,8 +60,9 @@ jobs:
             exit 1
           fi
           export SAST_RESULTS=`jq '.runs[0].results | length' sast.sarif`
+          expectedSastResults=1
           echo "Got $SAST_RESULTS from SAST"
-          if [ "$SAST_RESULTS" == "0" ]; then
-            echo "::error::Expected to have some SAST results!"
+          if [ "$SAST_RESULTS" != "$expectedSastResults" ]; then
+            echo "::error::Expected to have $expectedSastResults SAST results!"
             exit 1
           fi

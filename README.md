@@ -8,7 +8,7 @@ This repository contains a GitHub Action for using Lacework's code security offe
 
 ### Creating secrets
 
-Before attempting to run this action, you should add three secrets `LW_ACCOUNT_NAME`, `LW_API_KEY` and `LW_API_SECRET` to your GitHub repository (or, better yet, your GitHub organization so they can be shared accross all your repositories). The value for these secrets can be obtained by following the instructions [here](https://docs.lacework.com/console/api-access-keys) to create an API key and then downloading it.
+Before attempting to run this action, you should add three secrets `LW_ACCOUNT_NAME`, `LW_API_KEY` and `LW_API_SECRET` to your GitHub repository (or, better yet, your GitHub organization so they can be shared accross all your repositories). The value for these secrets can be obtained by following the instructions [here](https://docs.lacework.com/console/api-access-keys) to create an API key and then download it.
 
 ### On pull requests
 
@@ -99,4 +99,4 @@ jobs:
 
 ## License
 
-The code contained in this repository is released as open-source under the Apache 2.0 license. However, the underlying analysis tools are subject to their own licensing conditions. Thus, you will not be able to use the code found here without being a Lacework customer that has purchased our code security offering.
+The code contained in this repository is released as open-source under the Apache 2.0 license. However, the underlying analysis tools are subject to their own licensing conditions. Thus, you will not be able to use the code found here without having purchased the Lacework code security offering.

@@ -1,10 +1,14 @@
 <img src="https://techally-content.s3-us-west-1.amazonaws.com/public-content/lacework_logo_full.png" width="600">
 
-# Lacework Code Analysis GitHub Action
+# Lacework Code Security for GitHub Actions
 
-Github Action for using Lacework's code analysis.
+This repository contains a GitHub Action for using Lacework's code security offering on your code. In order for the code in this repository to run, you must be a Lacework customer that has been opted into the beta of our code security program. Please contact Lacework support for more information.
 
 ## Usage
+
+### Creating secrets
+
+Before attempting to run this action, you should add three secrets `LW_ACCOUNT_NAME`, `LW_API_KEY` and `LW_API_SECRET` to your GitHub repository (or, better yet, your GitHub organization so they can be shared accross all your repositories). The value for these secrets can be obtained by following the instructions [here](https://docs.lacework.com/console/api-access-keys) to create an API key and then downloading it.
 
 ### On pull requests
 
@@ -20,9 +24,9 @@ permissions:
   pull-requests: write
 
 env:
-  LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_CAT }}
-  LW_API_KEY: ${{ secrets.LW_API_KEY_CAT }}
-  LW_API_SECRET: ${{ secrets.LW_API_SECRET_CAT }}
+  LW_ACCOUNT_NAME: ${{ secrets._LW_ACCOUNT_NAME }}
+  LW_API_KEY: ${{ secrets.LW_API_KEY }}
+  LW_API_SECRET: ${{ secrets.LW_API_SECRET }}
 
 name: Lacework Code Analysis (PR)
 jobs:
@@ -41,7 +45,7 @@ jobs:
         if: ${{ matrix.target == 'old' }}
         run: git checkout HEAD^1
       - name: Analyze
-        uses: lacework-dev/code-analysis-action@v0.1
+        uses: lacework/code-security@v1
         with:
           target: ${{ matrix.target }}
           tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca and sast.
@@ -56,18 +60,9 @@ jobs:
     steps:
       - name: Results
         id: code-analysis
-        uses: lacework-dev/code-analysis-action@v0.1
+        uses: lacework/code-security@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Notify Code Security team
-        if: ${{ steps.code-analysis.outputs.posted-comment }}
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_CHANNEL: code-security-notify
-          SLACK_MESSAGE: "Posted an alert on a pull request: ${{ steps.code-analysis.outputs.posted-comment }}"
-          MSG_MINIMAL: true
-          SLACK_MSG_AUTHOR: Lacework
 ```
 
 ### On push
@@ -80,9 +75,9 @@ on:
     branches: [main]
 
 env:
-  LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_CAT }}
-  LW_API_KEY: ${{ secrets.LW_API_KEY_CAT }}
-  LW_API_SECRET: ${{ secrets.LW_API_SECRET_CAT }}
+  LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_NAME }}
+  LW_API_KEY: ${{ secrets.LW_API_KEY }}
+  LW_API_SECRET: ${{ secrets.LW_API_SECRET }}
 
 name: Lacework Code Analysis (Push)
 jobs:
@@ -93,10 +88,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Analyze
-        uses: lacework-dev/code-analysis-action@v0.1
+        uses: lacework/code-security@v1
         with:
           target: push
           tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca and sast.
-          # If using the SAST tool, uncomment the line below and point it to a built JAR for your project
-          # jar: target
+          # If using the SAST tool, uncomment the line below and point it to the generated classes directory
+          # or built JAR for your project
+          # classes: target
 ```
+
+## License
+
+The code contained in this repository is released as open-source under the Apache 2.0 license. However, the underlying analysis tools are subject to their own licensing conditions. Thus, you will not be able to use the code found here without being a Lacework customer that has purchased our code security offering.

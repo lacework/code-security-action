@@ -1,7 +1,7 @@
 import { error, info, startGroup, endGroup } from '@actions/core'
 import { context } from '@actions/github'
 import { readFileSync } from 'fs'
-import { callLaceworkCli } from './util'
+import { callLaceworkCli, debug } from './util'
 import { Location, Log } from 'sarif'
 import { Issue } from './types'
 
@@ -26,18 +26,21 @@ export async function printSastResults(sarifFile: string) {
 
 export async function compareSastResults(oldReport: string, newReport: string): Promise<Issue[]> {
   startGroup('Comparing SAST results')
-  info(
-    await callLaceworkCli(
-      'sast',
-      'compare',
-      '--old',
-      oldReport,
-      '--new',
-      newReport,
-      '-o',
-      'sast-compare.sarif'
-    )
-  )
+  const args = [
+    'sast',
+    'compare',
+    '--verbose',
+    '--old',
+    oldReport,
+    '--new',
+    newReport,
+    '-o',
+    'sast-compare.sarif',
+  ]
+  if (debug()) {
+    args.push('--debug')
+  }
+  info(await callLaceworkCli(...args))
   const results: Log = JSON.parse(readFileSync('sast-compare.sarif', 'utf8'))
   let sawChange = false
   const alertsAdded: Issue[] = []

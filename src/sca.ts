@@ -1,7 +1,7 @@
 import { error, info, startGroup, endGroup } from '@actions/core'
 import { readFileSync } from 'fs'
 import { Issue } from './types'
-import { callLaceworkCli } from './util'
+import { callLaceworkCli, debug } from './util'
 
 export async function printScaResults(jsonFile: string) {
   startGroup('Results for SCA')
@@ -19,18 +19,11 @@ export async function printScaResults(jsonFile: string) {
 
 export async function compareScaResults(oldReport: string, newReport: string): Promise<Issue[]> {
   startGroup('Comparing SCA results')
-  info(
-    await callLaceworkCli(
-      'sca',
-      'compare',
-      '--old',
-      oldReport,
-      '--new',
-      newReport,
-      '-o',
-      'sca-compare.json'
-    )
-  )
+  const args = ['sca', 'compare', '--old', oldReport, '--new', newReport, '-o', 'sca-compare.json']
+  if (debug()) {
+    args.push('--debug')
+  }
+  info(await callLaceworkCli(...args))
   const results = JSON.parse(readFileSync('sca-compare.json', 'utf8'))
   const alertsAdded: Issue[] = []
   if (Array.isArray(results.Vulnerabilities) && results.Vulnerabilities.length > 0) {

@@ -32,6 +32,7 @@ jobs:
           tools: sca,sast
           classes: target
           sources: ${{ github.workspace }}
+          debug: true
       - name: Check run succeeded
         env:
           RUN_OUTPUT: ${{ steps.run-action.outputs.push-completed }}

@@ -48,3 +48,9 @@ export async function callLaceworkCli(...args: string[]) {
   info('Calling lacework ' + expandedArgs.join(' '))
   return await callCommand('lacework', ...expandedArgs)
 }
+
+export function getOrDefault(name: string, defaultValue: string) {
+  const setTo = getInput(name)
+  if (setTo !== undefined && setTo.length > 0) return setTo
+  return defaultValue
+}

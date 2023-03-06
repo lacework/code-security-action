@@ -9,7 +9,7 @@ import {
 import { compareSastResults, printSastResults } from './sast'
 import { compareScaResults, printScaResults } from './sca'
 import { Issue } from './types'
-import { callLaceworkCli, debug } from './util'
+import { callLaceworkCli, debug, getOrDefault } from './util'
 
 const scaReport = 'sca.json'
 const sastReport = 'sast.sarif'
@@ -39,9 +39,9 @@ async function runAnalysis() {
       '--verbose',
       '--save-results',
       '--classes',
-      getInput('classes'),
+      getOrDefault('classes', '.'),
       '--sources',
-      getInput('sources'),
+      getOrDefault('sources', '.'),
       '-o',
       sastReport,
     ]

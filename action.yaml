@@ -5,9 +5,11 @@ inputs:
   classes:
     description: 'Classes directory or JAR file to analyze'
     required: false
+    default: '.'
   sources:
     description: 'Sources directory to analyze'
     required: false
+    default: '.'
   target:
     description: 'One of old or new to represent which is being analyzed'
     required: false

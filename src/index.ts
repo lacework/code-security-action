@@ -39,7 +39,9 @@ async function runAnalysis() {
       '--verbose',
       '--save-results',
       '--classes',
-      getInput('jar'),
+      getInput('classes'),
+      '--sources',
+      getInput('sources'),
       '-o',
       sastReport,
     ]

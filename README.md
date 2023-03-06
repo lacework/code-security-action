@@ -45,8 +45,9 @@ jobs:
         with:
           target: ${{ matrix.target }}
           tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca and sast.
-          # If using the SAST tool, uncomment the line below and point it to a built JAR for your project
-          # jar: target
+          # If using the SAST tool, uncomment the line below and point it to the generated classes directory
+          # or built JAR for your project
+          # classes: target
   display-results:
     runs-on: ubuntu-22.04
     name: Display results

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 SCA_VERSION=0.0.20
-SAST_VERSION=0.0.31
+SAST_VERSION=0.0.32
 
 echo "::group::Installing Lacework CLI components"
 lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" component install sca --version "${SCA_VERSION}"

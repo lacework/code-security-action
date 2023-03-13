@@ -28,7 +28,7 @@ env:
   LW_API_KEY: ${{ secrets.LW_API_KEY }}
   LW_API_SECRET: ${{ secrets.LW_API_SECRET }}
 
-name: Lacework Code Analysis (PR)
+name: Lacework Code Security (PR)
 jobs:
   run-analysis:
     runs-on: ubuntu-22.04
@@ -45,7 +45,7 @@ jobs:
         if: ${{ matrix.target == 'old' }}
         run: git checkout HEAD^1
       - name: Analyze
-        uses: lacework/code-security@v1
+        uses: lacework/code-security-action@v1
         with:
           target: ${{ matrix.target }}
           tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca and sast.
@@ -60,7 +60,7 @@ jobs:
     steps:
       - name: Results
         id: code-analysis
-        uses: lacework/code-security@v1
+        uses: lacework/code-security-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -79,7 +79,7 @@ env:
   LW_API_KEY: ${{ secrets.LW_API_KEY }}
   LW_API_SECRET: ${{ secrets.LW_API_SECRET }}
 
-name: Lacework Code Analysis (Push)
+name: Lacework Code Security (Push)
 jobs:
   run-analysis:
     runs-on: ubuntu-22.04
@@ -88,7 +88,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Analyze
-        uses: lacework/code-security@v1
+        uses: lacework/code-security-action@v1
         with:
           target: push
           tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca and sast.

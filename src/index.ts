@@ -6,12 +6,10 @@ import {
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import { compareSastResults, printSastResults } from './sast'
-import { compareScaResults, printScaResults } from './sca'
-import { Issue } from './types'
+import { compareResults, printResults } from './tool'
 import { callLaceworkCli, debug, getOrDefault } from './util'
 
-const scaReport = 'sca.json'
+const scaReport = 'sca.sarif'
 const sastReport = 'sast.sarif'
 
 async function runAnalysis() {
@@ -21,7 +19,7 @@ async function runAnalysis() {
   const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
   if (tools.includes('sca')) {
-    var args = ['sca', 'dir', '.', '--save-results', '-o', scaReport]
+    var args = ['sca', 'dir', '.', '--save-results', '-o', scaReport, '--formats', 'sarif']
     if (indirectDeps.toLowerCase() === 'false') {
       args.push('--eval-direct-only')
     }
@@ -29,14 +27,13 @@ async function runAnalysis() {
       args.push('--debug')
     }
     info(await callLaceworkCli(...args))
-    await printScaResults(scaReport)
+    await printResults('sca', scaReport)
     toUpload.push(scaReport)
   }
   if (tools.includes('sast')) {
     var args = [
       'sast',
       'scan',
-      '--verbose',
       '--save-results',
       '--classes',
       getOrDefault('classes', '.'),
@@ -49,7 +46,7 @@ async function runAnalysis() {
       args.push('--debug')
     }
     info(await callLaceworkCli(...args))
-    await printSastResults(sastReport)
+    await printResults('sast', sastReport)
     toUpload.push(sastReport)
   }
   await uploadArtifact('results-' + target, ...toUpload)
@@ -60,15 +57,17 @@ async function displayResults() {
   info('Displaying results')
   await downloadArtifact('results-old')
   await downloadArtifact('results-new')
-  const issuesByTool: { [tool: string]: Issue[] } = {}
+  const issuesByTool: { [tool: string]: string } = {}
   if (existsSync(`results-old/${scaReport}`) && existsSync(`results-new/${scaReport}`)) {
-    issuesByTool['sca'] = await compareScaResults(
+    issuesByTool['sca'] = await compareResults(
+      'sca',
       `results-old/${scaReport}`,
       `results-new/${scaReport}`
     )
   }
   if (existsSync(`results-old/${sastReport}`) && existsSync(`results-new/${sastReport}`)) {
-    issuesByTool['sast'] = await compareSastResults(
+    issuesByTool['sast'] = await compareResults(
+      'sast',
       `results-old/${sastReport}`,
       `results-new/${sastReport}`
     )
@@ -78,14 +77,8 @@ async function displayResults() {
     let message = `Lacework Code Analysis found potential new issues in this PR.`
     for (const [tool, issues] of Object.entries(issuesByTool)) {
       if (issues.length > 0) {
-        message += `\n\n<details><summary>${tool} found ${issues.length} potential new issues</summary>\n\n`
-        for (const issue in issues) {
-          message += `* ${issues[issue].summary}\n`
-          const details = issues[issue].details?.replaceAll('\n', '\n  ')
-          if (details !== undefined) {
-            message += `  <details><summary>More details</summary>\n  ${details}\n  </details>\n`
-          }
-        }
+        message += `\n\n<details><summary>${tool} found potential new issues</summary>\n\n`
+        message += issues
         message += '\n</details>'
       }
     }

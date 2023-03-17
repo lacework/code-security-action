@@ -1,5 +1,5 @@
 {
-  "name": "code-analysis-action",
+  "name": "code-security-action",
   "version": "1.0.0",
   "type": "commonjs",
   "main": "index.js",
@@ -22,15 +22,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lacework-dev/code-analysis-action.git"
+    "url": "git+https://github.com/lacework/code-security-action.git"
   },
   "keywords": [],
   "author": "Lacework",
-  "license": "",
+  "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/lacework-dev/code-analysis-action/issues"
+    "url": "https://github.com/lacework/code-security-action/issues"
   },
-  "homepage": "https://github.com/lacework-dev/code-analysis-action#readme",
+  "homepage": "https://github.com/lacework/code-security-action#readme",
   "devDependencies": {
     "@types/jest": "^29.2.4",
     "@typescript-eslint/eslint-plugin": "^5.46.1",

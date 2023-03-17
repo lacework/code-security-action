@@ -52,7 +52,7 @@ export async function resolveExistingCommentIfFound() {
   const stepHash = getStepHash()
   const foundComment = await findExistingComment(stepHash)
   if (foundComment !== undefined) {
-    const body = 'All issues previously detected by Lacework Code Analysis have been resolved!'
+    const body = 'All issues previously detected by Lacework Code Security have been resolved!'
     await getIssuesApi().updateComment({
       ...context.repo,
       comment_id: foundComment,
@@ -64,7 +64,7 @@ export async function resolveExistingCommentIfFound() {
 /**
  * This function is used to uniquely identify our comment and distinguish it from
  * any other comments. We do this by computing an MD5 hash of:
- * - A constant of lacework-code-analysis to distinguish ourselves on the off-chance
+ * - A constant of lacework-code-security to distinguish ourselves on the off-chance
  *   another Action has implemented this exact logic.
  * - The name of the workflow, so if there are two workflows running this step then
  *   we will distinguish them.
@@ -74,7 +74,7 @@ export async function resolveExistingCommentIfFound() {
  */
 function getStepHash(): string {
   const md5 = new Md5()
-  md5.appendStr('lacework-code-analysis')
+  md5.appendStr('lacework-code-security')
   md5.appendStr(context.workflow)
   md5.appendStr(context.action)
   const result = md5.end()

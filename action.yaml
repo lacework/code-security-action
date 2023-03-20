@@ -53,10 +53,12 @@ runs:
     - id: init
       shell: bash
       run: |
-        SCA_VERSION=0.0.22
+        SCA_VERSION=0.0.23
         SAST_VERSION=0.0.33
         curl https://raw.githubusercontent.com/lacework/go-sdk/main/cli/install.sh | bash
         echo "cache-key=$(date +'%Y-%m-%d')-$SCA_VERSION-$SAST_VERSION" >> $GITHUB_OUTPUT
+        echo "sca-version=$SCA_VERSION" >> $GITHUB_OUTPUT
+        echo "sast-version=$SAST_VERSION" >> $GITHUB_OUTPUT
     - id: cache
       uses: actions/cache/restore@v3
       with:
@@ -66,8 +68,8 @@ runs:
       shell: bash
       run: |
         echo "::group::Installing Lacework CLI components"
-        lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" component install sca --version "${SCA_VERSION}"
-        lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" component install sast --version "${SAST_VERSION}"
+        lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" component install sca --version "${{ steps.init.outputs.sca-version }}"
+        lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" component install sast --version "${{ steps.init.outputs.sast-version }}"
         echo "::endgroup::"
         echo "::group::Printing Lacework CLI information"
         lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" version

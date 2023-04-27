@@ -19,7 +19,18 @@ async function runAnalysis() {
   const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
   if (tools.includes('sca')) {
-    var args = ['sca', 'git', '.', '--save-results', '-o', scaReport, '--formats', 'sarif', '--deployment', 'ci']
+    var args = [
+      'sca',
+      'git',
+      '.',
+      '--save-results',
+      '-o',
+      scaReport,
+      '--formats',
+      'sarif',
+      '--deployment',
+      'ci',
+    ]
     if (indirectDeps.toLowerCase() === 'false') {
       args.push('--eval-direct-only')
     }
@@ -42,7 +53,7 @@ async function runAnalysis() {
       '-o',
       sastReport,
       '--deployment',
-      'ci'
+      'ci',
     ]
     if (debug()) {
       args.push('--debug')

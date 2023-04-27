@@ -42,6 +42,8 @@ export async function compareResults(
     `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/blob/${context.sha}/$FILENAME#L$LINENUMBER`,
     '--markdown-variant',
     'GitHub',
+    '--deployment',
+    'ci',
   ]
   if (debug()) args.push('--debug')
   info(await callLaceworkCli(...args))

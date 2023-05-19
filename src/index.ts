@@ -30,6 +30,7 @@ async function runAnalysis() {
       'sarif',
       '--deployment',
       'ci',
+      '--secret',
     ]
     if (indirectDeps.toLowerCase() === 'false') {
       args.push('--eval-direct-only')

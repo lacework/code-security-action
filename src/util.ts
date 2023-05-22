@@ -12,7 +12,7 @@ export function debug() {
 
 export async function callCommand(command: string, ...args: string[]) {
   const child = spawnSync(command, args)
-  if (debug() && child.stderr.toString() !== '') {
+  if (child.stderr.toString() !== '') {
     info(`stderr from command:\n${child.stderr.toString()}`)
   }
   if (child.status) {

@@ -53,7 +53,7 @@ runs:
     - id: init
       shell: bash
       run: |
-        SCA_VERSION=0.0.48
+        SCA_VERSION=0.0.51
         SAST_VERSION=0.0.45
         curl https://raw.githubusercontent.com/lacework/go-sdk/main/cli/install.sh | bash
         echo "cache-key=$(date +'%Y-%m-%d')-$SCA_VERSION-$SAST_VERSION" >> $GITHUB_OUTPUT

@@ -19,6 +19,19 @@ export function debug() {
   return getBooleanInput('debug') || isDebug()
 }
 
+export function getActionRef(): string {
+  return getOptionalEnvVariable('LACEWORK_ACTION_REF', 'unknown')
+}
+
+export function getRunUrl(): string {
+  let result = getRequiredEnvVariable('GITHUB_SERVER_URL')
+  result += '/'
+  result += getRequiredEnvVariable('GITHUB_REPOSITORY')
+  result += '/actions/runs/'
+  result += getRequiredEnvVariable('GITHUB_RUN_ID')
+  return result
+}
+
 export async function callCommand(command: string, ...args: string[]) {
   info('Invoking ' + command + ' ' + args.join(' '))
   const child = spawn(command, args, { stdio: 'inherit' })

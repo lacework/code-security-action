@@ -1,5 +1,5 @@
 import { error, getInput, info, setOutput, warning } from '@actions/core'
-import { existsSync } from 'fs'
+import { existsSync, appendFileSync } from 'fs'
 import {
   downloadArtifact,
   postCommentIfInPr,
@@ -10,10 +10,11 @@ import { compareResults, printResults } from './tool'
 import {
   callLaceworkCli,
   debug,
+  getActionRef,
   getMsSinceStart,
-  getOptionalEnvVariable,
   getOrDefault,
   getRequiredEnvVariable,
+  getRunUrl,
   telemetryCollector,
 } from './util'
 
@@ -128,8 +129,8 @@ async function displayResults() {
 
 async function main() {
   telemetryCollector.addField('duration.install', getMsSinceStart())
-  telemetryCollector.addField('version', getOptionalEnvVariable('ACTION_REF', 'unknown'))
-  telemetryCollector.addField('url', getRequiredEnvVariable('RUN_URL'))
+  telemetryCollector.addField('version', getActionRef())
+  telemetryCollector.addField('url', getRunUrl())
   telemetryCollector.addField('repository', getRequiredEnvVariable('GITHUB_REPOSITORY'))
   if (getInput('target') !== '') {
     telemetryCollector.addField('run-type', 'analysis')
@@ -156,4 +157,5 @@ main()
     await telemetryCollector.report().catch((err) => {
       warning('Failed to report telemetry: ' + err.message)
     })
+    appendFileSync(getRequiredEnvVariable('GITHUB_ENV'), 'LACEWORK_WROTE_TELEMETRY=true\n')
   })

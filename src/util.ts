@@ -1,6 +1,15 @@
 import { getInput, isDebug } from '@actions/core'
 import { error, info } from '@actions/core'
 import { spawnSync } from 'child_process'
+import { TelemetryCollector } from './telemetry'
+
+export const telemetryCollector = new TelemetryCollector()
+
+export function getMsSinceStart(): string {
+  const now = Date.now()
+  const start = Date.parse(getRequiredEnvVariable('LACEWORK_START_TIME'))
+  return (now - start).toString()
+}
 
 function getBooleanInput(name: string) {
   return getInput(name).toLowerCase() === 'true'

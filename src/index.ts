@@ -1,4 +1,4 @@
-import { error, getInput, info, setOutput } from '@actions/core'
+import { error, getInput, info, setOutput, warning } from '@actions/core'
 import { existsSync } from 'fs'
 import {
   downloadArtifact,
@@ -7,7 +7,14 @@ import {
   uploadArtifact,
 } from './actions'
 import { compareResults, printResults } from './tool'
-import { callLaceworkCli, debug, getOrDefault } from './util'
+import {
+  callLaceworkCli,
+  debug,
+  getMsSinceStart,
+  getOrDefault,
+  getRequiredEnvVariable,
+  telemetryCollector,
+} from './util'
 
 const scaReport = 'sca.sarif'
 const sastReport = 'sast.sarif'
@@ -64,14 +71,21 @@ async function runAnalysis() {
     await printResults('sast', sastReport)
     toUpload.push(sastReport)
   }
+  const uploadStart = Date.now()
   await uploadArtifact('results-' + target, ...toUpload)
+  telemetryCollector.addField('duration.upload-artifacts', (Date.now() - uploadStart).toString())
   setOutput(`${target}-completed`, true)
 }
 
 async function displayResults() {
   info('Displaying results')
+  const downloadStart = Date.now()
   await downloadArtifact('results-old')
   await downloadArtifact('results-new')
+  telemetryCollector.addField(
+    'duration.download-artifacts',
+    (Date.now() - downloadStart).toString()
+  )
   const issuesByTool: { [tool: string]: string } = {}
   if (existsSync(`results-old/${scaReport}`) && existsSync(`results-new/${scaReport}`)) {
     issuesByTool['sca'] = await compareResults(
@@ -87,6 +101,7 @@ async function displayResults() {
       `results-new/${sastReport}`
     )
   }
+  const commentStart = Date.now()
   if (Object.values(issuesByTool).some((x) => x.length > 0) && getInput('token').length > 0) {
     info('Posting comment to GitHub PR as there were new issues introduced:')
     let message = `Lacework Code Security found potential new issues in this PR.`
@@ -106,17 +121,37 @@ async function displayResults() {
   } else {
     await resolveExistingCommentIfFound()
   }
+  telemetryCollector.addField('duration.comment', (Date.now() - commentStart).toString())
   setOutput(`display-completed`, true)
 }
 
 async function main() {
+  telemetryCollector.addField('duration.install', getMsSinceStart())
+  telemetryCollector.addField('version', getOrDefault('ACTION_REF', 'unknown'))
+  telemetryCollector.addField('repository', getRequiredEnvVariable('GITHUB_REPOSITORY'))
   if (getInput('target') !== '') {
+    telemetryCollector.addField('run-type', 'analysis')
     await runAnalysis()
   } else {
+    telemetryCollector.addField('run-type', 'display')
     await displayResults()
   }
 }
 
-main().catch(
-  (err) => error(err.message) // TODO: Use setFailed once we want failures to be fatal
-)
+main()
+  .catch((e) => {
+    if (typeof e === 'string') {
+      telemetryCollector.addField('error', e)
+    } else if (e instanceof Error) {
+      telemetryCollector.addField('error', e.message)
+    } else {
+      telemetryCollector.addField('error', 'Unknown error')
+    }
+    error(e.message) // TODO: Use setFailed once we want failures to be fatal
+  })
+  .finally(async () => {
+    telemetryCollector.addField('duration.total', getMsSinceStart())
+    await telemetryCollector.report().catch((err) => {
+      warning('Failed to report telemetry: ' + err.message)
+    })
+  })

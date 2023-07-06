@@ -1,0 +1,20 @@
+name: Upgrade v1 tag
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    env:
+      GITHUB_TOKEN: ${{ secrets.RELENG_GH_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.RELENG_GH_TOKEN }}
+      - name: Upgrade tag
+        run: |
+          git tag -f v1
+          git push -f origin v1

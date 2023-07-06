@@ -46,7 +46,7 @@ export async function compareResults(
     'ci',
   ]
   if (debug()) args.push('--debug')
-  info(await callLaceworkCli(...args))
+  await callLaceworkCli(...args)
   endGroup()
   return existsSync(`${tool}.md`) ? readFileSync(`${tool}.md`, 'utf8') : ''
 }

@@ -1,6 +1,6 @@
 import { getInput, isDebug } from '@actions/core'
 import { error, info } from '@actions/core'
-import { spawnSync } from 'child_process'
+import { spawn } from 'child_process'
 import { TelemetryCollector } from './telemetry'
 
 export const telemetryCollector = new TelemetryCollector()
@@ -20,15 +20,15 @@ export function debug() {
 }
 
 export async function callCommand(command: string, ...args: string[]) {
-  const child = spawnSync(command, args)
-  if (child.stderr.toString() !== '') {
-    info(`stderr from command:\n${child.stderr.toString()}`)
+  info('Invoking ' + command + ' ' + args.join(' '))
+  const child = spawn(command, args, { stdio: 'inherit' })
+  const exitCode = await new Promise((resolve, _) => {
+    child.on('close', resolve)
+  })
+  if (exitCode !== 0) {
+    error(`Command failed with status ${exitCode}`)
+    throw new Error(`Command failed with status ${exitCode}`)
   }
-  if (child.status) {
-    error(`Command failed with status ${child.status}`)
-    throw new Error(`Command failed with status ${child.status}`)
-  }
-  return child.stdout.toString().trim()
 }
 
 export function getRequiredEnvVariable(name: string) {
@@ -63,7 +63,7 @@ export async function callLaceworkCli(...args: string[]) {
     ...args,
   ]
   info('Calling lacework ' + expandedArgs.join(' '))
-  return await callCommand('lacework', ...expandedArgs)
+  await callCommand('lacework', ...expandedArgs)
 }
 
 export function getOrDefault(name: string, defaultValue: string) {

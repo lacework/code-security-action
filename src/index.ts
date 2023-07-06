@@ -47,7 +47,7 @@ async function runAnalysis() {
     if (debug()) {
       args.push('--debug')
     }
-    info(await callLaceworkCli(...args))
+    await callLaceworkCli(...args)
     await printResults('sca', scaReport)
     toUpload.push(scaReport)
   }
@@ -68,7 +68,7 @@ async function runAnalysis() {
     if (debug()) {
       args.push('--debug')
     }
-    info(await callLaceworkCli(...args))
+    await callLaceworkCli(...args)
     await printResults('sast', sastReport)
     toUpload.push(sastReport)
   }

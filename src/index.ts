@@ -11,6 +11,7 @@ import {
   callLaceworkCli,
   debug,
   getMsSinceStart,
+  getOptionalEnvVariable,
   getOrDefault,
   getRequiredEnvVariable,
   telemetryCollector,
@@ -127,7 +128,7 @@ async function displayResults() {
 
 async function main() {
   telemetryCollector.addField('duration.install', getMsSinceStart())
-  telemetryCollector.addField('version', getOrDefault('ACTION_REF', 'unknown'))
+  telemetryCollector.addField('version', getOptionalEnvVariable('ACTION_REF', 'unknown'))
   telemetryCollector.addField('repository', getRequiredEnvVariable('GITHUB_REPOSITORY'))
   if (getInput('target') !== '') {
     telemetryCollector.addField('run-type', 'analysis')

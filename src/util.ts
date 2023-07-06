@@ -25,8 +25,8 @@ export async function callCommand(command: string, ...args: string[]) {
     info(`stderr from command:\n${child.stderr.toString()}`)
   }
   if (child.status) {
-    error(`Failed with status ${child.status}`)
-    process.exit(0) // TODO: Exit with 1 once we want failures to be fatal
+    error(`Command failed with status ${child.status}`)
+    throw new Error(`Command failed with status ${child.status}`)
   }
   return child.stdout.toString().trim()
 }
@@ -35,7 +35,15 @@ export function getRequiredEnvVariable(name: string) {
   const value = process.env[name]
   if (!value) {
     error(`Missing required environment variable ${name}`)
-    process.exit(0) // TODO: Exit with 1 once we want failures to be fatal
+    throw new Error(`Missing required environment variable ${name}`)
+  }
+  return value
+}
+
+export function getOptionalEnvVariable(name: string, defaultValue: string) {
+  const value = process.env[name]
+  if (!value) {
+    return defaultValue
   }
   return value
 }

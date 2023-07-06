@@ -14,6 +14,16 @@ jobs:
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.RELENG_GH_TOKEN }}
+      - name: Wait for tests to pass
+        run: |
+          sleep 60
+          export RUNS=`gh run list --branch main --event push --limit 100 --json "headSha,workflowName,url"`
+          export URLS=`echo $RUNS | jq -r '.[] | select(.headSha == env.GITHUB_SHA) | select(.workflowName != env.GITHUB_WORKFLOW) | .url'`
+          while IFS= read -r url; do
+            echo "Waiting for $url to finish"
+            export RUN_ID=`echo $url | sed -e 's/\/.*\///g'`
+            gh run watch --exit-status --interval 60 "$RUN_ID"
+          done <<< "$URLS"
       - name: Upgrade tag
         run: |
           git tag -f v1

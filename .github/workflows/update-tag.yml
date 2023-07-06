@@ -21,7 +21,7 @@ jobs:
           export URLS=`echo $RUNS | jq -r '.[] | select(.headSha == env.GITHUB_SHA) | select(.workflowName != env.GITHUB_WORKFLOW) | .url'`
           while IFS= read -r url; do
             echo "Waiting for $url to finish"
-            export RUN_ID=`echo $url | sed -e 's/\/.*\///g'`
+            export RUN_ID=`echo $url | sed -e 's/.*\///g'`
             gh run watch --exit-status --interval 60 "$RUN_ID"
           done <<< "$URLS"
       - name: Upgrade tag

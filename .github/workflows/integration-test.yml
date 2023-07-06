@@ -32,7 +32,7 @@ jobs:
         with:
           target: push
           tools: sca,sast
-          classes: target
+          classpath: target/test-project-0.1.0.jar
           sources: ${{ github.workspace }}
           debug: true
       - name: Check run succeeded
@@ -61,7 +61,7 @@ jobs:
             exit 1
           fi
           export SAST_RESULTS=`jq '.runs | map (.results | length) | add' sast.sarif`
-          expectedSastResults=2
+          expectedSastResults=1
           echo "Got $SAST_RESULTS from SAST"
           if [ "$SAST_RESULTS" != "$expectedSastResults" ]; then
             echo "::error::Expected to have $expectedSastResults SAST results!"

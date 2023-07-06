@@ -18,6 +18,7 @@ async function runAnalysis() {
   const tools = (getInput('tools') || 'sca').toLowerCase().split(',')
   const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
+  const classpath = getInput('classpath') || getOrDefault('classes', '.')
   if (tools.includes('sca')) {
     var args = [
       'sca',
@@ -47,8 +48,8 @@ async function runAnalysis() {
       'sast',
       'scan',
       '--save-results',
-      '--classes',
-      getOrDefault('classes', '.'),
+      '--classpath',
+      classpath,
       '--sources',
       getOrDefault('sources', '.'),
       '-o',

@@ -98,6 +98,7 @@ runs:
       uses: './../lacework-code-security'
       env:
         ACTION_REF: '${{ github.action_ref }}'
+        RUN_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
       with:
         classpath: '${{ inputs.classpath }}'
         classes: '${{ inputs.classes }}'

@@ -129,6 +129,7 @@ async function displayResults() {
 async function main() {
   telemetryCollector.addField('duration.install', getMsSinceStart())
   telemetryCollector.addField('version', getOptionalEnvVariable('ACTION_REF', 'unknown'))
+  telemetryCollector.addField('url', getRequiredEnvVariable('RUN_URL'))
   telemetryCollector.addField('repository', getRequiredEnvVariable('GITHUB_REPOSITORY'))
   if (getInput('target') !== '') {
     telemetryCollector.addField('run-type', 'analysis')

@@ -30,6 +30,7 @@ async function runAnalysis() {
     .map((x) => x.trim())
     .sort()
   telemetryCollector.addField('tools', tools.join(','))
+  appendFileSync(getRequiredEnvVariable('GITHUB_ENV'), `LACEWORK_TOOLS=${tools.join(',')}\n`)
   const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
   const classpath = getInput('classpath') || getOrDefault('classes', '.')

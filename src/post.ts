@@ -15,6 +15,9 @@ if (getOptionalEnvVariable('LACEWORK_WROTE_TELEMETRY', 'false') !== 'true') {
   telemetryCollector.addField('repository', getRequiredEnvVariable('GITHUB_REPOSITORY'))
   telemetryCollector.addField('duration.total', getMsSinceStart())
   telemetryCollector.addField('error', 'Unknown catastrophic error')
+  if (getOptionalEnvVariable('LACEWORK_TOOLS', '') !== '') {
+    telemetryCollector.addField('tools', getRequiredEnvVariable('LACEWORK_TOOLS'))
+  }
   telemetryCollector.report().catch((err) => {
     warning('Failed to report telemetry: ' + err.message)
   })

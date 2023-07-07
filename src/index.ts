@@ -24,7 +24,12 @@ const sastReport = 'sast.sarif'
 async function runAnalysis() {
   const target = getInput('target')
   info('Analyzing ' + target)
-  const tools = (getInput('tools') || 'sca').toLowerCase().split(',')
+  const tools = (getInput('tools') || 'sca')
+    .toLowerCase()
+    .split(',')
+    .map((x) => x.trim())
+    .sort()
+  telemetryCollector.addField('tools', tools.join(','))
   const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
   const classpath = getInput('classpath') || getOrDefault('classes', '.')

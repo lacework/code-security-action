@@ -1,6 +1,8 @@
 import { create } from '@actions/artifact'
 import { startGroup, endGroup, getInput } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
+import { Octokit } from '@octokit/core'
+import { retry } from '@octokit/plugin-retry'
 import { Md5 } from 'ts-md5'
 
 export async function uploadArtifact(artifactName: string, ...files: string[]) {
@@ -114,7 +116,15 @@ async function findExistingComment(stepHash: string): Promise<number | undefined
 }
 
 function getIssuesApi() {
-  return getOctokit(getInput('token')).rest.issues
+  return getOctokit(
+    getInput('token'),
+    {
+      request: {
+        timeout: 30_000,
+      },
+    },
+    retry
+  ).rest.issues
 }
 
 function appendHash(comment: string, hash: string): string {

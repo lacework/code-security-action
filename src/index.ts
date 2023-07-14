@@ -62,18 +62,24 @@ async function runAnalysis() {
     var args = [
       'sast',
       'scan',
+      '--mariana-trench',
       '--save-results',
       '--classpath',
       classpath,
       '--sources',
       getOrDefault('sources', '.'),
-      '-o',
+      '--output',
       sastReport,
       '--deployment',
       'ci',
     ]
     if (debug()) {
       args.push('--debug')
+    }
+
+    const libpath: string = getInput('libpath')
+    if (libpath !== "") {
+      args.push("--libpath", libpath)
     }
     await callLaceworkCli(...args)
     await printResults('sast', sastReport)

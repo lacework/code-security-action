@@ -1,7 +1,6 @@
 import { create } from '@actions/artifact'
 import { startGroup, endGroup, getInput } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
-import { Octokit } from '@octokit/core'
 import { retry } from '@octokit/plugin-retry'
 import { Md5 } from 'ts-md5'
 
@@ -115,7 +114,7 @@ async function findExistingComment(stepHash: string): Promise<number | undefined
   return undefined
 }
 
-function getIssuesApi() {
+function makeOctokit() {
   return getOctokit(
     getInput('token'),
     {
@@ -124,7 +123,19 @@ function getIssuesApi() {
       },
     },
     retry
-  ).rest.issues
+  )
+}
+
+export function getIssuesApi() {
+  return makeOctokit().rest.issues
+}
+
+export function getOrgsApi() {
+  return makeOctokit().rest.orgs
+}
+
+export function getUsersApi() {
+  return makeOctokit().rest.users
 }
 
 function appendHash(comment: string, hash: string): string {

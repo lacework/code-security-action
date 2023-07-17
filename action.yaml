@@ -118,7 +118,7 @@ runs:
         sources: '${{ inputs.sources }}'
         target: '${{ inputs.target }}'
         debug: '${{ inputs.debug }}'
-        token: '${{ inputs.token }}'
+        token: '${{ inputs.token || github.token }}'
         footer: '${{ inputs.footer }}'
         tools: '${{ inputs.tools }}'
         eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'

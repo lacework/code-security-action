@@ -17,6 +17,7 @@ import {
   getRunUrl,
   telemetryCollector,
 } from './util'
+import { downloadKeys, trustedKeys } from './keys'
 
 const scaReport = 'sca.sarif'
 const sastReport = 'sast.sarif'
@@ -35,6 +36,7 @@ async function runAnalysis() {
   const toUpload: string[] = []
   const classpath = getInput('classpath') || getOrDefault('classes', '.')
   if (tools.includes('sca')) {
+    await downloadKeys()
     var args = [
       'sca',
       'git',
@@ -46,6 +48,8 @@ async function runAnalysis() {
       'sarif',
       '--deployment',
       'ci',
+      '--keyring',
+      trustedKeys,
       '--secret',
     ]
     if (indirectDeps.toLowerCase() === 'false') {

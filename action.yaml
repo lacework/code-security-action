@@ -30,7 +30,7 @@ inputs:
   tools:
     description: 'Comma separated list of tools to run'
     required: false
-    default: 'sca'
+    default: 'sca,sast'
   eval-indirect-dependencies:
     description: 'Show vulnerabilities found in transitive dependencies'
     required: false

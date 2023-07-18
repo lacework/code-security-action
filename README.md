@@ -62,6 +62,7 @@ jobs:
         id: code-analysis
         uses: lacework/code-security-action@v1
         with:
+          tools: sca # Should be the same list of tools as above.
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
 

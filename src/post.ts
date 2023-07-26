@@ -7,20 +7,40 @@ import {
   getRunUrl,
   telemetryCollector,
 } from './util'
+import { getActionsApi } from './actions'
+import { context } from '@actions/github'
 
-if (getOptionalEnvVariable('LACEWORK_WROTE_TELEMETRY', 'false') !== 'true') {
-  info("Telemetry wasn't previous reported, reporting unknown failure now")
-  telemetryCollector.addField('version', getActionRef())
-  telemetryCollector.addField('url', getRunUrl())
-  telemetryCollector.addField('repository', getRequiredEnvVariable('GITHUB_REPOSITORY'))
-  telemetryCollector.addField('duration.total', getMsSinceStart())
-  telemetryCollector.addField('error', 'Unknown catastrophic error')
-  if (getOptionalEnvVariable('LACEWORK_TOOLS', '') !== '') {
-    telemetryCollector.addField('tools', getRequiredEnvVariable('LACEWORK_TOOLS'))
+async function main() {
+  if (getOptionalEnvVariable('LACEWORK_WROTE_TELEMETRY', 'false') !== 'true') {
+    info("Telemetry wasn't previous reported")
+
+    const run = await getActionsApi().getWorkflowRunAttempt({
+      ...context.repo,
+      run_id: parseInt(getRequiredEnvVariable('GITHUB_RUN_ID')),
+      attempt_number: parseInt(getRequiredEnvVariable('GITHUB_RUN_NUMBER')),
+    })
+
+    info(`Run status: ${run.data.status}`)
+    if (run.data.status === 'cancelled') {
+      info('Run does was cancelled, not reporting telemetry')
+      return
+    }
+
+    info('Reporting unknown failure')
+    telemetryCollector.addField('version', getActionRef())
+    telemetryCollector.addField('url', getRunUrl())
+    telemetryCollector.addField('repository', getRequiredEnvVariable('GITHUB_REPOSITORY'))
+    telemetryCollector.addField('duration.total', getMsSinceStart())
+    telemetryCollector.addField('error', 'Unknown catastrophic error')
+    if (getOptionalEnvVariable('LACEWORK_TOOLS', '') !== '') {
+      telemetryCollector.addField('tools', getRequiredEnvVariable('LACEWORK_TOOLS'))
+    }
+    await telemetryCollector.report()
+  } else {
+    info('Telemetry has been reported previously')
   }
-  telemetryCollector.report().catch((err) => {
-    warning('Failed to report telemetry: ' + err.message)
-  })
-} else {
-  info('Telemetry has been reported')
 }
+
+main().catch((e) => {
+  warning(`Failed to report telemetry: ${e.message}`)
+})

@@ -130,6 +130,10 @@ export function getIssuesApi() {
   return makeOctokit().rest.issues
 }
 
+export function getActionsApi() {
+  return makeOctokit().rest.actions
+}
+
 export function getOrgsApi() {
   return makeOctokit().rest.orgs
 }

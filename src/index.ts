@@ -63,12 +63,12 @@ async function runAnalysis() {
       args.push('--debug')
     }
     if (autofix()) {
-      args.push("--fix-suggestions")
+      args.push('--fix-suggestions')
     }
     await callLaceworkCli(...args)
-    // add autofix check here? 
+    // add autofix check here?
     await printResults('sca', scaSarifReport)
-    // func - generate pr 
+    // func - generate pr
     if (autofix()) {
       // call function to parse JSON and generate automated pr for each fix id
     }

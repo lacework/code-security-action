@@ -23,6 +23,10 @@ export function getActionRef(): string {
   return getOptionalEnvVariable('LACEWORK_ACTION_REF', 'unknown')
 }
 
+export function autofix() {
+  return getBooleanInput('autofix')
+}
+
 export function getRunUrl(): string {
   let result = getRequiredEnvVariable('GITHUB_SERVER_URL')
   result += '/'

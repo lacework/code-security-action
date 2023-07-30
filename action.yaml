@@ -54,13 +54,20 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - if: runner.os == 'Linux'
+      shell: bash
+      run: echo "LACEWORK_START_TIME=$(date --rfc-3339=seconds)" >> $GITHUB_ENV
+    - if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew install coreutils
+        echo "LACEWORK_START_TIME=$(gdate --rfc-3339=seconds)" >> $GITHUB_ENV
     - id: init
       shell: bash
       env:
         LACEWORK_ACTION_REF: '${{ github.action_ref }}'
         TOOLS: '${{ inputs.tools }}'
       run: |
-        echo "LACEWORK_START_TIME=$(date --rfc-3339=seconds)" >> $GITHUB_ENV
         echo "LACEWORK_CONTEXT_ID=$(echo $RANDOM | md5sum | head -c 32)" >> $GITHUB_ENV
         echo "LACEWORK_ACTION_REF=$(echo $LACEWORK_ACTION_REF)" >> $GITHUB_ENV
         SCA_VERSION=0.0.55
@@ -108,8 +115,7 @@ runs:
         cd ../lacework-code-security
         HUSKY=0 npm install
         npm run compile
-        pip install yq
-        yq -yi 'del(.runs.steps) | del(.outputs) | .runs.using="node16" | .runs.main="dist/src/index.js" | .runs.post="dist/src/post.js"' action.yaml
+        yq -i -o yaml 'del(.runs.steps) | del(.outputs) | .runs.using="node16" | .runs.main="dist/src/index.js" | .runs.post="dist/src/post.js"' action.yaml
     - id: run-analysis
       uses: './../lacework-code-security'
       with:

@@ -6,7 +6,7 @@ import {
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import { compareResults, printResults } from './tool'
+import { compareResults, createPR, printResults } from './tool'
 import {
   autofix,
   callLaceworkCli,
@@ -71,6 +71,7 @@ async function runAnalysis() {
     // func - generate pr
     if (autofix()) {
       // call function to parse JSON and generate automated pr for each fix id
+      await createPR(scaLWJSONReport)
     }
     toUpload.push(scaSarifReport)
   }

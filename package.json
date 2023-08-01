@@ -13,6 +13,7 @@
     "@types/sarif": "^2.1.4",
     "@types/tmp": "^0.2.3",
     "prettier": "^2.8.1",
+    "simple-git": "^3.19.1",
     "tmp": "^0.2.1",
     "ts-md5": "^1.3.1"
   },

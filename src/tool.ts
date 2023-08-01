@@ -3,6 +3,9 @@ import { context } from '@actions/github'
 import { existsSync, readFileSync } from 'fs'
 import { callLaceworkCli, debug } from './util'
 import { Log } from 'sarif'
+import { LWJSON } from './lw-json'
+import { getPrApi } from './actions'
+import { simpleGit, SimpleGitOptions } from 'simple-git'
 
 export async function printResults(tool: string, sarifFile: string) {
   startGroup(`Results for ${tool}`)
@@ -21,6 +24,53 @@ export async function printResults(tool: string, sarifFile: string) {
     info(`No ${tool} issues were found`)
   }
   endGroup()
+}
+
+const options: Partial<SimpleGitOptions> = {
+  baseDir: process.cwd(),
+  binary: 'git',
+  maxConcurrentProcesses: 6,
+  trimmed: false,
+};
+
+export async function createPR(jsonFile: string) {
+  const results: LWJSON = JSON.parse(readFileSync(jsonFile, 'utf-8'))
+  results.FixSuggestions?.forEach(async fix => {
+    let fixId: string = fix.fixId
+    let newBranch: string = 'Fix for ' + fixId
+    const git = simpleGit(options)
+    await git.init()
+    // get current branch
+    let currBranch = await git.revparse(['--abbrevref', 'HEAD'])
+    // create a new branch for the specified fix from currBranch
+    await git.checkoutBranch(newBranch, currBranch)
+
+    var patchReport = 'patchSummary.md'
+    // create command to run on branch
+    var args = [
+      'sca',
+      'patch',
+      '.',
+      '-o',
+      patchReport,
+      '--sbom', 
+      jsonFile, 
+      '--fix-suggestion', 
+      fixId, 
+      '-o',
+      patchReport,
+    ]
+    // call patch command
+    await callLaceworkCli(...args)
+    
+    // commit and push changes 
+    await git
+      .add("./*")
+      .commit('Fix Suggestion ' + fixId + '.')
+      .addRemote(newBranch, currBranch)
+      .push(currBranch, newBranch)
+
+  });
 }
 
 export async function compareResults(

@@ -142,6 +142,10 @@ export function getUsersApi() {
   return makeOctokit().rest.users
 }
 
+export function getPrApi() {
+  return makeOctokit().rest.pulls
+}
+
 function appendHash(comment: string, hash: string): string {
   return `${comment}\n\n<!--- lacework-code-analysis: ${hash} --->\n`
 }

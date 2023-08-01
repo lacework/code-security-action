@@ -74,6 +74,7 @@ runs:
         SAST_VERSION=0.0.50
         curl https://raw.githubusercontent.com/lacework/go-sdk/main/cli/install.sh | bash
         KEY="$(date +'%Y-%m-%d')"
+        KEY="$KEY-$RUNNER_OS-$RUNNER_ARCH"
         if [[ $TOOLS == *"sca"* ]]; then
           KEY="$KEY-sca-$SCA_VERSION"
           echo "sca-version=$SCA_VERSION" >> $GITHUB_OUTPUT

@@ -59,7 +59,7 @@ async function runAnalysis() {
 
     // get current branch
     // let currBranch = await git.revparse(['--abbrevref', 'HEAD'])
-    info('this -> ' + getRequiredEnvVariable('GITHUB_REF'))
+    info('this -> ' + getRequiredEnvVariable('GITHUB_HEAD_REF'))
     let currBranch = getRequiredEnvVariable('GITHUB_REF').slice('refs/heads/'.length)
     info('current branch name: ' + currBranch)
     // create a new branch for the specified fix from currBranch

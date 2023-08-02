@@ -31,11 +31,23 @@ const options: Partial<SimpleGitOptions> = {
   binary: 'git',
   maxConcurrentProcesses: 6,
   trimmed: false,
-};
+}
+
+function splitStringAtFirstSlash(inputString: string | undefined): [string, string] {
+  if (inputString != null) {
+  const [firstPart, secondPart] = inputString.split('/', 2);
+  return [firstPart, secondPart];
+  } 
+  return ['', '']
+}
 
 export async function createPR(jsonFile: string) {
   const results: LWJSON = JSON.parse(readFileSync(jsonFile, 'utf-8'))
-  results.FixSuggestions?.forEach(async fix => {
+  // get owner and name of current repository
+  const [repoOwner, repoName] = splitStringAtFirstSlash(process.env.GITHUB_REPOSITORY)
+  info(repoOwner)
+  info(repoName)
+  results.FixSuggestions?.forEach(async (fix) => {
     let fixId: string = fix.fixId
     let newBranch: string = 'Fix for ' + fixId
     const git = simpleGit(options)
@@ -51,26 +63,36 @@ export async function createPR(jsonFile: string) {
       'sca',
       'patch',
       '.',
-      '-o',
-      patchReport,
-      '--sbom', 
-      jsonFile, 
-      '--fix-suggestion', 
-      fixId, 
+      '--sbom',
+      jsonFile,
+      '--fix-suggestion',
+      fixId,
       '-o',
       patchReport,
     ]
+    let patch: string = readFileSync(patchReport, 'utf-8')
     // call patch command
     await callLaceworkCli(...args)
-    
-    // commit and push changes 
+
+    // commit and push changes
     await git
-      .add("./*")
+      .add('./*')
       .commit('Fix Suggestion ' + fixId + '.')
       .addRemote(newBranch, currBranch)
       .push(currBranch, newBranch)
 
-  });
+    // open PR 
+    await getPrApi().create({
+      owner: repoOwner, 
+      repo: repoName, 
+      head: newBranch, 
+      base: currBranch, 
+      title: "Suggested fix for fixId: " + fixId, 
+      body: patch
+    })
+
+
+  })
 }
 
 export async function compareResults(

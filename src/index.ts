@@ -94,7 +94,7 @@ async function runAnalysis() {
     if (autofix()) {
       args.push('--fix-suggestions')
     }
-    info("got here")
+    info('got here')
     await callLaceworkCli(...args)
     // add autofix check here?
     info('got here')

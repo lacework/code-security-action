@@ -3,15 +3,15 @@ export interface LWJSON {
 }
 
 export interface FixVersion {
-  type: string
-  version: string
+  Type?: string
+  Version?: string
 }
 
 export interface Info {
-  fixVersion: FixVersion
-  diffs: string[][]
+  fixVersion?: FixVersion | undefined
+  Diffs?: string[][] | undefined
 }
 export interface FixSuggestion {
   fixId: string
-  info: Info
+  Info: Info
 }

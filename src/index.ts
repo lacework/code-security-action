@@ -94,9 +94,10 @@ async function runAnalysis() {
     if (autofix()) {
       args.push('--fix-suggestions')
     }
+    info("got here")
     await callLaceworkCli(...args)
     // add autofix check here?
-    info("got here")
+    info('got here')
     await printResults('sca', scaSarifReport)
     // func - generate pr
     if (autofix()) {

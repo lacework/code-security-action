@@ -63,10 +63,10 @@ async function runAnalysis() {
     // info('current branch name: ' + currBranch)
     // // create a new branch for the specified fix from currBranch
     // await git.checkoutLocalBranch(newBranch)
-    
+
     // await git.add('.').commit('branch created successfuly').push('origin', newBranch)
 
-    // 
+    //
     //
 
     // command to print both sarif and lwjson formats
@@ -92,6 +92,7 @@ async function runAnalysis() {
       args.push('--debug')
     }
     if (autofix()) {
+      info("got here")
       args.push('--fix-suggestions')
     }
     await callLaceworkCli(...args)

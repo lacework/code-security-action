@@ -12,6 +12,6 @@ export interface Info {
   Diffs?: string[][] | undefined
 }
 export interface FixSuggestion {
-  fixId: string
+  FixId: string
   Info: Info
 }

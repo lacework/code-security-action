@@ -92,11 +92,11 @@ async function runAnalysis() {
       args.push('--debug')
     }
     if (autofix()) {
-      info("got here")
       args.push('--fix-suggestions')
     }
     await callLaceworkCli(...args)
     // add autofix check here?
+    info("got here")
     await printResults('sca', scaSarifReport)
     // func - generate pr
     if (autofix()) {

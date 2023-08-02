@@ -56,7 +56,8 @@ async function runAnalysis() {
     let newBranch: string = 'Fix_for_aleluia'
     const git = simpleGit(options)
     await git.init()
-
+    await git.addConfig("user.name", "CodeSec Bot")
+    await git.addConfig("user.email", "codesec-eng@lacework.com")
     // get current branch
     let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
     info('current branch name: ' + currBranch)

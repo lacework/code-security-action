@@ -69,9 +69,6 @@ export async function createPR(jsonFile: string) {
   // }
 
   // Generate PRs corresponding to new changes to the branch
-  results.FixSuggestions?.forEach(async (fix) => {
-    info('this ->' + fix.FixId)
-  })
 
   results.FixSuggestions?.forEach(async (fix) => {
     let fixId: string = fix.FixId
@@ -99,10 +96,12 @@ export async function createPR(jsonFile: string) {
       '-o',
       patchReport,
     ]
-    let patch: string = readFileSync(patchReport, 'utf-8')
 
     // call patch command
     await callLaceworkCli(...args)
+
+    let patch: string = readFileSync(patchReport, 'utf-8')
+
 
     // commit and push changes
     await git

@@ -61,7 +61,8 @@ async function runAnalysis() {
     let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
     info('current branch name: ' + currBranch)
     // create a new branch for the specified fix from currBranch
-    await git.checkoutBranch(newBranch, currBranch)
+    await git.checkoutLocalBranch(newBranch)
+    await git.add(".").commit("branch created successfuly")
 
     //
 

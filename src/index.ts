@@ -63,7 +63,7 @@ async function runAnalysis() {
     info('current branch name: ' + currBranch)
     // create a new branch for the specified fix from currBranch
     await git.checkoutLocalBranch(newBranch)
-    await git.add('.').commit('branch created successfuly').push(currBranch, newBranch)
+    await git.add('.').commit('branch created successfuly').push("origin", newBranch)
 
     //
 

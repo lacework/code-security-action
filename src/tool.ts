@@ -82,6 +82,7 @@ export async function createPR(jsonFile: string) {
     await git.checkoutLocalBranch(newBranch)
 
     var patchReport = 'patchSummary.md'
+    info(fixId)
     // create command to run on branch
     var args = [
       'sca',

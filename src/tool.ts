@@ -70,6 +70,10 @@ export async function createPR(jsonFile: string) {
 
   // Generate PRs corresponding to new changes to the branch
   results.FixSuggestions?.forEach(async (fix) => {
+    info('this ->' + fix.fixId)
+  })
+
+  results.FixSuggestions?.forEach(async (fix) => {
     let fixId: string = fix.fixId
     let newBranch: string = 'SCA_fix_for_' + fixId
     const git = simpleGit(options)

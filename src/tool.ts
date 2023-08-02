@@ -91,7 +91,7 @@ export async function createPR(jsonFile: string) {
       '.',
       '--sbom',
       jsonFile,
-      '--fix-suggestion',
+      '--fix-suggestions',
       fixId,
       '-o',
       patchReport,
@@ -101,7 +101,6 @@ export async function createPR(jsonFile: string) {
     await callLaceworkCli(...args)
 
     let patch: string = readFileSync(patchReport, 'utf-8')
-
 
     // commit and push changes
     await git

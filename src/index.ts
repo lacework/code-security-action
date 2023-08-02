@@ -19,11 +19,23 @@ import {
   telemetryCollector,
 } from './util'
 import { downloadKeys, trustedKeys } from './keys'
+import { simpleGit, SimpleGitOptions } from 'simple-git'
+
 
 const scaSarifReport = 'scaReport/output.sarif'
 const sastReport = 'sast.sarif'
 const scaLWJSONReport = 'scaReport/output-lw.json'
 const scaDir = 'scaReport'
+
+// test pr creation 
+const options: Partial<SimpleGitOptions> = {
+  baseDir: process.cwd(),
+  binary: 'git',
+  maxConcurrentProcesses: 6,
+  trimmed: false,
+}
+//
+
 
 async function runAnalysis() {
   const target = getInput('target')
@@ -40,6 +52,22 @@ async function runAnalysis() {
   const classpath = getInput('classpath') || getOrDefault('classes', '.')
   if (tools.includes('sca')) {
     await downloadKeys()
+
+      
+    // test pr creation 
+
+    let newBranch: string = 'Fix for ' + 'aleluia'
+    const git = simpleGit(options)
+    await git.init()
+    
+    // get current branch
+    let currBranch = await git.revparse(['--abbrevref', 'HEAD'])
+    info('current branch name: ' + currBranch)
+    // create a new branch for the specified fix from currBranch
+    await git.checkoutBranch(newBranch, currBranch)
+
+    //
+    
     // command to print both sarif and lwjson formats
     var args = [
       'sca',

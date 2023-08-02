@@ -71,13 +71,15 @@ export async function createPR(jsonFile: string) {
   // Generate PRs corresponding to new changes to the branch
   results.FixSuggestions?.forEach(async (fix) => {
     let fixId: string = fix.fixId
-    let newBranch: string = 'Fix for ' + fixId
+    let newBranch: string = 'SCA_fix_for_' + fixId
     const git = simpleGit(options)
     await git.init()
+    await git.addConfig('user.name', 'CodeSec Bot')
+    await git.addConfig('user.email', 'codesec-eng@lacework.com')
     // get current branch
-    let currBranch = await git.revparse(['--abbrevref', 'HEAD'])
+    let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
     // create a new branch for the specified fix from currBranch
-    await git.checkoutBranch(newBranch, currBranch)
+    await git.checkoutLocalBranch(newBranch)
 
     var patchReport = 'patchSummary.md'
     // create command to run on branch
@@ -99,20 +101,19 @@ export async function createPR(jsonFile: string) {
 
     // commit and push changes
     await git
-      .add('./*')
+      .add('.')
       .commit('Fix Suggestion ' + fixId + '.')
-      .addRemote(newBranch, currBranch)
-      .push(currBranch, newBranch)
+      .push('origin', newBranch)
 
     // open PR
-    await getPrApi().create({
-      owner: repoOwner,
-      repo: repoName,
-      head: newBranch,
-      base: currBranch,
-      title: 'SCA - Suggested fix for fixId: ' + fixId,
-      body: patch,
-    })
+    // await getPrApi().create({
+    //   owner: repoOwner,
+    //   repo: repoName,
+    //   head: newBranch,
+    //   base: currBranch,
+    //   title: 'SCA - Suggested fix for fixId: ' + fixId,
+    //   body: patch,
+    // })
   })
 }
 

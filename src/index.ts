@@ -53,18 +53,20 @@ async function runAnalysis() {
 
     // test pr creation
 
-    let newBranch: string = 'Fix_for_aleluia'
-    const git = simpleGit(options)
-    await git.init()
-    await git.addConfig('user.name', 'CodeSec Bot')
-    await git.addConfig('user.email', 'codesec-eng@lacework.com')
-    // get current branch
-    let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
-    info('current branch name: ' + currBranch)
-    // create a new branch for the specified fix from currBranch
-    await git.checkoutLocalBranch(newBranch)
-    await git.add('.').commit('branch created successfuly').push("origin", newBranch)
+    // let newBranch: string = 'Fix_for_aleluia'
+    // const git = simpleGit(options)
+    // await git.init()
+    // await git.addConfig('user.name', 'CodeSec Bot')
+    // await git.addConfig('user.email', 'codesec-eng@lacework.com')
+    // // get current branch
+    // let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
+    // info('current branch name: ' + currBranch)
+    // // create a new branch for the specified fix from currBranch
+    // await git.checkoutLocalBranch(newBranch)
+    
+    // await git.add('.').commit('branch created successfuly').push('origin', newBranch)
 
+    // 
     //
 
     // command to print both sarif and lwjson formats

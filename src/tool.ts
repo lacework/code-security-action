@@ -56,7 +56,7 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
   await git
     .add('.')
     .rm(['--cached', 'scaReport/output-lw.json'])
-    .rm(['-cached', 'scaReport/output.sarif'])
+    .rm(['--cached', 'scaReport/output.sarif'])
     .commit('Branch for ' + fixId + ' created successfully.')
     .push('origin', newBranch)
 
@@ -74,7 +74,7 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
   await git
     .add('.')
     .rm(['--cached', 'scaReport/output-lw.json'])
-    .rm(['-cached', 'scaReport/output.sarif'])
+    .rm(['--cached', 'scaReport/output.sarif'])
     .commit('Fix Suggestion ' + fixId + '.')
     .push('origin', newBranch)
 

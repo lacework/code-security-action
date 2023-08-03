@@ -93,7 +93,7 @@ export async function prForFixSuggestion(
   })
 
   // go back to currBranch
-  await git.checkout(refVar)
+  await git.checkout('remotes/pull/22/merge')
 }
 
 export async function createPRs(jsonFile: string) {

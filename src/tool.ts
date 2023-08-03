@@ -41,8 +41,7 @@ function splitStringAtFirstSlash(inputString: string | undefined): [string, stri
   return ['', '']
 }
 
-async function prForFixSuggestion(jsonFile: string, fixId: string) { 
-
+async function prForFixSuggestion(jsonFile: string, fixId: string) {
   let newBranch: string = 'SCA_fix_for_' + fixId
   const git = simpleGit(options)
   await git.init()
@@ -70,6 +69,7 @@ async function prForFixSuggestion(jsonFile: string, fixId: string) {
     .commit('Fix Suggestion ' + fixId + '.')
     .push('origin', newBranch)
 
+  info("got heeere")
 }
 
 export async function createPRs(jsonFile: string) {

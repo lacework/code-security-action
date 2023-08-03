@@ -26,15 +26,6 @@ const sastReport = 'sast.sarif'
 const scaLWJSONReport = 'scaReport/output-lw.json'
 const scaDir = 'scaReport'
 
-// test pr creation
-const options: Partial<SimpleGitOptions> = {
-  baseDir: process.cwd(),
-  binary: 'git',
-  maxConcurrentProcesses: 6,
-  trimmed: false,
-}
-//
-
 async function runAnalysis() {
   const target = getInput('target')
   info('Analyzing ' + target)
@@ -50,25 +41,6 @@ async function runAnalysis() {
   const classpath = getInput('classpath') || getOrDefault('classes', '.')
   if (tools.includes('sca')) {
     await downloadKeys()
-
-    // test pr creation
-
-    // let newBranch: string = 'Fix_for_aleluia'
-    // const git = simpleGit(options)
-    // await git.init()
-    // await git.addConfig('user.name', 'CodeSec Bot')
-    // await git.addConfig('user.email', 'codesec-eng@lacework.com')
-    // // get current branch
-    // let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
-    // info('current branch name: ' + currBranch)
-    // // create a new branch for the specified fix from currBranch
-    // await git.checkoutLocalBranch(newBranch)
-
-    // await git.add('.').commit('branch created successfuly').push('origin', newBranch)
-
-    //
-    //
-
     // command to print both sarif and lwjson formats
     var args = [
       'sca',
@@ -94,14 +66,9 @@ async function runAnalysis() {
     if (autofix()) {
       args.push('--fix-suggestions')
     }
-    info('got here')
     await callLaceworkCli(...args)
-    // add autofix check here?
-    info('got here')
     await printResults('sca', scaSarifReport)
-    // func - generate pr
     if (autofix()) {
-      // call function to parse JSON and generate automated pr for each fix id
       await createPRs(scaLWJSONReport)
     }
     toUpload.push(scaSarifReport)

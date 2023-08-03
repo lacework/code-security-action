@@ -72,9 +72,9 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
     .add('.')
     .commit('Fix Suggestion ' + fixId + '.')
     .push('origin', newBranch)
-  
+
   // go back to currBranch
-  await git.checkoutLocalBranch(currBranch)
+  await git.checkout(currBranch)
 }
 
 export async function createPRs(jsonFile: string) {

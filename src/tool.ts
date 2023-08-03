@@ -79,7 +79,7 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
   for (const branch of list.all) {
     info(branch)
   }
-  await git.checkout(currBranch)
+  await git.checkout("remotes/pull/22/merge")
   info('gOT Here')
 }
 

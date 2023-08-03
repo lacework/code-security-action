@@ -83,15 +83,18 @@ export async function prForFixSuggestion(
     .push('origin', newBranch)
 
   // open PR:
-  await getPrApi().create({
-    owner: repoOwner,
-    repo: repoName,
-    head: newBranch,
-    base: currBranch,
-    title: 'SCA - Suggested fix for fixId: ' + fixId,
-    body: patch,
-  })
-
+  // await getPrApi().create({
+  //   owner: repoOwner,
+  //   repo: repoName,
+  //   head: newBranch,
+  //   base: currBranch,
+  //   title: 'SCA - Suggested fix for fixId: ' + fixId,
+  //   body: patch,
+  // })
+let list = git.branch()
+for (const branch of (await list).all) {
+  info(branch)
+}
   // go back to currBranch
   await git.checkout('remotes/pull/22/merge')
 }

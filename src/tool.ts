@@ -74,6 +74,7 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
     .push('origin', newBranch)
 
   // go back to currBranch
+  info(currBranch)
   await git.checkout(currBranch)
 }
 

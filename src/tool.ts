@@ -42,16 +42,12 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
     maxConcurrentProcesses: 6,
     trimmed: false,
   }
-  let newBranch: string = 'SCA_fix_for_' + fixId
-  const git = simpleGit(options)
-  await git.init()
-  await git.addConfig('user.name', 'CodeSec Bot')
-  await git.addConfig('user.email', 'codesec-eng@lacework.com')
   // get current branch
   let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
-  // create a new branch for the specified fix from currBranch
-  await git.checkoutLocalBranch(newBranch)
-
+  let newBranch: string = 'SCA_fix_for_' + fixId
+  const git = simpleGit(options)
+  // initialize new branch
+  await git.init().addConfig('user.name', 'CodeSec Bot').addConfig('user.email', 'codesec-eng@lacework.com').checkoutLocalBranch(newBranch)
   // push branch to remote
   await git
     .add('.')

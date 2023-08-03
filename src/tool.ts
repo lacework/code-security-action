@@ -35,7 +35,7 @@ export function splitStringAtFirstSlash(inputString: string | undefined): [strin
 }
 
 export async function prForFixSuggestion(jsonFile: string, fixId: string) {
-  info("WOOOOO")
+  info('WOOOOO')
   const options: Partial<SimpleGitOptions> = {
     baseDir: process.cwd(),
     binary: 'git',
@@ -51,6 +51,12 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
   let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
   // create a new branch for the specified fix from currBranch
   await git.checkoutLocalBranch(newBranch)
+
+  // push branch to remote
+  await git
+    .add('.')
+    .commit('Branch for ' + fixId + ' created successfully.')
+    .push('origin', newBranch)
 
   var patchReport = 'patchSummary.md'
   info(fixId)

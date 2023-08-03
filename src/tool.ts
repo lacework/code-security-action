@@ -26,14 +26,7 @@ export async function printResults(tool: string, sarifFile: string) {
   endGroup()
 }
 
-const options: Partial<SimpleGitOptions> = {
-  baseDir: process.cwd(),
-  binary: 'git',
-  maxConcurrentProcesses: 6,
-  trimmed: false,
-}
-
-function splitStringAtFirstSlash(inputString: string | undefined): [string, string] {
+export function splitStringAtFirstSlash(inputString: string | undefined): [string, string] {
   if (inputString != null) {
     const [firstPart, secondPart] = inputString.split('/', 2)
     return [firstPart, secondPart]
@@ -41,7 +34,14 @@ function splitStringAtFirstSlash(inputString: string | undefined): [string, stri
   return ['', '']
 }
 
-async function prForFixSuggestion(jsonFile: string, fixId: string) {
+export async function prForFixSuggestion(jsonFile: string, fixId: string) {
+  info("WOOOOO")
+  const options: Partial<SimpleGitOptions> = {
+    baseDir: process.cwd(),
+    binary: 'git',
+    maxConcurrentProcesses: 6,
+    trimmed: false,
+  }
   let newBranch: string = 'SCA_fix_for_' + fixId
   const git = simpleGit(options)
   await git.init()

@@ -63,7 +63,6 @@ export async function prForFixSuggestion(
     .add('.')
     .rm(['--cached', 'scaReport/output-lw.json'])
     .rm(['--cached', 'scaReport/output.sarif'])
-    .rm(['--cached', patchReport])
     .commit('Branch for ' + fixId + ' created successfully.')
     .push('origin', newBranch)
 

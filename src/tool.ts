@@ -103,9 +103,17 @@ export async function createPRs(jsonFile: string) {
 
   // Generate PRs corresponding to new changes to the branch
 
-  results.FixSuggestions?.forEach(async (fix) => {
+  // check if FixSuggestions undefined 
+  if (results.FixSuggestions == undefined) {
+    return 
+  }
+
+  for(const fix of results.FixSuggestions) {
     let fixId: string = fix.FixId
     await prForFixSuggestion(jsonFile, fixId)
+  }
+  // results.FixSuggestions?.forEach(async (fix) => {
+    
     // open PR
     // await getPrApi().create({
     //   owner: repoOwner,
@@ -115,7 +123,7 @@ export async function createPRs(jsonFile: string) {
     //   title: 'SCA - Suggested fix for fixId: ' + fixId,
     //   body: patch,
     // })
-  })
+  // })
 }
 
 export async function compareResults(

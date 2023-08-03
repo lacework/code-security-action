@@ -75,8 +75,10 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
 
   // go back to currBranch
   info(currBranch)
-  await git.checkout('main').checkout(currBranch)
-  info("gOT Here")
+  let list = await git.branch()
+  info(list.branches.key.name)
+  await git.checkout(currBranch)
+  info('gOT Here')
 }
 
 export async function createPRs(jsonFile: string) {

@@ -34,7 +34,12 @@ export function splitStringAtFirstSlash(inputString: string | undefined): [strin
   return ['', '']
 }
 
-export async function prForFixSuggestion(jsonFile: string, fixId: string, repoOwner: string, repoName: string) {
+export async function prForFixSuggestion(
+  jsonFile: string,
+  fixId: string,
+  repoOwner: string,
+  repoName: string
+) {
   info('WOOOOO')
   const options: Partial<SimpleGitOptions> = {
     baseDir: process.cwd(),
@@ -51,16 +56,17 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string, repoOw
   let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
   // create a new branch for the specified fix from currBranch
   await git.checkoutLocalBranch(newBranch)
+  var patchReport = 'patchSummary.md'
 
   // push branch to remote
   await git
     .add('.')
     .rm(['--cached', 'scaReport/output-lw.json'])
     .rm(['--cached', 'scaReport/output.sarif'])
+    .rm(['--cached', patchReport])
     .commit('Branch for ' + fixId + ' created successfully.')
     .push('origin', newBranch)
 
-  var patchReport = 'patchSummary.md'
   info(fixId)
   await callCommand('ls')
   // create command to run on branch
@@ -76,22 +82,23 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string, repoOw
     .add('.')
     .rm(['--cached', 'scaReport/output-lw.json'])
     .rm(['--cached', 'scaReport/output.sarif'])
+    .rm(['--cached', patchReport])
     .commit('Fix Suggestion ' + fixId + '.')
     .push('origin', newBranch)
 
-  // open PR: 
-    await getPrApi().create({
-      owner: repoOwner,
-      repo: repoName,
-      head: newBranch,
-      base: currBranch,
-      title: 'SCA - Suggested fix for fixId: ' + fixId,
-      body: patch,
+  // open PR:
+  await getPrApi().create({
+    owner: repoOwner,
+    repo: repoName,
+    head: newBranch,
+    base: currBranch,
+    title: 'SCA - Suggested fix for fixId: ' + fixId,
+    body: patch,
   })
-  
-    // go back to currBranch
+
+  // go back to currBranch
   info(currBranch)
- 
+
   await git.checkout('remotes/pull/22/merge')
   info('gOT Here')
 }

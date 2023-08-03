@@ -53,7 +53,7 @@ export async function prForFixSuggestion(
   await git.addConfig('user.email', 'codesec-eng@lacework.com')
   // get current branch
   let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
-  let currRepo = getRequiredEnvVariable('GITHUB_REPOSITORY')
+  let currRepo = getRequiredEnvVariable('GITHUB_REF')
   info('this -> ' + currRepo)
   // create a new branch for the specified fix from currBranch
   await git.checkoutLocalBranch(newBranch)
@@ -67,7 +67,6 @@ export async function prForFixSuggestion(
     .commit('Branch for ' + fixId + ' created successfully.')
     .push('origin', newBranch)
 
-  await callCommand('ls')
   // create command to run on branch
   var args = ['sca', 'patch', '.', '--sbom', jsonFile, '--fix-id', fixId, '-o', patchReport]
 

@@ -55,8 +55,9 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
   // push branch to remote
   await git
     .add('.')
-    .rm('scaReport/output-lw.json')
-    .rm('scaReport/output.sarif')
+    .rm('-r scaReport/output-lw.json')
+    .rm('-r scaReport/output.sarif')
+    .rm('-r sast.sarif')
     .commit('Branch for ' + fixId + ' created successfully.')
     .push('origin', newBranch)
 
@@ -72,8 +73,9 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
   // commit and push changes
   await git
     .add('.')
-    .rm('scaReport/output-lw.json')
-    .rm('scaReport/output.sarif')
+    .rm('-r scaReport/output-lw.json')
+    .rm('-r scaReport/output.sarif')
+    .rm('-r sast.sarif')
     .commit('Fix Suggestion ' + fixId + '.')
     .push('origin', newBranch)
 

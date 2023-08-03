@@ -40,7 +40,6 @@ export async function prForFixSuggestion(
   repoOwner: string,
   repoName: string
 ) {
-  info('WOOOOO')
   const options: Partial<SimpleGitOptions> = {
     baseDir: process.cwd(),
     binary: 'git',
@@ -54,6 +53,8 @@ export async function prForFixSuggestion(
   await git.addConfig('user.email', 'codesec-eng@lacework.com')
   // get current branch
   let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
+  let currRepo = getRequiredEnvVariable('GITHUB_REPOSITORY')
+  info('this -> ' + currRepo)
   // create a new branch for the specified fix from currBranch
   await git.checkoutLocalBranch(newBranch)
   var patchReport = 'patchSummary.md'
@@ -66,14 +67,12 @@ export async function prForFixSuggestion(
     .commit('Branch for ' + fixId + ' created successfully.')
     .push('origin', newBranch)
 
-  info(fixId)
   await callCommand('ls')
   // create command to run on branch
   var args = ['sca', 'patch', '.', '--sbom', jsonFile, '--fix-id', fixId, '-o', patchReport]
 
   // call patch command
   await callLaceworkCli(...args)
-  info('GOT HERE')
   let patch = readFileSync(patchReport, 'utf-8')
 
   // commit and push changes
@@ -96,10 +95,7 @@ export async function prForFixSuggestion(
   })
 
   // go back to currBranch
-  info(currBranch)
-
   await git.checkout('remotes/pull/22/merge')
-  info('gOT Here')
 }
 
 export async function createPRs(jsonFile: string) {
@@ -140,11 +136,6 @@ export async function createPRs(jsonFile: string) {
     let fixId: string = fix.FixId
     await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName)
   }
-  // results.FixSuggestions?.forEach(async (fix) => {
-
-  // open PR
-
-  // })
 }
 
 export async function compareResults(

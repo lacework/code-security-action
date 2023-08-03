@@ -72,6 +72,9 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
     .add('.')
     .commit('Fix Suggestion ' + fixId + '.')
     .push('origin', newBranch)
+  
+  // go back to currBranch
+  await git.checkoutLocalBranch(currBranch)
 }
 
 export async function createPRs(jsonFile: string) {
@@ -103,26 +106,26 @@ export async function createPRs(jsonFile: string) {
 
   // Generate PRs corresponding to new changes to the branch
 
-  // check if FixSuggestions undefined 
+  // check if FixSuggestions undefined
   if (results.FixSuggestions == undefined) {
-    return 
+    return
   }
 
-  for(const fix of results.FixSuggestions) {
+  for (const fix of results.FixSuggestions) {
     let fixId: string = fix.FixId
     await prForFixSuggestion(jsonFile, fixId)
   }
   // results.FixSuggestions?.forEach(async (fix) => {
-    
-    // open PR
-    // await getPrApi().create({
-    //   owner: repoOwner,
-    //   repo: repoName,
-    //   head: newBranch,
-    //   base: currBranch,
-    //   title: 'SCA - Suggested fix for fixId: ' + fixId,
-    //   body: patch,
-    // })
+
+  // open PR
+  // await getPrApi().create({
+  //   owner: repoOwner,
+  //   repo: repoName,
+  //   head: newBranch,
+  //   base: currBranch,
+  //   title: 'SCA - Suggested fix for fixId: ' + fixId,
+  //   body: patch,
+  // })
   // })
 }
 

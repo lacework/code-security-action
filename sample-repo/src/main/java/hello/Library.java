@@ -1,11 +1,10 @@
 package hello;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 public class Library {
-	public static void doSomething(InputStream is) {
-		execute(is.toString());
+	public static void doSomething(String s) {
+		execute(s);
 	}
 
 	private static void execute(String command) {

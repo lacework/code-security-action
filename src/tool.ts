@@ -41,7 +41,38 @@ function splitStringAtFirstSlash(inputString: string | undefined): [string, stri
   return ['', '']
 }
 
-export async function createPR(jsonFile: string) {
+async function prForFixSuggestion(jsonFile: string, fixId: string) { 
+
+  let newBranch: string = 'SCA_fix_for_' + fixId
+  const git = simpleGit(options)
+  await git.init()
+  await git.addConfig('user.name', 'CodeSec Bot')
+  await git.addConfig('user.email', 'codesec-eng@lacework.com')
+  // get current branch
+  let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
+  // create a new branch for the specified fix from currBranch
+  await git.checkoutLocalBranch(newBranch)
+
+  var patchReport = 'patchSummary.md'
+  info(fixId)
+  // create command to run on branch
+  var args = ['sca', 'patch', '.', '--sbom', jsonFile, '--fix-id', fixId, '-o', patchReport]
+
+  // call patch command
+  await callLaceworkCli(...args)
+  info('GOT HERE')
+
+  let patch: string = readFileSync(patchReport, 'utf-8')
+
+  // commit and push changes
+  await git
+    .add('.')
+    .commit('Fix Suggestion ' + fixId + '.')
+    .push('origin', newBranch)
+
+}
+
+export async function createPRs(jsonFile: string) {
   const results: LWJSON = JSON.parse(readFileSync(jsonFile, 'utf-8'))
   // get owner and name of current repository
   const [repoOwner, repoName] = splitStringAtFirstSlash(getRequiredEnvVariable('GITHUB_REPOSITORY'))
@@ -72,43 +103,7 @@ export async function createPR(jsonFile: string) {
 
   results.FixSuggestions?.forEach(async (fix) => {
     let fixId: string = fix.FixId
-    let newBranch: string = 'SCA_fix_for_' + fixId
-    const git = simpleGit(options)
-    await git.init()
-    await git.addConfig('user.name', 'CodeSec Bot')
-    await git.addConfig('user.email', 'codesec-eng@lacework.com')
-    // get current branch
-    let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
-    // create a new branch for the specified fix from currBranch
-    await git.checkoutLocalBranch(newBranch)
-
-    var patchReport = 'patchSummary.md'
-    info(fixId)
-    // create command to run on branch
-    var args = [
-      'sca',
-      'patch',
-      '.',
-      '--sbom',
-      jsonFile,
-      '--fix-id',
-      fixId,
-      '-o',
-      patchReport,
-    ]
-
-    // call patch command
-    await callLaceworkCli(...args)
-    info ("GOT HERE")
-
-    let patch: string = readFileSync(patchReport, 'utf-8')
-
-    // commit and push changes
-    await git
-      .add('.')
-      .commit('Fix Suggestion ' + fixId + '.')
-      .push('origin', newBranch)
-
+    await prForFixSuggestion(jsonFile, fixId)
     // open PR
     // await getPrApi().create({
     //   owner: repoOwner,

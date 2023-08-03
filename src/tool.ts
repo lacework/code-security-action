@@ -53,8 +53,7 @@ export async function prForFixSuggestion(
   await git.addConfig('user.email', 'codesec-eng@lacework.com')
   // get current branch
   let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
-  let currRepo = getRequiredEnvVariable('GITHUB_REF')
-  info('this -> ' + currRepo)
+  let refVar = getRequiredEnvVariable('GITHUB_REF')
   // create a new branch for the specified fix from currBranch
   await git.checkoutLocalBranch(newBranch)
   var patchReport = 'patchSummary.md'
@@ -94,15 +93,13 @@ export async function prForFixSuggestion(
   })
 
   // go back to currBranch
-  await git.checkout('remotes/pull/22/merge')
+  await git.checkout(refVar)
 }
 
 export async function createPRs(jsonFile: string) {
   const results: LWJSON = JSON.parse(readFileSync(jsonFile, 'utf-8'))
   // get owner and name of current repository
   const [repoOwner, repoName] = splitStringAtFirstSlash(getRequiredEnvVariable('GITHUB_REPOSITORY'))
-  info('Owner: ' + repoOwner)
-  info('Repo: ' + repoName)
   // New push to PR will delete all prev generated PRs and create new ones
   // corresponding to new version of branch wanting to be pulled into main.
 

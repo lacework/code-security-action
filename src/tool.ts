@@ -1,7 +1,7 @@
 import { info, startGroup, endGroup, error } from '@actions/core'
 import { context } from '@actions/github'
 import { existsSync, readFileSync } from 'fs'
-import { callLaceworkCli, debug, getRequiredEnvVariable } from './util'
+import { callCommand, callLaceworkCli, debug, getRequiredEnvVariable } from './util'
 import { Log } from 'sarif'
 import { LWJSON } from './lw-json'
 import { getPrApi } from './actions'
@@ -62,6 +62,7 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
 
   var patchReport = 'patchSummary.md'
   info(fixId)
+  await callCommand("ls")
   // create command to run on branch
   var args = ['sca', 'patch', '.', '--sbom', jsonFile, '--fix-id', fixId, '-o', patchReport]
 

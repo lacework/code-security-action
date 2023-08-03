@@ -55,6 +55,7 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
   // push branch to remote
   await git
     .add('.')
+    .rm('scaReport')
     .commit('Branch for ' + fixId + ' created successfully.')
     .push('origin', newBranch)
 
@@ -70,6 +71,7 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
   // commit and push changes
   await git
     .add('.')
+    .rm('scaReport')
     .commit('Fix Suggestion ' + fixId + '.')
     .push('origin', newBranch)
 
@@ -79,7 +81,7 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
   for (const branch of list.all) {
     info(branch)
   }
-  await git.checkout("remotes/pull/22/merge")
+  await git.checkout('remotes/pull/22/merge')
   info('gOT Here')
 }
 

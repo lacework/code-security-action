@@ -34,7 +34,7 @@ export function splitStringAtFirstSlash(inputString: string | undefined): [strin
   return ['', '']
 }
 
-export async function prForFixSuggestion(jsonFile: string, fixId: string) {
+export async function prForFixSuggestion(jsonFile: string, fixId: string, repoOwner: string, repoName: string) {
   info('WOOOOO')
   const options: Partial<SimpleGitOptions> = {
     baseDir: process.cwd(),
@@ -69,6 +69,7 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
   // call patch command
   await callLaceworkCli(...args)
   info('GOT HERE')
+  let patch = readFileSync(patchReport, 'utf-8')
 
   // commit and push changes
   await git
@@ -78,12 +79,19 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
     .commit('Fix Suggestion ' + fixId + '.')
     .push('origin', newBranch)
 
-  // go back to currBranch
+  // open PR: 
+    await getPrApi().create({
+      owner: repoOwner,
+      repo: repoName,
+      head: newBranch,
+      base: currBranch,
+      title: 'SCA - Suggested fix for fixId: ' + fixId,
+      body: patch,
+  })
+  
+    // go back to currBranch
   info(currBranch)
-  let list = await git.branch()
-  for (const branch of list.all) {
-    info(branch)
-  }
+ 
   await git.checkout('remotes/pull/22/merge')
   info('gOT Here')
 }
@@ -124,19 +132,12 @@ export async function createPRs(jsonFile: string) {
 
   for (const fix of results.FixSuggestions) {
     let fixId: string = fix.FixId
-    await prForFixSuggestion(jsonFile, fixId)
+    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName)
   }
   // results.FixSuggestions?.forEach(async (fix) => {
 
   // open PR
-  // await getPrApi().create({
-  //   owner: repoOwner,
-  //   repo: repoName,
-  //   head: newBranch,
-  //   base: currBranch,
-  //   title: 'SCA - Suggested fix for fixId: ' + fixId,
-  //   body: patch,
-  // })
+
   // })
 }
 

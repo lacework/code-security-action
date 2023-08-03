@@ -76,7 +76,9 @@ export async function prForFixSuggestion(jsonFile: string, fixId: string) {
   // go back to currBranch
   info(currBranch)
   let list = await git.branch()
-  info(list.branches.key.name)
+  for (const branch of list.all) {
+    info(branch)
+  }
   await git.checkout(currBranch)
   info('gOT Here')
 }

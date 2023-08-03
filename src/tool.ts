@@ -61,15 +61,11 @@ async function prForFixSuggestion(jsonFile: string, fixId: string) {
   await callLaceworkCli(...args)
   info('GOT HERE')
 
-  let patch: string = readFileSync(patchReport, 'utf-8')
-
   // commit and push changes
   await git
     .add('.')
     .commit('Fix Suggestion ' + fixId + '.')
     .push('origin', newBranch)
-
-  info("got heeere")
 }
 
 export async function createPRs(jsonFile: string) {

@@ -99,12 +99,10 @@ export async function prForFixSuggestion(
   }
 
   // commit and push changes
-  await git
-    .commit('Fix Suggestion ' + fixId + '.')
-    .push('origin', newBranch)
+  await git.commit('Fix Suggestion ' + fixId + '.').push('origin', newBranch)
 
   // title is the first line of the patch summary
-  let title = patch.split('\n')[0].substring(2)
+  let titlePR = patch.split('\n')[0].substring(2)
   // info(title)
 
   // open PR:
@@ -113,7 +111,7 @@ export async function prForFixSuggestion(
     repo: repoName,
     head: newBranch,
     base: currBranch,
-    title: 'SCA - Suggested fix for fixId: ' + fixId,
+    title: titlePR,
     body: patch,
   })
 

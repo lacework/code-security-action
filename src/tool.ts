@@ -33,7 +33,7 @@ export function splitStringAtFirstSlash(inputString: string | undefined): [strin
   }
   return ['', '']
 }
-  
+
 export const options: Partial<SimpleGitOptions> = {
   baseDir: process.cwd(),
   binary: 'git',
@@ -45,7 +45,8 @@ export async function prForFixSuggestion(
   jsonFile: string,
   fixId: string,
   repoOwner: string,
-  repoName: string
+  repoName: string,
+  originBranch: string
 ) {
   let newBranch: string = 'SCA_fix_for_' + fixId
   const git = simpleGit(options)
@@ -54,7 +55,6 @@ export async function prForFixSuggestion(
   await git.addConfig('user.email', 'codesec-eng@lacework.com')
   // get current branch
   let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
-  let refVar = getRequiredEnvVariable('GITHUB_REF')
   // create a new branch for the specified fix from currBranch
   await git.checkoutLocalBranch(newBranch)
   var patchReport = 'patchSummary.md'
@@ -96,7 +96,7 @@ export async function prForFixSuggestion(
   // })
 
   // go back to currBranch
-  await git.checkout('remotes/pull/22/merge')
+  await git.checkout(originBranch)
 }
 
 export async function createPRs(jsonFile: string) {
@@ -109,9 +109,8 @@ export async function createPRs(jsonFile: string) {
   let list = (await git.branch()).all
   let originBranch = list.at(list.length - 1)
   if (originBranch == undefined) {
-    return 
+    return
   }
-  info(originBranch)
 
   // check if FixSuggestions undefined
   if (results.FixSuggestions == undefined) {
@@ -120,7 +119,7 @@ export async function createPRs(jsonFile: string) {
 
   for (const fix of results.FixSuggestions) {
     let fixId: string = fix.FixId
-    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName)
+    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName, originBranch)
   }
 }
 

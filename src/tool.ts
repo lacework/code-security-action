@@ -61,14 +61,6 @@ export async function prForFixSuggestion(
   await git.checkoutLocalBranch(newBranch)
   var patchReport = 'patchSummary.md'
 
-  // push branch to remote
-  // await git
-  //   .add('.')
-  //   .rm(['--cached', 'scaReport/output-lw.json'])
-  //   .rm(['--cached', 'scaReport/output.sarif'])
-  //   .commit('Branch for ' + fixId + ' created successfully.')
-  //   .push('origin', newBranch)
-
   // create command to run on branch
   var args = ['sca', 'patch', '.', '--sbom', jsonFile, '--fix-id', fixId, '-o', patchReport]
 
@@ -81,7 +73,6 @@ export async function prForFixSuggestion(
   if (text == undefined) {
     return
   }
-  // info(text)
   let lines: string[] = text.split('-')
   for (let line of lines) {
     // delete whitespaces
@@ -103,7 +94,6 @@ export async function prForFixSuggestion(
 
   // title is the first line of the patch summary
   let titlePR = patch.split('\n')[0].substring(2)
-  // info(title)
 
   // open PR:
   await getPrApi().create({

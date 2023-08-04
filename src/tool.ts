@@ -82,6 +82,8 @@ export async function prForFixSuggestion(
     .commit('Fix Suggestion ' + fixId + '.')
     .push('origin', newBranch)
 
+  let title = ''
+
   // open PR:
   // await getPrApi().create({
   //   owner: repoOwner,
@@ -91,10 +93,7 @@ export async function prForFixSuggestion(
   //   title: 'SCA - Suggested fix for fixId: ' + fixId,
   //   body: patch,
   // })
-let list = git.branch()
-for (const branch of (await list).all) {
-  info(branch)
-}
+ 
   // go back to currBranch
   await git.checkout('remotes/pull/22/merge')
 }
@@ -103,6 +102,18 @@ export async function createPRs(jsonFile: string) {
   const results: LWJSON = JSON.parse(readFileSync(jsonFile, 'utf-8'))
   // get owner and name of current repository
   const [repoOwner, repoName] = splitStringAtFirstSlash(getRequiredEnvVariable('GITHUB_REPOSITORY'))
+  const options: Partial<SimpleGitOptions> = {
+    baseDir: process.cwd(),
+    binary: 'git',
+    maxConcurrentProcesses: 6,
+    trimmed: false,
+  }
+  const git = simpleGit(options)
+  await git.init()
+  let list = git.branch()
+  for (const branch of (await list).all) {
+    info(branch)
+  }
 
   // check if FixSuggestions undefined
   if (results.FixSuggestions == undefined) {

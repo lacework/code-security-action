@@ -82,7 +82,7 @@ export async function prForFixSuggestion(
   if (text == undefined) {
     return
   }
-  info(text)
+  // info(text)
   let lines: string[] = text.split('-')
   for (let line of lines) {
     // delete whitespaces

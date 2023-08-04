@@ -103,7 +103,7 @@ export async function prForFixSuggestion(
   //   .push('origin', newBranch)
 
   // title is the first line of the patch summary
-  let title = patch.split('\n')[0] + 2
+  let title = patch.split('\n')[0].substring(2)
   info(title)
 
   // open PR:

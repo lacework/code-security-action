@@ -76,11 +76,11 @@ export async function prForFixSuggestion(
   await callLaceworkCli(...args)
   let patch = readFileSync(patchReport, 'utf-8')
 
-  // parse the modified files from the patch summary 
+  // parse the modified files from the patch summary
   let files: string[] = []
   let text: string = patch.split('## Files that have been modified:')[1]
   let lines: string[] = text.split('-')
-  for(let line of lines) {
+  for (let line of lines) {
     // delete whitespaces
     line = line.trimStart().trimEnd()
     // delete *
@@ -89,18 +89,18 @@ export async function prForFixSuggestion(
   }
 
   // add modified files to branch
-  for(const file of files) {
+  for (const file of files) {
     await git.add(file)
     info(file)
   }
 
-  // commit and push changes 
+  // commit and push changes
   // await git
   //   .commit('Fix Suggestion ' + fixId + '.')
   //   .push('origin', newBranch)
 
   // title is the first line of the patch summary
-  let title = patch.split("\n")[0] + 2
+  let title = patch.split('\n')[0] + 2
   info(title)
 
   // open PR:

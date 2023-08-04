@@ -1,5 +1,4 @@
 export interface LWJSON {
-  Artifacts?: Artifact[]
   FixSuggestions?: FixSuggestion[]
 }
 

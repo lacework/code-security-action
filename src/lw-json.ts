@@ -18,15 +18,3 @@ export interface FixSuggestion {
   FixId: string
   Info: Info
 }
-
-// Artifact
-
-export interface Artifact {
-  Id: string
-  Name: string
-  Path: string
-  Timestamp: string
-  Type: string
-  Class: string
-  Language: string
-}

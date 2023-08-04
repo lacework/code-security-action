@@ -46,7 +46,7 @@ export async function prForFixSuggestion(
   fixId: string,
   repoOwner: string,
   repoName: string,
-  originBranch: string, 
+  originBranch: string,
   artifactName: string,
   newVersion: string
 ) {
@@ -76,14 +76,32 @@ export async function prForFixSuggestion(
   await callLaceworkCli(...args)
   let patch = readFileSync(patchReport, 'utf-8')
 
-  // commit and push changes
-  await git
-    .add('*.bazel')
-    .rm(['--cached', patchReport])
-    .commit('Fix Suggestion ' + fixId + '.')
-    .push('origin', newBranch)
+  // parse the modified files from the patch summary 
+  let files: string[] = []
+  let text: string = patch.split('## Files that have been modified:')[1]
+  let lines: string[] = text.split('-')
+  for(let line of lines) {
+    // delete whitespaces
+    line = line.trimStart().trimEnd()
+    // delete *
+    line = line.substring(1, line.length - 1)
+    files.push(line)
+  }
 
-  let title = 'scabot: bump ' + artifactName + ' to version ' + newVersion
+  // add modified files to branch
+  for(const file of files) {
+    await git.add(file)
+    info(file)
+  }
+
+  // commit and push changes 
+  // await git
+  //   .commit('Fix Suggestion ' + fixId + '.')
+  //   .push('origin', newBranch)
+
+  // title is the first line of the patch summary
+  let title = patch.split("\n")[0] + 2
+  info(title)
 
   // open PR:
   // await getPrApi().create({
@@ -113,7 +131,6 @@ export async function createPRs(jsonFile: string) {
     return
   }
 
-  // check if FixSuggestions undefined
   if (results.FixSuggestions == undefined) {
     return
   }
@@ -124,7 +141,7 @@ export async function createPRs(jsonFile: string) {
     if (fix.Info.fixVersion?.Version !== undefined) {
       version = fix.Info.fixVersion?.Version
     }
-    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName, originBranch, "test", version)
+    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName, originBranch, 'test', version)
   }
 }
 

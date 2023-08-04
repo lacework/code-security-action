@@ -77,7 +77,7 @@ export async function prForFixSuggestion(
   let patch = readFileSync(patchReport, 'utf-8')
   // parse the modified files from the patch summary
   let files: string[] = []
-  let text: string = patch.split('# Files that have been modified:')[1]
+  let text: string = patch.split('## Files that have been modified:')[1]
   if (text == undefined) {
     return
   }
@@ -94,7 +94,7 @@ export async function prForFixSuggestion(
   // add modified files to branch
   for (const file of files) {
     // await git.add(file)
-    if(file != "") {
+    if (file != '') {
       info(file)
     }
   }

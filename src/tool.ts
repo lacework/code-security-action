@@ -94,7 +94,7 @@ export async function prForFixSuggestion(
 
   // add modified files to branch
   for (const file of files) {
-    await git.add(file)
+    // await git.add(file)
     info(file)
   }
 

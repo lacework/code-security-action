@@ -46,26 +46,28 @@ export async function prForFixSuggestion(
   fixId: string,
   repoOwner: string,
   repoName: string,
-  originBranch: string
+  originBranch: string, 
+  artifactName: string,
+  newVersion: string
 ) {
   let newBranch: string = 'SCA_fix_for_' + fixId
   const git = simpleGit(options)
   await git.init()
   await git.addConfig('user.name', 'CodeSec Bot')
   await git.addConfig('user.email', 'codesec-eng@lacework.com')
-  // get current branch
+  // get current branch (different in name from the originBranch but same in functionality - github being weird)
   let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
   // create a new branch for the specified fix from currBranch
   await git.checkoutLocalBranch(newBranch)
   var patchReport = 'patchSummary.md'
 
   // push branch to remote
-  await git
-    .add('.')
-    .rm(['--cached', 'scaReport/output-lw.json'])
-    .rm(['--cached', 'scaReport/output.sarif'])
-    .commit('Branch for ' + fixId + ' created successfully.')
-    .push('origin', newBranch)
+  // await git
+  //   .add('.')
+  //   .rm(['--cached', 'scaReport/output-lw.json'])
+  //   .rm(['--cached', 'scaReport/output.sarif'])
+  //   .commit('Branch for ' + fixId + ' created successfully.')
+  //   .push('origin', newBranch)
 
   // create command to run on branch
   var args = ['sca', 'patch', '.', '--sbom', jsonFile, '--fix-id', fixId, '-o', patchReport]
@@ -76,14 +78,12 @@ export async function prForFixSuggestion(
 
   // commit and push changes
   await git
-    .add('.')
-    .rm(['--cached', 'scaReport/output-lw.json'])
-    .rm(['--cached', 'scaReport/output.sarif'])
+    .add('*.bazel')
     .rm(['--cached', patchReport])
     .commit('Fix Suggestion ' + fixId + '.')
     .push('origin', newBranch)
 
-  let title = ''
+  let title = 'scabot: bump ' + artifactName + ' to version ' + newVersion
 
   // open PR:
   // await getPrApi().create({
@@ -104,6 +104,7 @@ export async function createPRs(jsonFile: string) {
   // get owner and name of current repository
   const [repoOwner, repoName] = splitStringAtFirstSlash(getRequiredEnvVariable('GITHUB_REPOSITORY'))
 
+  // get the origin branch stored
   const git = simpleGit(options)
   await git.init()
   let list = (await git.branch()).all
@@ -119,7 +120,11 @@ export async function createPRs(jsonFile: string) {
 
   for (const fix of results.FixSuggestions) {
     let fixId: string = fix.FixId
-    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName, originBranch)
+    let version: string = ''
+    if (fix.Info.fixVersion?.Version !== undefined) {
+      version = fix.Info.fixVersion?.Version
+    }
+    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName, originBranch, "test", version)
   }
 }
 

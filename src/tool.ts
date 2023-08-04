@@ -78,7 +78,7 @@ export async function prForFixSuggestion(
 
   // parse the modified files from the patch summary
   let files: string[] = []
-  let text: string = patch.split('## Files that have been modified:')[1]
+  let text: string = patch.split('# Files that have been modified:')[1]
   if (text == undefined) return
   let lines: string[] = text.split('-')
   for (let line of lines) {

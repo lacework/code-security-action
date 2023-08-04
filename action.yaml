@@ -70,7 +70,7 @@ runs:
       run: |
         echo "LACEWORK_CONTEXT_ID=$(echo $RANDOM | md5sum | head -c 32)" >> $GITHUB_ENV
         echo "LACEWORK_ACTION_REF=$(echo $LACEWORK_ACTION_REF)" >> $GITHUB_ENV
-        SCA_VERSION=0.0.57
+        SCA_VERSION=0.0.58
         SAST_VERSION=0.0.50
         curl https://raw.githubusercontent.com/lacework/go-sdk/main/cli/install.sh | bash
         KEY="$(date +'%Y-%m-%d')"

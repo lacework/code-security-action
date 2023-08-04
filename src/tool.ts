@@ -75,7 +75,7 @@ export async function prForFixSuggestion(
   // call patch command
   await callLaceworkCli(...args)
   let patch = readFileSync(patchReport, 'utf-8')
-
+  info(patch)
   // parse the modified files from the patch summary
   let files: string[] = []
   let text: string = patch.split('# Files that have been modified:')[1]

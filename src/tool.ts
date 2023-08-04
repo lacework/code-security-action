@@ -93,30 +93,29 @@ export async function prForFixSuggestion(
 
   // add modified files to branch
   for (const file of files) {
-    // await git.add(file)
     if (file != '') {
-      info(file)
+      await git.add(file)
     }
   }
 
   // commit and push changes
-  // await git
-  //   .commit('Fix Suggestion ' + fixId + '.')
-  //   .push('origin', newBranch)
+  await git
+    .commit('Fix Suggestion ' + fixId + '.')
+    .push('origin', newBranch)
 
   // title is the first line of the patch summary
   let title = patch.split('\n')[0].substring(2)
-  info(title)
+  // info(title)
 
   // open PR:
-  // await getPrApi().create({
-  //   owner: repoOwner,
-  //   repo: repoName,
-  //   head: newBranch,
-  //   base: currBranch,
-  //   title: 'SCA - Suggested fix for fixId: ' + fixId,
-  //   body: patch,
-  // })
+  await getPrApi().create({
+    owner: repoOwner,
+    repo: repoName,
+    head: newBranch,
+    base: currBranch,
+    title: 'SCA - Suggested fix for fixId: ' + fixId,
+    body: patch,
+  })
 
   // go back to currBranch
   await git.checkout(originBranch)

@@ -79,10 +79,8 @@ export async function prForFixSuggestion(
   let patch = readFileSync(patchReport, 'utf-8')
   // title is the first line of the patch summary
   let titlePR = patch.split('\n')[0].substring(2)
-  let sth = titlePR.split('bump ')[1].replaceAll(' ', '_')
-  info(sth)
-  newBranch += titlePR.split('bump ')[1].replace(' ', '_')
-  info(newBranch)
+  newBranch += titlePR.split('bump ')[1].replaceAll(' ', '_')
+  
   await git.checkoutLocalBranch(newBranch)
 
   // parse the modified files from the patch summary

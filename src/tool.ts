@@ -56,18 +56,17 @@ export async function prForFixSuggestion(
   await git.addConfig('user.name', 'CodeSec Bot')
   await git.addConfig('user.email', 'codesec-eng@lacework.com')
   // get current branch (different in name from the originBranch but same in functionality - github being weird)
-  let currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
+  let currBranch: string 
+  try { 
+    currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
+  } catch (error) {
+    currBranch = getRequiredEnvVariable('GITHUB_REF')
+    info("this --> " + currBranch)
+  }
   // create a new branch for the specified fix from currBranch
   await git.checkoutLocalBranch(newBranch)
   var patchReport = 'patchSummary.md'
-  
-  info(newBranch)
-  let as = (await git.log()).all
-  for (let b of as) {
-    // info(b.author_email)
-    // info(b.author_name)
-    info(b.message)
-  }
+
   // create command to run on branch
   var args = ['sca', 'patch', '.', '--sbom', jsonFile, '--fix-id', fixId, '-o', patchReport]
 
@@ -112,15 +111,6 @@ export async function prForFixSuggestion(
     title: titlePR,
     body: patch,
   })
-
-  // git log to see why 2 commits
-  info(newBranch)
-  let a = (await git.log()).all
-  for (let b of a) {
-    // info(b.author_email)
-    // info(b.author_name)
-    info(b.message)
-  }
 
   // go back to currBranch
   await git.checkout(originBranch)

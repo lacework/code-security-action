@@ -79,17 +79,20 @@ export async function prForFixSuggestion(
   let patch = readFileSync(patchReport, 'utf-8')
   // title is the first line of the patch summary
   let titlePR = patch.split('\n')[0].substring(2)
-  newBranch += titlePR.split('bump ')[1].replaceAll(' ', '-').replaceAll(':', '/')
+  newBranch += titlePR.split('bump ')[1].replaceAll(' ', '_').replaceAll(':', '-')
   if (newBranch[newBranch.length - 1] == '.') {
     newBranch = newBranch.substring(0, newBranch.length - 1)
   }
 
+  // check if branch already exists for branch creation/overwrite
   let branchList = (await git.branch()).all
-  for(let branch of branchList) {
-    info(branch)
-  }
+  let found = branchList.includes(newBranch)
 
+  if(!found) {
   await git.checkoutLocalBranch(newBranch)
+  } else { 
+    await git.checkout(newBranch)
+  }
 
   // parse the modified files from the patch summary
   let files: string[] = []
@@ -114,7 +117,7 @@ export async function prForFixSuggestion(
   }
 
   // commit and push changes
-  await git.commit('Fix Suggestion ' + fixId + '.').push('origin', newBranch)
+  await git.commit('Fix Suggestion ' + fixId + '.').push('origin', newBranch, ['--force'])
 
   // open PR:
   await getPrApi().create({

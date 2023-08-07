@@ -1,7 +1,7 @@
 import { info, startGroup, endGroup, error } from '@actions/core'
 import { context } from '@actions/github'
 import { existsSync, readFileSync } from 'fs'
-import { callCommand, callLaceworkCli, debug, getRequiredEnvVariable } from './util'
+import { callCommand, callLaceworkCli, debug, getOptionalEnvVariable, getRequiredEnvVariable } from './util'
 import { Log } from 'sarif'
 import { LWJSON } from './lw-json'
 import { getPrApi } from './actions'
@@ -46,7 +46,7 @@ export async function prForFixSuggestion(
   fixId: string,
   repoOwner: string,
   repoName: string,
-  originBranch: string,
+  originBranch: string
 ) {
   let newBranch: string = 'SCA_fix_for_' + fixId
   const git = simpleGit(options)
@@ -54,15 +54,11 @@ export async function prForFixSuggestion(
   await git.addConfig('user.name', 'CodeSec Bot')
   await git.addConfig('user.email', 'codesec-eng@lacework.com')
   // get current branch (different in name from the originBranch but same in functionality - github being weird for PR)
-  let currBranch: string
-  try {
-    // trigger: pull request
-    currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
-    info('bit sad')
-  } catch (error) {
+  // trigger: on pull request 
+  let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')
+  if (currBranch == '') {
     // trigger: on push
     currBranch = getRequiredEnvVariable('GITHUB_REF')
-    info('this --> ' + currBranch)
   }
   // create a new branch for the specified fix from currBranch
   await git.checkoutLocalBranch(newBranch)

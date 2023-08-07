@@ -86,9 +86,9 @@ export async function prForFixSuggestion(
 
   // check if branch already exists for branch creation/overwrite
   let branchList = (await git.branch()).all
-  let found = false 
-  for(let branch of branchList) {
-    if(branch.includes(newBranch)) {
+  let found = false
+  for (let branch of branchList) {
+    if (branch.includes(newBranch)) {
       found = true
       break
     }
@@ -138,7 +138,8 @@ export async function prForFixSuggestion(
       body: patch,
     })
   }
-
+  
+  info(originBranch)
   // go back to currBranch
   await git.checkout(originBranch)
 }

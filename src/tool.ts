@@ -93,6 +93,7 @@ export async function prForFixSuggestion(
       break
     }
   }
+  info(originBranch)
 
   if (!found) {
     info('not found')
@@ -138,8 +139,7 @@ export async function prForFixSuggestion(
       body: patch,
     })
   }
-  
-  info(originBranch)
+
   // go back to currBranch
   await git.checkout(originBranch)
 }

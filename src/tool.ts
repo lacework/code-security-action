@@ -80,8 +80,8 @@ export async function prForFixSuggestion(
   // title is the first line of the patch summary
   let titlePR = patch.split('\n')[0].substring(2)
   newBranch += titlePR.split('bump ')[1].replaceAll(' ', '-').replaceAll(':', '/')
-  if(newBranch[newBranch.length - 1] == '.') {
-    newBranch = newBranch.substring(0, newBranch.length - 2)
+  if (newBranch[newBranch.length - 1] == '.') {
+    newBranch = newBranch.substring(0, newBranch.length - 1)
   }
 
   await git.checkoutLocalBranch(newBranch)

@@ -84,6 +84,11 @@ export async function prForFixSuggestion(
     newBranch = newBranch.substring(0, newBranch.length - 1)
   }
 
+  let branchList = (await git.branch()).all
+  for(let branch of branchList) {
+    info(branch)
+  }
+
   await git.checkoutLocalBranch(newBranch)
 
   // parse the modified files from the patch summary

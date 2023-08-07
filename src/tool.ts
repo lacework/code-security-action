@@ -90,6 +90,10 @@ export async function prForFixSuggestion(
 
   if (!found) {
     info('not found')
+    info(newBranch + '\n')
+    for (let branch of branchList) {
+      info(branch)
+    }
     await git.checkoutLocalBranch(newBranch)
   } else {
     info('found')

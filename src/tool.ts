@@ -153,6 +153,9 @@ export async function createPRs(jsonFile: string) {
   const git = simpleGit(options)
   await git.init()
   let list = (await git.branch()).all
+  for (const branch of list) {
+    info(branch)
+  }
   let originBranch = list.at(list.length - 1)
   if (originBranch == undefined) {
     return

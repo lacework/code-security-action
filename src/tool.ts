@@ -86,14 +86,16 @@ export async function prForFixSuggestion(
 
   // check if branch already exists for branch creation/overwrite
   let branchList = (await git.branch()).all
-  let found = branchList.includes(newBranch)
+  let found = false 
+  for(let branch of branchList) {
+    if(branch.includes(newBranch)) {
+      found = true
+      break
+    }
+  }
 
   if (!found) {
     info('not found')
-    info(newBranch + '\n')
-    for (let branch of branchList) {
-      info(branch)
-    }
     await git.checkoutLocalBranch(newBranch)
   } else {
     info('found')

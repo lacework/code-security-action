@@ -79,7 +79,10 @@ export async function prForFixSuggestion(
   let patch = readFileSync(patchReport, 'utf-8')
   // title is the first line of the patch summary
   let titlePR = patch.split('\n')[0].substring(2)
-  newBranch += titlePR.split('bump ')[1].replaceAll(' ', '-')
+  newBranch += titlePR.split('bump ')[1].replaceAll(' ', '-').replaceAll(':', '/')
+  if(newBranch[newBranch.length - 1] == '.') {
+    newBranch = newBranch.substring(0, newBranch.length - 2)
+  }
 
   await git.checkoutLocalBranch(newBranch)
 

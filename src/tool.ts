@@ -88,9 +88,9 @@ export async function prForFixSuggestion(
   let branchList = (await git.branch()).all
   let found = branchList.includes(newBranch)
 
-  if(!found) {
-  await git.checkoutLocalBranch(newBranch)
-  } else { 
+  if (!found) {
+    await git.checkoutLocalBranch(newBranch)
+  } else {
     await git.checkout(newBranch)
   }
 
@@ -120,6 +120,7 @@ export async function prForFixSuggestion(
   await git.commit('Fix Suggestion ' + fixId + '.').push('origin', newBranch, ['--force'])
 
   // open PR:
+  if(!found) {
   await getPrApi().create({
     owner: repoOwner,
     repo: repoName,
@@ -128,6 +129,7 @@ export async function prForFixSuggestion(
     title: titlePR,
     body: patch,
   })
+  }
 
   // go back to currBranch
   await git.checkout(originBranch)

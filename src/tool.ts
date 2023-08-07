@@ -1,7 +1,13 @@
 import { info, startGroup, endGroup, error } from '@actions/core'
 import { context } from '@actions/github'
 import { existsSync, readFileSync } from 'fs'
-import { callCommand, callLaceworkCli, debug, getOptionalEnvVariable, getRequiredEnvVariable } from './util'
+import {
+  callCommand,
+  callLaceworkCli,
+  debug,
+  getOptionalEnvVariable,
+  getRequiredEnvVariable,
+} from './util'
 import { Log } from 'sarif'
 import { LWJSON } from './lw-json'
 import { getPrApi } from './actions'
@@ -53,8 +59,9 @@ export async function prForFixSuggestion(
   await git.init()
   await git.addConfig('user.name', 'CodeSec Bot')
   await git.addConfig('user.email', 'codesec-eng@lacework.com')
-  // get current branch (different in name from the originBranch but same in functionality - github being weird for PR)
-  // trigger: on pull request 
+ 
+  // get current branch
+  // trigger: on pull request
   let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')
   if (currBranch == '') {
     // trigger: on push
@@ -81,7 +88,7 @@ export async function prForFixSuggestion(
   for (let line of lines) {
     // delete whitespaces
     line = line.trimStart().trimEnd()
-    // delete *
+    // delete the '*'
     line = line.substring(1, line.length - 1)
     files.push(line)
   }

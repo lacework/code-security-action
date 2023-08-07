@@ -69,7 +69,8 @@ export async function prForFixSuggestion(
   }
   // create a new branch for the specified fix from currBranch
   var patchReport = 'patchSummary.md'
-
+  
+  info(currBranch)
   // create command to run on branch
   var args = ['sca', 'patch', '.', '--sbom', jsonFile, '--fix-id', fixId, '-o', patchReport]
 

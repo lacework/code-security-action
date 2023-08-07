@@ -47,21 +47,22 @@ export async function prForFixSuggestion(
   repoOwner: string,
   repoName: string,
   originBranch: string,
-  artifactName: string,
-  newVersion: string
 ) {
   let newBranch: string = 'SCA_fix_for_' + fixId
   const git = simpleGit(options)
   await git.init()
   await git.addConfig('user.name', 'CodeSec Bot')
   await git.addConfig('user.email', 'codesec-eng@lacework.com')
-  // get current branch (different in name from the originBranch but same in functionality - github being weird)
-  let currBranch: string 
-  try { 
+  // get current branch (different in name from the originBranch but same in functionality - github being weird for PR)
+  let currBranch: string
+  try {
+    // trigger: pull request
     currBranch = getRequiredEnvVariable('GITHUB_HEAD_REF')
+    info('bit sad')
   } catch (error) {
+    // trigger: on push
     currBranch = getRequiredEnvVariable('GITHUB_REF')
-    info("this --> " + currBranch)
+    info('this --> ' + currBranch)
   }
   // create a new branch for the specified fix from currBranch
   await git.checkoutLocalBranch(newBranch)
@@ -140,7 +141,7 @@ export async function createPRs(jsonFile: string) {
     if (fix.Info.fixVersion?.Version !== undefined) {
       version = fix.Info.fixVersion?.Version
     }
-    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName, originBranch, 'test', version)
+    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName, originBranch)
   }
 }
 

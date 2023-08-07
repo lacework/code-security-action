@@ -87,7 +87,7 @@ export async function prForFixSuggestion(
   // check if branch already exists for branch creation/overwrite
   let branchList = (await git.branch()).all
   let found = branchList.includes(newBranch)
-
+  info(found.valueOf.toString())
   if (!found) {
     await git.checkoutLocalBranch(newBranch)
   } else {
@@ -120,15 +120,15 @@ export async function prForFixSuggestion(
   await git.commit('Fix Suggestion ' + fixId + '.').push('origin', newBranch, ['--force'])
 
   // open PR:
-  if(!found) {
-  await getPrApi().create({
-    owner: repoOwner,
-    repo: repoName,
-    head: newBranch,
-    base: currBranch,
-    title: titlePR,
-    body: patch,
-  })
+  if (!found) {
+    await getPrApi().create({
+      owner: repoOwner,
+      repo: repoName,
+      head: newBranch,
+      base: currBranch,
+      title: titlePR,
+      body: patch,
+    })
   }
 
   // go back to currBranch

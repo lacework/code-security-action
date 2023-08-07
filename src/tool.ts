@@ -66,6 +66,7 @@ export async function prForFixSuggestion(
 
   // call patch command
   await callLaceworkCli(...args)
+
   let patch = readFileSync(patchReport, 'utf-8')
   // parse the modified files from the patch summary
   let files: string[] = []
@@ -104,6 +105,15 @@ export async function prForFixSuggestion(
     title: titlePR,
     body: patch,
   })
+
+  // git log to see why 2 commits
+  info(newBranch)
+  let a = (await git.log()).all
+  for (let b of a ) {
+    info(b.author_email)
+    info(b.author_name)
+    info(b.body)
+  }
 
   // go back to currBranch
   await git.checkout(originBranch)

@@ -54,12 +54,12 @@ export async function prForFixSuggestion(
   repoName: string,
   originBranch: string
 ) {
-  let newBranch: string = 'SCA_fix_for_' + fixId
+  let newBranch: string = 'codesec/sca/'
   const git = simpleGit(options)
   await git.init()
   await git.addConfig('user.name', 'CodeSec Bot')
   await git.addConfig('user.email', 'codesec-eng@lacework.com')
- 
+
   // get current branch
   // trigger: on pull request
   let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')
@@ -68,7 +68,6 @@ export async function prForFixSuggestion(
     currBranch = getRequiredEnvVariable('GITHUB_REF')
   }
   // create a new branch for the specified fix from currBranch
-  await git.checkoutLocalBranch(newBranch)
   var patchReport = 'patchSummary.md'
 
   // create command to run on branch
@@ -78,6 +77,12 @@ export async function prForFixSuggestion(
   await callLaceworkCli(...args)
 
   let patch = readFileSync(patchReport, 'utf-8')
+  // title is the first line of the patch summary
+  let titlePR = patch.split('\n')[0].substring(2)
+  newBranch += titlePR.split('bump ')[1].replace(' ', '_')
+  
+  await git.checkoutLocalBranch(newBranch)
+
   // parse the modified files from the patch summary
   let files: string[] = []
   let text: string = patch.split('## Files that have been modified:')[1]
@@ -102,9 +107,6 @@ export async function prForFixSuggestion(
 
   // commit and push changes
   await git.commit('Fix Suggestion ' + fixId + '.').push('origin', newBranch)
-
-  // title is the first line of the patch summary
-  let titlePR = patch.split('\n')[0].substring(2)
 
   // open PR:
   await getPrApi().create({

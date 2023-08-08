@@ -94,7 +94,7 @@ export async function prForFixSuggestion(
       info(branch)
       await git.deleteLocalBranch(branch)
       found = true
-      break
+      // break
     }
   }
 

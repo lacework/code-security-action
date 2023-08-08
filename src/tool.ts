@@ -127,6 +127,7 @@ export async function prForFixSuggestion(
   }
 
   // commit and push changes
+  info('about to commit')
   await git.commit('Fix Suggestion ' + fixId + '.').push('origin', newBranch, ['--force'])
   info('can commit')
   // open PR:

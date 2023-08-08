@@ -65,7 +65,7 @@ export async function prForFixSuggestion(
   let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')
   if (currBranch == '') {
     // trigger: on push
-    currBranch = getRequiredEnvVariable('GITHUB_REF')
+    currBranch = getRequiredEnvVariable('GITHUB_REF_NAME')
   }
   // create a new branch for the specified fix from currBranch
   var patchReport = 'patchSummary.md'
@@ -94,7 +94,7 @@ export async function prForFixSuggestion(
       break
     }
   }
-  info(originBranch)
+  // info(originBranch)
 
   if (!found) {
     info('not found')

@@ -94,7 +94,6 @@ export async function prForFixSuggestion(
       break
     }
   }
-  // info(originBranch)
 
   if (!found) {
     info('not found')
@@ -155,9 +154,7 @@ export async function createPRs(jsonFile: string) {
   const git = simpleGit(options)
   await git.init()
   let list = (await git.branch()).all
-  for (const branch of list) {
-    info(branch)
-  }
+  // for pr i believe
   let originBranch = list.at(list.length - 1)
   if (originBranch == undefined) {
     return

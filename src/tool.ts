@@ -52,7 +52,6 @@ export async function prForFixSuggestion(
   fixId: string,
   repoOwner: string,
   repoName: string,
-  originBranch: string
 ) {
   let newBranch: string = 'codesec/sca/'
   const git = simpleGit(options)
@@ -66,13 +65,12 @@ export async function prForFixSuggestion(
     // trigger: on push
     currBranch = getRequiredEnvVariable('GITHUB_REF_NAME')
   }
-  
+
   newBranch += currBranch + '/'
 
   // create a new branch for the specified fix from currBranch
   var patchReport = 'patchSummary.md'
 
-  info(currBranch)
   // create command to run on branch
   var args = ['sca', 'patch', '.', '--sbom', jsonFile, '--fix-id', fixId, '-o', patchReport]
 
@@ -101,8 +99,6 @@ export async function prForFixSuggestion(
   // create local branch
   await git.checkoutLocalBranch(newBranch)
 
-  info('Can checkout')
-
   // parse the modified files from the patch summary
   let files: string[] = []
   let text: string = patch.split('## Files that have been modified:')[1]
@@ -126,9 +122,7 @@ export async function prForFixSuggestion(
   }
 
   // commit and push changes --force to overwrite remote branch
-  info('about to commit')
   await git.commit('Fix for: ' + newBranch + '.').push('origin', newBranch, ['--force'])
-  info('can commit')
   // open PR:
   if (!found) {
     await getPrApi().create({
@@ -140,10 +134,8 @@ export async function prForFixSuggestion(
       body: patch,
     })
   }
-  info('can pr')
 
   // go back to currBranch
-  // if (found)
   await git.checkout(currBranch)
 }
 
@@ -151,16 +143,6 @@ export async function createPRs(jsonFile: string) {
   const results: LWJSON = JSON.parse(readFileSync(jsonFile, 'utf-8'))
   // get owner and name of current repository
   const [repoOwner, repoName] = splitStringAtFirstSlash(getRequiredEnvVariable('GITHUB_REPOSITORY'))
-
-  // get the origin branch stored
-  const git = simpleGit(options)
-  await git.init()
-  let list = (await git.branch()).all
-  // for pr i believe
-  let originBranch = list.at(list.length - 1)
-  if (originBranch == undefined) {
-    return
-  }
 
   if (results.FixSuggestions == undefined) {
     return
@@ -172,7 +154,7 @@ export async function createPRs(jsonFile: string) {
     if (fix.Info.fixVersion?.Version !== undefined) {
       version = fix.Info.fixVersion?.Version
     }
-    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName, originBranch)
+    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName)
   }
 }
 

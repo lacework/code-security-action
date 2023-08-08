@@ -127,7 +127,7 @@ export async function prForFixSuggestion(
 
   // commit and push changes --force to overwrite remote branch
   info('about to commit')
-  await git.commit('Fix Suggestion ' + fixId + '.').push('origin', newBranch, ['--force'])
+  await git.commit('Fix for: ' + newBranch + '.').push('origin', newBranch, ['--force'])
   info('can commit')
   // open PR:
   if (!found) {

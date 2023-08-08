@@ -61,13 +61,15 @@ export async function prForFixSuggestion(
   await git.addConfig('user.email', 'codesec-eng@lacework.com')
 
   // get current branch
-  // trigger: on pull request
   let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')
   if (currBranch == '') {
     // trigger: on push
     currBranch = getRequiredEnvVariable('GITHUB_REF_NAME')
     newBranch += currBranch + '/'
   } else {
+    // trigger: on pull request
+    info(originBranch)
+    info(currBranch)
     newBranch += 'pr_test/'
   }
   // create a new branch for the specified fix from currBranch

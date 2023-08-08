@@ -65,14 +65,10 @@ export async function prForFixSuggestion(
   if (currBranch == '') {
     // trigger: on push
     currBranch = getRequiredEnvVariable('GITHUB_REF_NAME')
-    newBranch += currBranch + '/'
-  } else {
-    // trigger: on pull request
-    info('this ->')
-    info(originBranch)
-    info(currBranch)
-    newBranch += 'pr_test/'
   }
+  
+  newBranch += currBranch + '/'
+
   // create a new branch for the specified fix from currBranch
   var patchReport = 'patchSummary.md'
 

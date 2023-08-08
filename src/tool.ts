@@ -134,24 +134,23 @@ export async function prForFixSuggestion(
       body: patch,
     })
   } else {
-    // update the title if needed: 
+    // update the title if needed:
     const prList = await getPrApi().list({
       owner: repoOwner,
       repo: repoName,
-      state: 'open', 
+      state: 'open',
       base: currBranch,
     })
-    
-    for(const pr of prList.data) {
+    let filtered = prList.data.filter(pr => pr.head.ref == currBranch)
+    for (const pr of filtered) {
       let pullNr = pr.number
       await getPrApi().update({
         owner: repoOwner,
         repo: repoName,
         pull_number: pullNr,
-        title: titlePR
-      }) 
+        title: titlePR,
+      })
     }
-    
   }
 
   // go back to currBranch

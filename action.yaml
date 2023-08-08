@@ -68,7 +68,9 @@ runs:
         LACEWORK_ACTION_REF: '${{ github.action_ref }}'
         TOOLS: '${{ inputs.tools }}'
       run: |
-        echo "LACEWORK_CONTEXT_ID=$(echo $RANDOM | md5sum | head -c 32)" >> $GITHUB_ENV
+        LACEWORK_CONTEXT_ID=`echo $RANDOM | md5sum | head -c 32`
+        echo "Lacework context ID: $LACEWORK_CONTEXT_ID"
+        echo "LACEWORK_CONTEXT_ID=$(echo $LACEWORK_CONTEXT_ID)" >> $GITHUB_ENV
         echo "LACEWORK_ACTION_REF=$(echo $LACEWORK_ACTION_REF)" >> $GITHUB_ENV
         SCA_VERSION=0.0.58
         SAST_VERSION=0.0.50

@@ -92,7 +92,7 @@ export async function prForFixSuggestion(
     if (branch.includes(newBranch)) {
       info('found')
       info(branch)
-      await git.deleteLocalBranch(newBranch)
+      await git.deleteLocalBranch(branch)
       found = true
       break
     }

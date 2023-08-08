@@ -65,8 +65,8 @@ export async function prForFixSuggestion(
   let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')
   if (currBranch == '') {
     // trigger: on push
-    newBranch += currBranch + '/'
     currBranch = getRequiredEnvVariable('GITHUB_REF_NAME')
+    newBranch += currBranch + '/'
   } else {
     newBranch += 'pr_test/'
   }
@@ -83,7 +83,7 @@ export async function prForFixSuggestion(
   let patch = readFileSync(patchReport, 'utf-8')
   // title is the first line of the patch summary
   let titlePR = patch.split('\n')[0].substring(2)
-  newBranch += ((titlePR.split('bump ')[1]).split(' to')[0]).replaceAll(' ', '_').replaceAll(':', '-')
+  newBranch += titlePR.split('bump ')[1].split(' to')[0].replaceAll(' ', '_').replaceAll(':', '-')
   if (newBranch[newBranch.length - 1] == '.') {
     newBranch = newBranch.substring(0, newBranch.length - 1)
   }

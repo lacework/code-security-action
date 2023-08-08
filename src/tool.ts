@@ -154,7 +154,6 @@ export async function createPRs(jsonFile: string) {
     if (fix.Info.fixVersion?.Version !== undefined) {
       version = fix.Info.fixVersion?.Version
     }
-    process.env['GITHUB_AUTHOR'] = 'bot'
     await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName)
   }
 }

@@ -90,8 +90,9 @@ export async function prForFixSuggestion(
   let found = false
   for (let branch of branchList) {
     if (branch.includes(newBranch)) {
-      await git.deleteLocalBranch(branch)
+      await git.deleteLocalBranch(newBranch)
       found = true
+      info('found')
       break
     }
   }

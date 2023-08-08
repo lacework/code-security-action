@@ -94,6 +94,9 @@ export async function prForFixSuggestion(
     info(br)
   }
   for (let branch of branchList) {
+    info(branch)
+  }
+  for (let branch of branchList) {
     if (branch.includes(newBranch)) {
       info('found')
       info(branch)

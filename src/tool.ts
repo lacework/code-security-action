@@ -102,6 +102,7 @@ export async function prForFixSuggestion(
     info('found')
     await git.checkout(newBranch)
   }
+  info('Can checkout')
 
   // parse the modified files from the patch summary
   let files: string[] = []
@@ -127,7 +128,7 @@ export async function prForFixSuggestion(
 
   // commit and push changes
   await git.commit('Fix Suggestion ' + fixId + '.').push('origin', newBranch, ['--force'])
-
+  info('can commit')
   // open PR:
   if (!found) {
     await getPrApi().create({
@@ -139,6 +140,7 @@ export async function prForFixSuggestion(
       body: patch,
     })
   }
+  info('can pr')
 
   // go back to currBranch
   // if (found)

@@ -68,6 +68,7 @@ export async function prForFixSuggestion(
     newBranch += currBranch + '/'
   } else {
     // trigger: on pull request
+    info('this ->')
     info(originBranch)
     info(currBranch)
     newBranch += 'pr_test/'
@@ -90,20 +91,13 @@ export async function prForFixSuggestion(
     newBranch = newBranch.substring(0, newBranch.length - 1)
   }
 
-  info(currBranch)
-  info(newBranch)
   // check if branch already exists for branch creation/overwrite
   let branchList = (await git.branch()).all
   let found = false
   await git.fetch()
   for (let branch of branchList) {
-    info(branch)
-  }
-  for (let branch of branchList) {
     if (branch.includes(newBranch)) {
       found = true
-      info(branch)
-      info('found')
       break
     }
   }

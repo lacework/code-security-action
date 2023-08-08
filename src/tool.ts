@@ -90,23 +90,20 @@ export async function prForFixSuggestion(
   let found = false
   for (let branch of branchList) {
     if (branch.includes(newBranch)) {
+      await git.deleteLocalBranch(branch)
       found = true
       break
     }
   }
 
-  if (!found) {
-    info('not found')
-    await git.checkoutLocalBranch(newBranch)
-  } else {
-    info('found')
-    let status = await git.status()
-    let unstaged = status.not_added
-    for(let change of unstaged) {
-      info(change)
-    }
-    await git.checkout(newBranch)
-  }
+  await git.checkoutLocalBranch(newBranch)
+
+  // if (!found) {
+  //   info('not found')
+  // } else {
+  //   info('found')
+  //   await git.checkout(newBranch)
+  // }
   info('Can checkout')
 
   // parse the modified files from the patch summary

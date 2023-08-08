@@ -94,6 +94,9 @@ export async function prForFixSuggestion(
   let branchList = (await git.branch()).all
   let found = false
   for (let branch of branchList) {
+    info(branch)
+  }
+  for (let branch of branchList) {
     if (branch.includes(newBranch)) {
       found = true
       info(branch)

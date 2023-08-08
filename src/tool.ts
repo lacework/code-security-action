@@ -51,7 +51,7 @@ export async function prForFixSuggestion(
   jsonFile: string,
   fixId: string,
   repoOwner: string,
-  repoName: string,
+  repoName: string
 ) {
   let newBranch: string = 'codesec/sca/'
   const git = simpleGit(options)
@@ -154,6 +154,7 @@ export async function createPRs(jsonFile: string) {
     if (fix.Info.fixVersion?.Version !== undefined) {
       version = fix.Info.fixVersion?.Version
     }
+    process.env['GITHUB_AUTHOR'] = 'bot'
     await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName)
   }
 }

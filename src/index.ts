@@ -19,7 +19,6 @@ import {
   telemetryCollector,
 } from './util'
 import { downloadKeys, trustedKeys } from './keys'
-import { simpleGit, SimpleGitOptions } from 'simple-git'
 
 const scaSarifReport = 'scaReport/output.sarif'
 const sastReport = 'sast.sarif'

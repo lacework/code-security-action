@@ -88,32 +88,16 @@ export async function prForFixSuggestion(
   // check if branch already exists for branch creation/overwrite
   let branchList = (await git.branch()).all
   let found = false
-  await git.fetch('origin', currBranch)
-  const lb = (await git.branchLocal()).all
-  for (let br of lb) {
-    info(br)
-  }
-  for (let branch of branchList) {
-    info(branch)
-  }
   for (let branch of branchList) {
     if (branch.includes(newBranch)) {
-      info('found')
-      info(branch)
-      await git.branch(['-d', branch])
       found = true
       break
     }
   }
 
+  // create local branch
   await git.checkoutLocalBranch(newBranch)
 
-  // if (!found) {
-  //   info('not found')
-  // } else {
-  //   info('found')
-  //   await git.checkout(newBranch)
-  // }
   info('Can checkout')
 
   // parse the modified files from the patch summary
@@ -138,7 +122,7 @@ export async function prForFixSuggestion(
     }
   }
 
-  // commit and push changes
+  // commit and push changes --force to overwrite remote branch
   info('about to commit')
   await git.commit('Fix Suggestion ' + fixId + '.').push('origin', newBranch, ['--force'])
   info('can commit')

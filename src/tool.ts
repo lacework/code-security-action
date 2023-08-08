@@ -100,6 +100,11 @@ export async function prForFixSuggestion(
     await git.checkoutLocalBranch(newBranch)
   } else {
     info('found')
+    let status = await git.status()
+    let unstaged = status.not_added
+    for(let change of unstaged) {
+      info(change)
+    }
     await git.checkout(newBranch)
   }
   info('Can checkout')

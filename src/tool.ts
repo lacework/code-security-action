@@ -89,6 +89,10 @@ export async function prForFixSuggestion(
   let branchList = (await git.branch()).all
   let found = false
   await git.fetch()
+  const lb = (await git.branchLocal()).all
+  for(let br of lb) {
+    info(br)
+  }
   for (let branch of branchList) {
     if (branch.includes(newBranch)) {
       info('found')

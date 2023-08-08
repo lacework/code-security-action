@@ -93,6 +93,7 @@ export async function prForFixSuggestion(
   // check if branch already exists for branch creation/overwrite
   let branchList = (await git.branch()).all
   let found = false
+  await git.fetch()
   for (let branch of branchList) {
     info(branch)
   }

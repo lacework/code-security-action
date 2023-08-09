@@ -139,12 +139,10 @@ export async function prForFixSuggestion(
       repo: repoName,
       state: 'open',
     })
-    for(const pr of prList.data) {
-      info(pr.number.toString())
-    }
-    let filtered = prList.data.filter((pr) => pr.head.ref == currBranch)
+    let filtered = prList.data.filter((pr) => pr.head.ref == newBranch)
     for (const pr of filtered) {
       let pullNr = pr.number
+      info(pullNr.toString())
       await getPrApi().update({
         owner: repoOwner,
         repo: repoName,

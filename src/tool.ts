@@ -86,17 +86,6 @@ export async function prForFixSuggestion(
     newBranch = newBranch.substring(0, newBranch.length - 1)
   }
 
-  // check if branch already exists for branch creation/overwrite
-  let branchList = (await git.branch()).all
-  let found = false
-  await git.fetch()
-  for (let branch of branchList) {
-    if (branch.includes(newBranch)) {
-      found = true
-      break
-    }
-  }
-
   // create local branch
   await git.checkoutLocalBranch(newBranch)
 
@@ -131,6 +120,7 @@ export async function prForFixSuggestion(
   const prList = await getPrApi().list({
     owner: repoOwner,
     repo: repoName,
+    state: 'open',
   })
   // look for PR corresponding to this branch
   let filtered = prList.data.filter((pr) => pr.head.ref == newBranch)

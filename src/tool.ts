@@ -57,8 +57,8 @@ export async function prForFixSuggestion(
 
   // git configuration
   const git = simpleGit(options)
-  await git.addConfig('user.name', 'CodeSec Bot', false, 'global')
-  await git.addConfig('user.email', 'codesec-eng@lacework.com', false, 'global')
+  await git.addConfig('user.name', 'Lacework Code Security', false, 'global')
+  await git.addConfig('user.email', 'support@lacework.net', false, 'global')
 
   // get current branch
   // trigger: on pr
@@ -125,8 +125,29 @@ export async function prForFixSuggestion(
   // commit and push changes --force to overwrite remote branch
   await git.commit('Fix for: ' + newBranch + '.').push('origin', newBranch, ['--force'])
 
-  // open PR:
-  if (!found) {
+  // open PR
+  let prFound = false
+  // retrieve list of PRs
+  const prList = await getPrApi().list({
+    owner: repoOwner,
+    repo: repoName,
+  })
+  // look for PR corresponding to this branch
+  let filtered = prList.data.filter((pr) => pr.head.ref == newBranch)
+  for (const pr of filtered) {
+    prFound = true
+    let pullNr = pr.number
+    // update with right title and body.
+    await getPrApi().update({
+      owner: repoOwner,
+      repo: repoName,
+      pull_number: pullNr,
+      title: titlePR,
+      body: patch,
+    })
+  }
+  // create PR if not found
+  if(!prFound) {
     await getPrApi().create({
       owner: repoOwner,
       repo: repoName,
@@ -135,23 +156,6 @@ export async function prForFixSuggestion(
       title: titlePR,
       body: patch,
     })
-  } else {
-    // update the title if needed:
-    const prList = await getPrApi().list({
-      owner: repoOwner,
-      repo: repoName,
-      state: 'open',
-    })
-    let filtered = prList.data.filter((pr) => pr.head.ref == newBranch)
-    for (const pr of filtered) {
-      let pullNr = pr.number
-      await getPrApi().update({
-        owner: repoOwner,
-        repo: repoName,
-        pull_number: pullNr,
-        title: titlePR,
-      })
-    }
   }
 
   // go back to currBranch

@@ -55,8 +55,8 @@ export async function prForFixSuggestion(
 ) {
   let newBranch: string = 'codesec/sca/'
   const git = simpleGit(options)
-  await git.addConfig('user.name', 'CodeSec Bot', false, 'system')
-  await git.addConfig('user.email', 'codesec-eng@lacework.com', false, 'system')
+  await git.addConfig('user.name', 'CodeSec Bot', false, 'global')
+  await git.addConfig('user.email', 'codesec-eng@lacework.com', false, 'global')
 
   // get current branch
   let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')

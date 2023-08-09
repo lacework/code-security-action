@@ -166,10 +166,6 @@ export async function createPRs(jsonFile: string) {
 
   for (const fix of results.FixSuggestions) {
     let fixId: string = fix.FixId
-    let version: string = ''
-    if (fix.Info.fixVersion?.Version !== undefined) {
-      version = fix.Info.fixVersion?.Version
-    }
     await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName)
   }
 }

@@ -6,8 +6,9 @@ import {
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import { compareResults, printResults } from './tool'
+import { compareResults, createPRs, printResults } from './tool'
 import {
+  autofix,
   callLaceworkCli,
   debug,
   getActionRef,
@@ -19,8 +20,10 @@ import {
 } from './util'
 import { downloadKeys, trustedKeys } from './keys'
 
-const scaReport = 'sca.sarif'
+const scaSarifReport = 'scaReport/output.sarif'
 const sastReport = 'sast.sarif'
+const scaLWJSONReport = 'scaReport/output-lw.json'
+const scaDir = 'scaReport'
 
 async function runAnalysis() {
   const target = getInput('target')
@@ -37,15 +40,16 @@ async function runAnalysis() {
   const classpath = getInput('classpath') || getOrDefault('classes', '.')
   if (tools.includes('sca')) {
     await downloadKeys()
+    // command to print both sarif and lwjson formats
     var args = [
       'sca',
       'git',
       '.',
       '--save-results',
       '-o',
-      scaReport,
+      scaDir,
       '--formats',
-      'sarif',
+      'sarif,lw-json',
       '--deployment',
       'ci',
       '--keyring',
@@ -58,9 +62,15 @@ async function runAnalysis() {
     if (debug()) {
       args.push('--debug')
     }
+    if (autofix()) {
+      args.push('--fix-suggestions')
+    }
     await callLaceworkCli(...args)
-    await printResults('sca', scaReport)
-    toUpload.push(scaReport)
+    await printResults('sca', scaSarifReport)
+    if (autofix()) {
+      await createPRs(scaLWJSONReport)
+    }
+    toUpload.push(scaSarifReport)
   }
   if (tools.includes('sast')) {
     var args = [
@@ -99,11 +109,11 @@ async function displayResults() {
     (Date.now() - downloadStart).toString()
   )
   const issuesByTool: { [tool: string]: string } = {}
-  if (existsSync(`results-old/${scaReport}`) && existsSync(`results-new/${scaReport}`)) {
+  if (existsSync(`results-old/${scaSarifReport}`) && existsSync(`results-new/${scaSarifReport}`)) {
     issuesByTool['sca'] = await compareResults(
       'sca',
-      `results-old/${scaReport}`,
-      `results-new/${scaReport}`
+      `results-old/${scaSarifReport}`,
+      `results-new/${scaSarifReport}`
     )
   }
   if (existsSync(`results-old/${sastReport}`) && existsSync(`results-new/${sastReport}`)) {

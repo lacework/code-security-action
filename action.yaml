@@ -35,6 +35,10 @@ inputs:
     description: 'Show vulnerabilities found in transitive dependencies'
     required: false
     default: false
+  autofix:
+    description: 'Set to true to enable automated pull-requests for fix suggestions'
+    required: false
+    default: false
 outputs:
   old-completed:
     description: 'If running a target called old, whether the analysis for this was completed'
@@ -131,3 +135,4 @@ runs:
         footer: '${{ inputs.footer }}'
         tools: '${{ inputs.tools }}'
         eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'
+        autofix: '${{ inputs.autofix }}'

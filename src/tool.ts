@@ -55,9 +55,8 @@ export async function prForFixSuggestion(
 ) {
   let newBranch: string = 'codesec/sca/'
   const git = simpleGit(options)
-  await git.init()
-  await git.addConfig('user.name', 'CodeSec Bot')
-  await git.addConfig('user.email', 'codesec-eng@lacework.com')
+  await git.addConfig('user.name', 'CodeSec Bot', false, 'global')
+  await git.addConfig('user.email', 'codesec-eng@lacework.com', false, 'global')
 
   // get current branch
   let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')
@@ -139,9 +138,8 @@ export async function prForFixSuggestion(
       owner: repoOwner,
       repo: repoName,
       state: 'open',
-      base: currBranch,
     })
-    let filtered = prList.data.filter(pr => pr.head.ref == currBranch)
+    let filtered = prList.data.filter((pr) => pr.head.ref == currBranch)
     for (const pr of filtered) {
       let pullNr = pr.number
       await getPrApi().update({

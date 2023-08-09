@@ -10,7 +10,7 @@ export interface FixVersion {
 }
 
 export interface Info {
-  FixVersion?: FixVersion 
+  FixVersion?: FixVersion
   Diffs?: string[][]
 }
 export interface FixSuggestion {

@@ -147,7 +147,7 @@ export async function prForFixSuggestion(
     })
   }
   // create PR if not found
-  if(!prFound) {
+  if (!prFound) {
     await getPrApi().create({
       owner: repoOwner,
       repo: repoName,

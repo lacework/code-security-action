@@ -67,7 +67,7 @@ export async function prForFixSuggestion(
     // trigger: on push
     currBranch = getRequiredEnvVariable('GITHUB_REF_NAME')
   }
-  
+
   newBranch += currBranch + '/'
 
   var patchReport = 'patchSummary.md'
@@ -124,7 +124,7 @@ export async function prForFixSuggestion(
 
   // commit and push changes --force to overwrite remote branch
   await git.commit('Fix for: ' + newBranch + '.').push('origin', newBranch, ['--force'])
-  
+
   // open PR:
   if (!found) {
     await getPrApi().create({
@@ -160,7 +160,7 @@ export async function prForFixSuggestion(
 
 export async function createPRs(jsonFile: string) {
   const results: LWJSON = JSON.parse(readFileSync(jsonFile, 'utf-8'))
-  
+
   // get owner and name of current repository
   const [repoOwner, repoName] = splitStringAtFirstSlash(getRequiredEnvVariable('GITHUB_REPOSITORY'))
 

@@ -9,6 +9,7 @@ import {
 import { compareResults, createPRs, printResults } from './tool'
 import {
   autofix,
+  callCommand,
   callLaceworkCli,
   debug,
   getActionRef,
@@ -22,6 +23,7 @@ import { downloadKeys, trustedKeys } from './keys'
 
 const scaSarifReport = 'scaReport/output.sarif'
 const sastReport = 'sast.sarif'
+const scaReport = 'sca.sarif'
 const scaLWJSONReport = 'scaReport/output-lw.json'
 const scaDir = 'scaReport'
 
@@ -66,11 +68,15 @@ async function runAnalysis() {
       args.push('--fix-suggestions')
     }
     await callLaceworkCli(...args)
-    await printResults('sca', scaSarifReport)
+    // make a copy of the sarif file
+    args = [scaSarifReport, scaReport]
+    await callCommand('cp', ...args)
+
+    await printResults('sca', scaReport)
     if (autofix()) {
       await createPRs(scaLWJSONReport)
     }
-    toUpload.push(scaSarifReport)
+    toUpload.push(scaReport)
   }
   if (tools.includes('sast')) {
     var args = [
@@ -109,11 +115,11 @@ async function displayResults() {
     (Date.now() - downloadStart).toString()
   )
   const issuesByTool: { [tool: string]: string } = {}
-  if (existsSync(`results-old/${scaSarifReport}`) && existsSync(`results-new/${scaSarifReport}`)) {
+  if (existsSync(`results-old/${scaReport}`) && existsSync(`results-new/${scaReport}`)) {
     issuesByTool['sca'] = await compareResults(
       'sca',
-      `results-old/${scaSarifReport}`,
-      `results-new/${scaSarifReport}`
+      `results-old/${scaReport}`,
+      `results-new/${scaReport}`
     )
   }
   if (existsSync(`results-old/${sastReport}`) && existsSync(`results-new/${sastReport}`)) {

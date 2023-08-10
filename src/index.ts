@@ -9,6 +9,7 @@ import {
 import { compareResults, createPRs, printResults } from './tool'
 import {
   autofix,
+  callCommand,
   callLaceworkCli,
   debug,
   getActionRef,
@@ -66,6 +67,10 @@ async function runAnalysis() {
       args.push('--fix-suggestions')
     }
     await callLaceworkCli(...args)
+    // make a copy of the sarif file 
+    args = [scaSarifReport, 'sca.sarif']
+    await callCommand('cp', ...args)
+
     await printResults('sca', scaSarifReport)
     if (autofix()) {
       await createPRs(scaLWJSONReport)

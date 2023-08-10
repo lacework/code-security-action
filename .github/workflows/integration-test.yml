@@ -59,7 +59,7 @@ jobs:
       - name: Check results
         working-directory: artifact
         run: |
-          export SCA_RESULTS=`jq '.runs | map (.results | length) | add' scaReport/output.sarif`
+          export SCA_RESULTS=`jq '.runs | map (.results | length) | add' sca.sarif`
           expectedScaResults=3
           echo "Got $SCA_RESULTS from SCA"
           if [ "$SCA_RESULTS" != "$expectedScaResults" ]; then

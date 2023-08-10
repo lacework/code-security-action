@@ -1,16 +1,17 @@
 package hello;
 
-import java.io.IOException;
-import java.net.Socket;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Response;
 
+@Path("/whatever")
 public class Application {
 
-	public static void main(String[] args) {
-		Socket socket = new Socket();
-		try {
-			Library.doSomething(socket.getInputStream());
-		} catch (IOException e) {
-			// do nothing
-		}
+	@GET
+	@Path("/path")
+	public Response myMethod(@QueryParam("User Controlled") String userControlled) {
+		Library.doSomething(userControlled);
+		return null;
 	}
 }

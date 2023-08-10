@@ -67,7 +67,7 @@ async function runAnalysis() {
       args.push('--fix-suggestions')
     }
     await callLaceworkCli(...args)
-    // make a copy of the sarif file 
+    // make a copy of the sarif file
     args = [scaSarifReport, 'sca.sarif']
     await callCommand('cp', ...args)
 

@@ -85,6 +85,8 @@ export async function prForFixSuggestion(
   if (newBranch[newBranch.length - 1] == '.') {
     newBranch = newBranch.substring(0, newBranch.length - 1)
   }
+  info("new vuln")
+  info(titlePR)
 
   // create local branch
   await git.checkoutLocalBranch(newBranch)
@@ -101,6 +103,7 @@ export async function prForFixSuggestion(
     line = line.trimStart().trimEnd()
     // delete the '*'
     line = line.substring(1, line.length - 1)
+    info(line)
     files.push(line)
   }
 

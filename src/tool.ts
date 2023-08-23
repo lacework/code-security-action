@@ -53,7 +53,6 @@ export async function prForFixSuggestion(
   repoOwner: string,
   repoName: string
 ) {
-  info('new vuln')
   let newBranch: string = 'codesec/sca/'
 
   // git configuration
@@ -86,7 +85,6 @@ export async function prForFixSuggestion(
   if (newBranch[newBranch.length - 1] == '.') {
     newBranch = newBranch.substring(0, newBranch.length - 1)
   }
-  info(titlePR)
 
   // create local branch
   await git.checkoutLocalBranch(newBranch)
@@ -103,7 +101,6 @@ export async function prForFixSuggestion(
     line = line.trimStart().trimEnd()
     // delete the '*' and '-'
     line = line.substring(3, line.length - 1)
-    info(line)
     files.push(line)
   }
 

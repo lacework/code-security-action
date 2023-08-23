@@ -95,12 +95,12 @@ export async function prForFixSuggestion(
   if (text == undefined) {
     return
   }
-  let lines: string[] = text.split('-')
+  let lines: string[] = text.split('\n')
   for (let line of lines) {
     // delete whitespaces
     line = line.trimStart().trimEnd()
-    // delete the '*'
-    line = line.substring(1, line.length - 1)
+    // delete the '*' and '-'
+    line = line.substring(3, line.length - 1)
     files.push(line)
   }
 

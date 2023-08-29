@@ -10,6 +10,7 @@ env:
   LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_CAT }}
   LW_API_KEY: ${{ secrets.LW_API_KEY_CAT }}
   LW_API_SECRET: ${{ secrets.LW_API_SECRET_CAT }}
+  DEBUG: 'true'
 
 jobs:
   build:

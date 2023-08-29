@@ -1,6 +1,6 @@
 package hello;
 
-import java.io.IOException;
+import java.io.File;
 
 public class Library {
 	public static void doSomething(String s) {
@@ -8,11 +8,6 @@ public class Library {
 	}
 
 	private static void execute(String command) {
-		try {
-			Runtime.getRuntime().exec(command);
-		} catch (IOException e) {
-			// do nothing
-		}
-
+		new File(command);
 	}
 }

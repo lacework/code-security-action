@@ -31,7 +31,7 @@ env:
 name: Lacework Code Security (PR)
 jobs:
   run-analysis:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     name: Run analysis
     strategy:
       matrix:
@@ -53,7 +53,7 @@ jobs:
           # or built JAR for your project
           # classes: target
   display-results:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     name: Display results
     needs:
       - run-analysis
@@ -83,7 +83,7 @@ env:
 name: Lacework Code Security (Push)
 jobs:
   run-analysis:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     name: Run analysis
     steps:
       - name: Checkout repository

@@ -169,13 +169,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    if (typeof e === 'string') {
-      telemetryCollector.addField('error', e)
-    } else if (e instanceof Error) {
-      telemetryCollector.addField('error', e.message)
-    } else {
-      telemetryCollector.addField('error', 'Unknown error')
-    }
+    telemetryCollector.addError('error', e)
     error(e.message) // TODO: Use setFailed once we want failures to be fatal
   })
   .finally(async () => {

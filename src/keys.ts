@@ -3,7 +3,7 @@ import { restoreCache, saveCache } from '@actions/cache'
 import { getRequiredEnvVariable, telemetryCollector } from './util'
 import { getOrgsApi, getUsersApi } from './actions'
 import { mkdirSync, writeFileSync, readdirSync } from 'fs'
-import { info } from '@actions/core'
+import { info, warning } from '@actions/core'
 
 export const trustedKeys = 'laceworkTrustedKeys'
 
@@ -20,10 +20,13 @@ export async function downloadKeys(): Promise<void> {
     mkdirSync(trustedKeys)
     await Promise.all(users.map(downloadKeysForUser))
     await saveCache([trustedKeys], cacheKey)
-  } finally {
-    telemetryCollector.addField('duration.key-download', (Date.now() - keyDownloadStart).toString())
     const downloaded = readdirSync(trustedKeys)
     info(`Successfully downloaded ${downloaded.length} trusted keys: ${downloaded.join(', ')}`)
+  } catch (e) {
+    telemetryCollector.addError('key-download-error', e)
+    warning(`Failed to download trusted keys: ${e}`)
+  } finally {
+    telemetryCollector.addField('duration.key-download', (Date.now() - keyDownloadStart).toString())
   }
 }
 

@@ -115,6 +115,9 @@ runs:
       with:
         path: ~/.config/lacework/components
         key: lacework-${{ steps.init.outputs.cache-key }}
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
     - shell: bash
       run: |
         cp -r "${{ github.action_path }}" ../lacework-code-security

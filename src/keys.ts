@@ -10,6 +10,7 @@ export const trustedKeys = 'laceworkTrustedKeys'
 export async function downloadKeys(): Promise<void> {
   const keyDownloadStart = Date.now()
   try {
+    mkdirSync(trustedKeys)
     const cacheKey = getCacheKey()
     const cacheResult = await restoreCache([trustedKeys], cacheKey)
     if (cacheResult !== undefined) {
@@ -17,14 +18,13 @@ export async function downloadKeys(): Promise<void> {
     }
     const users = await getOrgMembers()
     info(`Downloading trusted keys for ${users.length} users: ${users.join(', ')}`)
-    mkdirSync(trustedKeys)
     await Promise.all(users.map(downloadKeysForUser))
     await saveCache([trustedKeys], cacheKey)
     const downloaded = readdirSync(trustedKeys)
     info(`Successfully downloaded ${downloaded.length} trusted keys: ${downloaded.join(', ')}`)
   } catch (e) {
     telemetryCollector.addError('key-download-error', e)
-    warning(`Failed to download trusted keys: ${e}`)
+    info(`Failed to download trusted keys: ${e}`)
   } finally {
     telemetryCollector.addField('duration.key-download', (Date.now() - keyDownloadStart).toString())
   }

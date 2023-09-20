@@ -7,6 +7,7 @@ import {
   debug,
   getOptionalEnvVariable,
   getRequiredEnvVariable,
+  telemetryCollector,
 } from './util'
 import { Log } from 'sarif'
 import { LWJSON } from './lw-json'
@@ -51,7 +52,13 @@ export async function prForFixSuggestion(
   jsonFile: string,
   fixId: string,
   repoOwner: string,
-  repoName: string
+  repoName: string,
+  telem: {
+    prsCounter: number
+    prsUpdated: number
+    errors: any[]
+    totalAPITime: number
+  }
 ) {
   let newBranch: string = 'codesec/sca/'
 
@@ -103,7 +110,6 @@ export async function prForFixSuggestion(
     line = line.substring(3, line.length - 1)
     files.push(line)
   }
-
   // add modified files to branch
   for (const file of files) {
     if (file != '') {
@@ -128,24 +134,38 @@ export async function prForFixSuggestion(
     prFound = true
     let pullNr = pr.number
     // update with right title and body.
-    await getPrApi().update({
-      owner: repoOwner,
-      repo: repoName,
-      pull_number: pullNr,
-      title: titlePR,
-      body: patch,
-    })
+    try {
+      const before = Date.now()
+      await getPrApi().update({
+        owner: repoOwner,
+        repo: repoName,
+        pull_number: pullNr,
+        title: titlePR,
+        body: patch,
+      })
+      const after = Date.now()
+      telem.totalAPITime += after - before
+      telem.prsUpdated++
+      telem.prsCounter++
+    } catch (e) {
+      telem.errors.push(e)
+    }
   }
   // create PR if not found
   if (!prFound) {
-    await getPrApi().create({
-      owner: repoOwner,
-      repo: repoName,
-      head: newBranch,
-      base: currBranch,
-      title: titlePR,
-      body: patch,
-    })
+    try {
+      await getPrApi().create({
+        owner: repoOwner,
+        repo: repoName,
+        head: newBranch,
+        base: currBranch,
+        title: titlePR,
+        body: patch,
+      })
+      telem.prsCounter++
+    } catch (e) {
+      telem.errors.push(e)
+    }
   }
 
   // go back to currBranch
@@ -153,6 +173,7 @@ export async function prForFixSuggestion(
 }
 
 export async function createPRs(jsonFile: string) {
+  const before: number = Date.now()
   const results: LWJSON = JSON.parse(readFileSync(jsonFile, 'utf-8'))
 
   // get owner and name of current repository
@@ -162,10 +183,22 @@ export async function createPRs(jsonFile: string) {
     return
   }
 
+  const telem = {
+    prsCounter: 0,
+    prsUpdated: 0,
+    errors: Array(),
+    totalAPITime: 0,
+  }
   for (const fix of results.FixSuggestions) {
     let fixId: string = fix.FixId
-    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName)
+    await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName, telem)
   }
+  const after = Date.now()
+  telemetryCollector.addField('autofix.totalPRs', telem.prsCounter.toString())
+  telemetryCollector.addField('autofix.updatedPRs', telem.prsUpdated.toString())
+  telemetryCollector.addField('autofix.totalTimeCallingGitHubAPI', telem.totalAPITime.toString())
+  telemetryCollector.addField('autofix.APIerrors', telem.errors.map(String).join(', '))
+  telemetryCollector.addField('autofix.totalTime', (after - before).toString())
 }
 
 export async function compareResults(

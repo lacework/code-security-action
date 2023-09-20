@@ -120,6 +120,7 @@ runs:
         node-version: 16
     - shell: bash
       run: |
+        rm -rf ../lacework-code-security
         cp -r "${{ github.action_path }}" ../lacework-code-security
         cd ../lacework-code-security
         HUSKY=0 npm install

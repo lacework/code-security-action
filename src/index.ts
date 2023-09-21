@@ -173,6 +173,7 @@ main()
     error(e.message) // TODO: Use setFailed once we want failures to be fatal
   })
   .finally(async () => {
+    telemetryCollector.addField('metadata.integration', 'github')
     telemetryCollector.addField('duration.total', getMsSinceStart())
     await telemetryCollector.report().catch((err) => {
       warning('Failed to report telemetry: ' + err.message)

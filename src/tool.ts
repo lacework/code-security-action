@@ -196,7 +196,7 @@ export async function createPRs(jsonFile: string) {
   const after = Date.now()
   telemetryCollector.addField('autofix.totalPRs', telem.prsCounter.toString())
   telemetryCollector.addField('autofix.updatedPRs', telem.prsUpdated.toString())
-  telemetryCollector.addField('autofix.totalTimeCallingGitHubAPI', telem.totalAPITime.toString())
+  telemetryCollector.addField('autofix.timeAPI', telem.totalAPITime.toString())
   telemetryCollector.addField('autofix.APIerrors', telem.errors.map(String).join(', '))
   telemetryCollector.addField('autofix.totalTime', (after - before).toString())
 }

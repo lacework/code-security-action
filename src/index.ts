@@ -45,7 +45,7 @@ async function runAnalysis() {
     // command to print both sarif and lwjson formats
     var args = [
       'sca',
-      'git',
+      'scan',
       '.',
       '--save-results',
       '-o',

@@ -143,3 +143,4 @@ runs:
         tools: '${{ inputs.tools }}'
         eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'
         autofix: '${{ inputs.autofix }}'
+        dynamic: '${{ inputs.dynamic }}'

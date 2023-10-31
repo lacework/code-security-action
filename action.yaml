@@ -39,6 +39,10 @@ inputs:
     description: 'Set to true to enable automated pull-requests for fix suggestions'
     required: false
     default: false
+  dynamic:
+    description: 'Set to true to integrate SCA results with dynamic data, such as package activity'
+    required: false
+    default: false
 outputs:
   old-completed:
     description: 'If running a target called old, whether the analysis for this was completed'
@@ -139,3 +143,4 @@ runs:
         tools: '${{ inputs.tools }}'
         eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'
         autofix: '${{ inputs.autofix }}'
+        dynamic: '${{ inputs.dynamic }}'

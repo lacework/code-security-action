@@ -9,6 +9,7 @@ import {
 import { compareResults, createPRs, printResults } from './tool'
 import {
   autofix,
+  dynamic,
   callCommand,
   callLaceworkCli,
   debug,
@@ -66,6 +67,9 @@ async function runAnalysis() {
     }
     if (autofix()) {
       args.push('--fix-suggestions')
+    }
+    if (dynamic()) {
+      args.push('--dynamic')
     }
     await callLaceworkCli(...args)
     // make a copy of the sarif file

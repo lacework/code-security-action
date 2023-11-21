@@ -40,7 +40,6 @@ async function runAnalysis() {
   appendFileSync(getRequiredEnvVariable('GITHUB_ENV'), `LACEWORK_TOOLS=${tools.join(',')}\n`)
   const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
-  const classpath = getInput('classpath') || getOrDefault('classes', '.')
   if (tools.includes('sca')) {
     await downloadKeys()
     // command to print both sarif and lwjson formats
@@ -87,8 +86,6 @@ async function runAnalysis() {
       'sast',
       'scan',
       '--save-results',
-      '--classpath',
-      classpath,
       '--sources',
       getOrDefault('sources', '.'),
       '-o',
@@ -98,6 +95,11 @@ async function runAnalysis() {
     ]
     if (debug()) {
       args.push('--debug')
+    }
+    var classpath = getInput('classpath')
+    if (classpath) {
+      args.push('--classpath')
+      args.push(classpath)
     }
     await callLaceworkCli(...args)
     await printResults('sast', sastReport)

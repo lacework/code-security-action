@@ -5,11 +5,7 @@ inputs:
   classpath:
     description: 'Specify the Java classpath'
     required: false
-    default: '.'
-  classes:
-    description: 'Classes directory or JAR file to analyze (DEPRECATED)'
-    required: false
-    default: '.'
+    default: ''
   sources:
     description: 'Sources directory to analyze'
     required: false
@@ -134,7 +130,6 @@ runs:
       uses: './../lacework-code-security'
       with:
         classpath: '${{ inputs.classpath }}'
-        classes: '${{ inputs.classes }}'
         sources: '${{ inputs.sources }}'
         target: '${{ inputs.target }}'
         debug: '${{ inputs.debug }}'

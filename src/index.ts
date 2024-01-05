@@ -15,6 +15,7 @@ import {
   debug,
   getActionRef,
   getMsSinceStart,
+  getOptionalEnvVariable,
   getOrDefault,
   getRequiredEnvVariable,
   getRunUrl,
@@ -30,6 +31,17 @@ const scaDir = 'scaReport'
 
 async function runAnalysis() {
   const target = getInput('target')
+
+  let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')
+  if (currBranch !== '') {
+    // running on a PR
+    if (target == 'old') {
+      process.env['LW_CODESEC_GIT_BRANCH'] = getOptionalEnvVariable('GITHUB_BASE_REF', '')
+    } else {
+      process.env['LW_CODESEC_GIT_BRANCH'] = currBranch
+    }
+  }
+
   info('Analyzing ' + target)
   const tools = (getInput('tools') || 'sca')
     .toLowerCase()

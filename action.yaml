@@ -76,7 +76,7 @@ runs:
         echo "Lacework context ID: $LACEWORK_CONTEXT_ID"
         echo "LACEWORK_CONTEXT_ID=$(echo $LACEWORK_CONTEXT_ID)" >> $GITHUB_ENV
         echo "LACEWORK_ACTION_REF=$(echo $LACEWORK_ACTION_REF)" >> $GITHUB_ENV
-        SCA_VERSION=0.0.86
+        SCA_VERSION=0.0.87
         SAST_VERSION=0.0.63
         curl https://raw.githubusercontent.com/lacework/go-sdk/main/cli/install.sh | bash
         KEY="$(date +'%Y-%m-%d')"

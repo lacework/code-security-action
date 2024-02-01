@@ -190,7 +190,7 @@ export async function createPRs(jsonFile: string) {
     totalAPITime: 0,
   }
   for (const fix of results.FixSuggestions) {
-    let fixId: string = fix.FixId
+    let fixId: string = fix.Id
     await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName, telem)
   }
   const after = Date.now()

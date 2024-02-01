@@ -2,37 +2,37 @@ export interface LWJSON {
   FixSuggestions?: FixSuggestion[]
 }
 
-export interface VersionEdge {
+export interface NextNode {
   Version: string
   Severity?: string
   CVE?: string
 }
 
-export interface VersionNode {
+export interface SortedVersionGraphNode {
   Version: string
-  Edges?: VersionEdge[]
+  Edges?: NextNode[]
 }
 
-export interface VersionGraphInfo {
+export interface VersionGraphStruct {
   NodeCnt?: number
   EdgeCnt?: number
   ExtraAthenaCalls?: number
-  VersionGraph?: VersionNode[]
+  VersionGraph?: NextNode[]
 }
 
-export interface Recommendation {
+export interface FixInfo {
   FixVersion: FixVersion
   Kind?: string
 }
 
-export interface Info {
-  Recommendations?: Recommendation[]
-  VersionGraphInfo?: VersionGraphInfo
+export interface FixSuggestionInfo {
+  Recommendations?: FixInfo[]
+  VersionGraphInfo?: VersionGraphStruct
 }
 
 export interface FixSuggestion {
   Id: string
-  Info: Info
+  Info: FixSuggestionInfo
   AffectedArtifactId: string
 }
 

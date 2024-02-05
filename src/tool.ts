@@ -97,18 +97,22 @@ export async function prForFixSuggestion(
   await git.checkoutLocalBranch(newBranch)
 
   // parse the modified files from the patch summary
-  let files: string[] = []
-  let text: string = patch.split('## Files that have been modified:')[1]
-  if (text == undefined) {
-    return
-  }
-  let lines: string[] = text.split('\n')
-  for (let line of lines) {
-    // delete whitespaces
-    line = line.trimStart().trimEnd()
-    // delete the '*' and '-'
-    line = line.substring(3, line.length - 1)
-    files.push(line)
+  const startKeyword = '## Files that have been modified:'
+  const endKeyword = '## Explanation: why is this fix recommended by Ariadne?'
+
+  const startIndex = patch.indexOf(startKeyword)
+  const endIndex = patch.indexOf(endKeyword, startIndex)
+  const files: string[] = []
+  if (startIndex !== -1 && endIndex !== -1) {
+    const modifiedFilesText = patch.substring(startIndex + startKeyword.length, endIndex)
+
+    const lines = modifiedFilesText.split('\n')
+    for (const line of lines) {
+      const cleanedLine = line.trim().substring(3, line.length - 1)
+      if (cleanedLine) {
+        files.push(cleanedLine)
+      }
+    }
   }
   // add modified files to branch
   for (const file of files) {

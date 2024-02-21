@@ -52,6 +52,30 @@ async function runAnalysis() {
   appendFileSync(getRequiredEnvVariable('GITHUB_ENV'), `LACEWORK_TOOLS=${tools.join(',')}\n`)
   const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
+  if (tools.includes('sast')) {
+    var args = [
+      'sast',
+      'scan',
+      '--save-results',
+      '--sources',
+      getOrDefault('sources', '.'),
+      '-o',
+      sastReport,
+      '--deployment',
+      'ci',
+    ]
+    if (debug()) {
+      args.push('--debug')
+    }
+    var classpath = getInput('classpath')
+    if (classpath) {
+      args.push('--classpath')
+      args.push(classpath)
+    }
+    await callLaceworkCli(...args)
+    await printResults('sast', sastReport)
+    toUpload.push(sastReport)
+  }
   if (tools.includes('sca')) {
     await downloadKeys()
     // command to print both sarif and lwjson formats
@@ -92,30 +116,6 @@ async function runAnalysis() {
       await createPRs(scaLWJSONReport)
     }
     toUpload.push(scaReport)
-  }
-  if (tools.includes('sast')) {
-    var args = [
-      'sast',
-      'scan',
-      '--save-results',
-      '--sources',
-      getOrDefault('sources', '.'),
-      '-o',
-      sastReport,
-      '--deployment',
-      'ci',
-    ]
-    if (debug()) {
-      args.push('--debug')
-    }
-    var classpath = getInput('classpath')
-    if (classpath) {
-      args.push('--classpath')
-      args.push(classpath)
-    }
-    await callLaceworkCli(...args)
-    await printResults('sast', sastReport)
-    toUpload.push(sastReport)
   }
   const uploadStart = Date.now()
   await uploadArtifact('results-' + target, ...toUpload)

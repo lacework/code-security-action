@@ -48,10 +48,7 @@ jobs:
         uses: lacework/code-security-action@v1
         with:
           target: ${{ matrix.target }}
-          tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca and sast.
-          # If using the SAST tool, uncomment the line below and point it to the generated classes directory
-          # or built JAR for your project
-          # classes: target
+          tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca
   display-results:
     runs-on: ubuntu-20.04
     name: Display results
@@ -92,10 +89,7 @@ jobs:
         uses: lacework/code-security-action@v1
         with:
           target: push
-          tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca and sast.
-          # If using the SAST tool, uncomment the line below and point it to the generated classes directory
-          # or built JAR for your project
-          # classes: target
+          tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca
 ```
 
 ## License

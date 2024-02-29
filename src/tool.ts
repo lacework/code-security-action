@@ -98,7 +98,7 @@ export async function prForFixSuggestion(
 
   // parse the modified files from the patch summary
   const startKeyword = '## Files that have been modified:'
-  const endKeyword = '## Explanation: why is this fix recommended by Ariadne?'
+  const endKeyword = '## Explanation: why is this SmartFix recommended?'
 
   const startIndex = patch.indexOf(startKeyword)
   const endIndex = patch.indexOf(endKeyword, startIndex)

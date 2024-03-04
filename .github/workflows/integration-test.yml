@@ -37,7 +37,6 @@ jobs:
       - name: Build sample repo
         run: |
           mvn --quiet package
-          dotnet publish --output target/
       - name: Run action
         id: run-action
         uses: ./../action

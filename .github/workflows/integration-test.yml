@@ -34,16 +34,12 @@ jobs:
           mkdir ../action
           mv * ../action
           mv ../action/sample-repo/* .
-      - name: Build sample repo
-        run: |
-          mvn --quiet package
       - name: Run action
         id: run-action
         uses: ./../action
         with:
           target: push
           tools: sca,sast
-          classpath: target/test-project-0.1.0.jar
           sources: ${{ github.workspace }}
           debug: true
       - name: Check run succeeded

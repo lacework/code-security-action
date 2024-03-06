@@ -6,6 +6,7 @@ inputs:
     description: 'Specify the Java classpath'
     required: false
     default: ''
+    deprecationMessage: 'This option is not used anymore'
   sources:
     description: 'Sources directory to analyze'
     required: false

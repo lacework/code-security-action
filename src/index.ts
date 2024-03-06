@@ -52,25 +52,27 @@ async function runAnalysis() {
   appendFileSync(getRequiredEnvVariable('GITHUB_ENV'), `LACEWORK_TOOLS=${tools.join(',')}\n`)
   const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
-  if (tools.includes('sast')) {
+  if (tools.includes('sast') && !tools.includes('sca')) {
     var args = [
-      'sast',
+      'sca',
       'scan',
+      '.',
       '--save-results',
-      '--sources',
-      getOrDefault('sources', '.'),
       '-o',
-      sastReport,
+      scaDir,
+      '--formats',
+      'sarif,lw-json',
       '--deployment',
       'ci',
+      '--fast',
+      '--keyring',
+      trustedKeys,
+      '--no-eval',
+      '--no-license',
+      '--no-scr',
     ]
     if (debug()) {
       args.push('--debug')
-    }
-    var classpath = getInput('classpath')
-    if (classpath) {
-      args.push('--classpath')
-      args.push(classpath)
     }
     await callLaceworkCli(...args)
     await printResults('sast', sastReport)
@@ -105,6 +107,9 @@ async function runAnalysis() {
     }
     if (dynamic()) {
       args.push('--dynamic')
+    }
+    if (tools.includes('sast')) {
+      args.push('--fast')
     }
     await callLaceworkCli(...args)
     // make a copy of the sarif file

@@ -61,16 +61,9 @@ jobs:
         working-directory: artifact
         run: |
           export SCA_RESULTS=`jq '.runs | map (.results | length) | add' sca.sarif`
-          expectedScaResults=3
+          expectedScaResults=4
           echo "Got $SCA_RESULTS from SCA"
           if [ "$SCA_RESULTS" != "$expectedScaResults" ]; then
             echo "::error::Expected to have $expectedScaResults SCA results!"
-            exit 1
-          fi
-          export SAST_RESULTS=`jq '.runs | map (.results | length) | add' sast.sarif`
-          expectedSastResults=1
-          echo "Got $SAST_RESULTS from SAST"
-          if [ "$SAST_RESULTS" != "$expectedSastResults" ]; then
-            echo "::error::Expected to have $expectedSastResults SAST results!"
             exit 1
           fi

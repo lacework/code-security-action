@@ -24,7 +24,9 @@ export function getActionRef(): string {
 }
 
 export function autofix() {
-  return getBooleanInput('autofix')
+  // autofix does fix all vulnerabilities, regardless of whether they are newly introduced or no
+  // for this reason, we skip if we are scanning the old branch
+  return getBooleanInput('autofix') && getInput('target') != 'old'
 }
 
 export function dynamic() {

@@ -24,7 +24,6 @@ import {
 import { downloadKeys, trustedKeys } from './keys'
 
 const scaSarifReport = 'scaReport/output.sarif'
-const sastReport = 'sast.sarif'
 const scaReport = 'sca.sarif'
 const scaLWJSONReport = 'scaReport/output-lw.json'
 const scaDir = 'scaReport'
@@ -52,32 +51,6 @@ async function runAnalysis() {
   appendFileSync(getRequiredEnvVariable('GITHUB_ENV'), `LACEWORK_TOOLS=${tools.join(',')}\n`)
   const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
-  if (tools.includes('sast') && !tools.includes('sca')) {
-    var args = [
-      'sca',
-      'scan',
-      '.',
-      '--save-results',
-      '-o',
-      scaDir,
-      '--formats',
-      'sarif,lw-json',
-      '--deployment',
-      'ci',
-      '--fast',
-      '--keyring',
-      trustedKeys,
-      '--no-eval',
-      '--no-license',
-      '--no-scr',
-    ]
-    if (debug()) {
-      args.push('--debug')
-    }
-    await callLaceworkCli(...args)
-    await printResults('sast', sastReport)
-    toUpload.push(sastReport)
-  }
   if (tools.includes('sca')) {
     await downloadKeys()
     // command to print both sarif and lwjson formats
@@ -143,13 +116,6 @@ async function displayResults() {
       'sca',
       `results-old/${scaReport}`,
       `results-new/${scaReport}`
-    )
-  }
-  if (existsSync(`results-old/${sastReport}`) && existsSync(`results-new/${sastReport}`)) {
-    issuesByTool['sast'] = await compareResults(
-      'sast',
-      `results-old/${sastReport}`,
-      `results-new/${sastReport}`
     )
   }
   const commentStart = Date.now()

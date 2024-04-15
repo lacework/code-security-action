@@ -39,7 +39,6 @@ jobs:
         uses: ./../action
         with:
           target: push
-          tools: sca,sast
           sources: ${{ github.workspace }}
           debug: true
       - name: Check run succeeded

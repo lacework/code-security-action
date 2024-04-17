@@ -32,9 +32,7 @@ async function main() {
     telemetryCollector.addField('repository', getRequiredEnvVariable('GITHUB_REPOSITORY'))
     telemetryCollector.addField('duration.total', getMsSinceStart())
     telemetryCollector.addField('error', 'Unknown catastrophic error')
-    if (getOptionalEnvVariable('LACEWORK_TOOLS', '') !== '') {
-      telemetryCollector.addField('tools', getRequiredEnvVariable('LACEWORK_TOOLS'))
-    }
+    telemetryCollector.addField('tools', 'sca')
     await telemetryCollector.report()
   } else {
     info('Telemetry has been reported previously')

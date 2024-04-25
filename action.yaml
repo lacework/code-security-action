@@ -92,6 +92,11 @@ runs:
       with:
         path: ~/.config/lacework/components
         key: lacework-${{ steps.init.outputs.cache-key }}
+    - name: Sets LW_LOG var for debug
+      shell: bash
+      if: ${{ inputs.debug == 'true' }}
+      run: |
+          echo "LW_LOG=debug" >> $GITHUB_ENV
     - if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
@@ -103,6 +108,8 @@ runs:
         echo "::group::Printing Lacework CLI information"
         lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" version
         echo "::endgroup::"
+      env:
+        CDK_DOWNLOAD_TIMEOUT_MINUTES: 2
     - if: steps.cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v3
       with:

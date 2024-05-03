@@ -2,11 +2,6 @@ name: 'lacework-code-security'
 description: "Scan code with Lacework's Code Security offering"
 author: 'Lacework'
 inputs:
-  classpath:
-    description: 'Specify the Java classpath'
-    required: false
-    default: ''
-    deprecationMessage: 'This option is not used anymore'
   sources:
     description: 'Sources directory to analyze'
     required: false
@@ -25,19 +20,14 @@ inputs:
     description: 'A block of Markdown that will be appended to any PR comments posted'
     required: false
   tools:
-    description: 'Comma separated list of tools to run'
     required: false
-    default: 'sca,sast'
+    deprecationMessage: 'This option is not used anymore'
   eval-indirect-dependencies:
     description: 'Show vulnerabilities found in transitive dependencies'
     required: false
     default: false
   autofix:
     description: 'Set to true to enable automated pull-requests for fix suggestions'
-    required: false
-    default: false
-  dynamic:
-    description: 'Set to true to integrate SCA results with dynamic data, such as package activity'
     required: false
     default: false
 outputs:
@@ -71,7 +61,6 @@ runs:
       shell: bash
       env:
         LACEWORK_ACTION_REF: '${{ github.action_ref }}'
-        TOOLS: '${{ inputs.tools }}'
       run: |
         LACEWORK_CONTEXT_ID=`echo $RANDOM | md5sum | head -c 32`
         echo "Lacework context ID: $LACEWORK_CONTEXT_ID"
@@ -81,10 +70,8 @@ runs:
         curl https://raw.githubusercontent.com/lacework/go-sdk/main/cli/install.sh | bash
         KEY="$(date +'%Y-%m-%d')"
         KEY="$KEY-$RUNNER_OS-$RUNNER_ARCH"
-        if [[ $TOOLS == *"sca"* ]]; then
-          KEY="$KEY-sca-$SCA_VERSION"
-          echo "sca-version=$SCA_VERSION" >> $GITHUB_OUTPUT
-        fi
+        KEY="$KEY-sca-$SCA_VERSION"
+        echo "sca-version=$SCA_VERSION" >> $GITHUB_OUTPUT
         HASH="$(echo $KEY | md5sum | head -c 8)"
         echo "cache-key=$HASH" >> $GITHUB_OUTPUT
     - id: cache
@@ -129,7 +116,6 @@ runs:
     - id: run-analysis
       uses: './../lacework-code-security'
       with:
-        classpath: '${{ inputs.classpath }}'
         sources: '${{ inputs.sources }}'
         target: '${{ inputs.target }}'
         debug: '${{ inputs.debug }}'
@@ -138,4 +124,3 @@ runs:
         tools: '${{ inputs.tools }}'
         eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'
         autofix: '${{ inputs.autofix }}'
-        dynamic: '${{ inputs.dynamic }}'

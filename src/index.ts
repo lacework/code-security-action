@@ -9,7 +9,6 @@ import {
 import { compareResults, createPRs, printResults } from './tool'
 import {
   autofix,
-  dynamic,
   callCommand,
   callLaceworkCli,
   debug,
@@ -42,59 +41,47 @@ async function runAnalysis() {
   }
 
   info('Analyzing ' + target)
-  const tools = (getInput('tools') || 'sca')
-    .toLowerCase()
-    .split(',')
-    .map((x) => x.trim())
-    .sort()
-  telemetryCollector.addField('tools', tools.join(','))
-  appendFileSync(getRequiredEnvVariable('GITHUB_ENV'), `LACEWORK_TOOLS=${tools.join(',')}\n`)
+  telemetryCollector.addField('tools', 'sca')
   const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
-  if (tools.includes('sca')) {
-    await downloadKeys()
-    // command to print both sarif and lwjson formats
-    var args = [
-      'sca',
-      'scan',
-      '.',
-      '--save-results',
-      '-o',
-      scaDir,
-      '--formats',
-      'sarif,lw-json',
-      '--deployment',
-      'ci',
-      '--keyring',
-      trustedKeys,
-      '--secret',
-    ]
-    if (indirectDeps.toLowerCase() === 'false') {
-      args.push('--eval-direct-only')
-    }
-    if (debug()) {
-      args.push('--debug')
-    }
-    if (autofix()) {
-      args.push('--fix-suggestions')
-    }
-    if (dynamic()) {
-      args.push('--dynamic')
-    }
-    if (tools.includes('sast')) {
-      args.push('--fast')
-    }
-    await callLaceworkCli(...args)
-    // make a copy of the sarif file
-    args = [scaSarifReport, scaReport]
-    await callCommand('cp', ...args)
 
-    await printResults('sca', scaReport)
-    if (autofix()) {
-      await createPRs(scaLWJSONReport)
-    }
-    toUpload.push(scaReport)
+  await downloadKeys()
+  // command to print both sarif and lwjson formats
+  var args = [
+    'sca',
+    'scan',
+    '.',
+    '--save-results',
+    '-o',
+    scaDir,
+    '--formats',
+    'sarif,lw-json',
+    '--deployment',
+    'ci',
+    '--keyring',
+    trustedKeys,
+    '--secret',
+  ]
+  if (indirectDeps.toLowerCase() === 'false') {
+    args.push('--eval-direct-only')
   }
+  if (debug()) {
+    args.push('--debug')
+  }
+  if (autofix()) {
+    args.push('--fix-suggestions')
+  }
+  await callLaceworkCli(...args)
+  // make a copy of the sarif file
+  args = [scaSarifReport, scaReport]
+  await callCommand('cp', ...args)
+
+  await printResults('sca', scaReport)
+  if (autofix()) {
+    await createPRs(scaLWJSONReport)
+  }
+  toUpload.push(scaReport)
+
   const uploadStart = Date.now()
   await uploadArtifact('results-' + target, ...toUpload)
   telemetryCollector.addField('duration.upload-artifacts', (Date.now() - uploadStart).toString())

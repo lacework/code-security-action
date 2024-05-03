@@ -29,10 +29,6 @@ export function autofix() {
   return getBooleanInput('autofix') && getInput('target') != 'old'
 }
 
-export function dynamic() {
-  return getBooleanInput('dynamic')
-}
-
 export function getRunUrl(): string {
   let result = getRequiredEnvVariable('GITHUB_SERVER_URL')
   result += '/'

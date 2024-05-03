@@ -48,7 +48,6 @@ jobs:
         uses: lacework/code-security-action@v1
         with:
           target: ${{ matrix.target }}
-          tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca
   display-results:
     runs-on: ubuntu-20.04
     name: Display results
@@ -59,7 +58,6 @@ jobs:
         id: code-analysis
         uses: lacework/code-security-action@v1
         with:
-          tools: sca # Should be the same list of tools as above.
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
@@ -89,7 +87,6 @@ jobs:
         uses: lacework/code-security-action@v1
         with:
           target: push
-          tools: sca # Comma-separated list of tool(s) to use for scanning. Current options are sca
 ```
 
 ## License

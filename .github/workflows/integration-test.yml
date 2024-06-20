@@ -60,7 +60,7 @@ jobs:
         working-directory: artifact
         run: |
           export SCA_RESULTS=`jq '.runs | map (.results | length) | add' sca.sarif`
-          expectedScaResults=4
+          expectedScaResults=5
           echo "Got $SCA_RESULTS from SCA"
           if [ "$SCA_RESULTS" != "$expectedScaResults" ]; then
             echo "::error::Expected to have $expectedScaResults SCA results!"

@@ -12,12 +12,11 @@ Before attempting to run this action, you should add three secrets `LW_ACCOUNT_N
 
 ### On pull requests
 
-To run an analysis on PRs that highlights new alerts, create a file called `.github/workflows/code-analysis-pr.yml` with this content:
+To run an analysis on pull requests that highlights new alerts, create a file called `.github/workflows/lacework-code-security-pr.yml` with this content:
 
 ```yaml
 on:
-  pull_request:
-    branches: [main]
+  - pull_request
 
 permissions:
   contents: read
@@ -63,7 +62,7 @@ jobs:
 
 ### On push
 
-To run an analysis on pushes that logs alerts, create a file called `.github/workflows/code-analysis-push.yml` with this content:
+To run an analysis on pushes that logs alerts, create a file called `.github/workflows/lacework-code-security-push.yml` with this content:
 
 ```yaml
 on:

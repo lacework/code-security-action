@@ -19,9 +19,6 @@ inputs:
   footer:
     description: 'A block of Markdown that will be appended to any PR comments posted'
     required: false
-  tools:
-    required: false
-    deprecationMessage: 'This option is not used anymore'
   eval-indirect-dependencies:
     description: 'Show vulnerabilities found in transitive dependencies'
     required: false
@@ -121,6 +118,5 @@ runs:
         debug: '${{ inputs.debug }}'
         token: '${{ inputs.token || github.token }}'
         footer: '${{ inputs.footer }}'
-        tools: '${{ inputs.tools }}'
         eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'
         autofix: '${{ inputs.autofix }}'

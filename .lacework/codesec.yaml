@@ -1,4 +1,5 @@
 default:
   sca:
-    enable-dynamic: true
-    enable-fast: true
+    scan:
+      enableDynamic: true
+      enableFast: true

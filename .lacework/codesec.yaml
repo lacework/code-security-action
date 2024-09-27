@@ -1,4 +1,0 @@
-default:
-  sca:
-    enable-dynamic: true
-    enable-fast: true

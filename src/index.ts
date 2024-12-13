@@ -3,6 +3,7 @@ import { existsSync, appendFileSync } from 'fs'
 import {
   downloadArtifact,
   postCommentIfInPr,
+  postReviewComment,
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
@@ -18,9 +19,12 @@ import {
   getOrDefault,
   getRequiredEnvVariable,
   getRunUrl,
+  groupVulnerabilitiesByLineAndType,
+  parseVulnerabilities,
   telemetryCollector,
 } from './util'
 import { downloadKeys, trustedKeys } from './keys'
+import { group } from 'console'
 
 const scaSarifReport = 'scaReport/output.sarif'
 const scaReport = 'sca.sarif'
@@ -117,7 +121,20 @@ async function displayResults() {
     if (getInput('footer') !== '') {
       message += '\n\n' + getInput('footer')
     }
-    info(message)
+
+    // Breaking the message into individual vulnerability entries.
+    var entries = parseVulnerabilities(message)
+
+    const groupedVulnerabilities = groupVulnerabilitiesByLineAndType(entries)
+
+    for (const key of Object.keys(groupedVulnerabilities)) {
+      const [filePath, line] = key.split(':')
+      const groupedEntries = groupedVulnerabilities[key]
+      // For each file/line, we will post the batch of vulnerabilities affecting it.
+      info('Posting a review comment for ' + filePath + ' ' + line)
+      await postReviewComment(groupedEntries, filePath, parseInt(line, 10))
+    }
+
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {
       setOutput('posted-comment', commentUrl)

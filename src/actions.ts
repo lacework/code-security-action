@@ -1,5 +1,5 @@
 import { create } from '@actions/artifact'
-import { startGroup, endGroup, getInput } from '@actions/core'
+import { startGroup, endGroup, getInput, info } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
 import { retry } from '@octokit/plugin-retry'
 import { Md5 } from 'ts-md5'
@@ -31,6 +31,29 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
     const escapedMessage = message.replaceAll(/(\s)#([0-9]+\s)/g, '$1#&#8203;$2')
     const messageWithHash = appendHash(escapedMessage, stepHash)
     if (foundComment === undefined) {
+      info('Posting review now to PR')
+      info(messageWithHash)
+      info('Posting this message now to PR')
+      info(messageWithHash)
+      await getPrApi().createReviewComment({
+        ...context.repo,
+        pull_number: context.payload.pull_request.number,
+        body: `
+        ### Suggested Fix
+        
+        \`\`\`suggestion
+        const optimizedResult = optimize(input);
+        \`\`\`
+        `,
+        event: 'REQUEST_CHANGES',
+        commit_id: context.payload.pull_request.head.sha, // Latest commit SHA
+        path: 'vulns.js',
+        position: 1,
+        line: 5,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      })
       return (
         await getIssuesApi().createComment({
           ...context.repo,

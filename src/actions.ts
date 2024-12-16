@@ -31,18 +31,17 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
     const escapedMessage = message.replaceAll(/(\s)#([0-9]+\s)/g, '$1#&#8203;$2')
     const messageWithHash = appendHash(escapedMessage, stepHash)
 
-    info("Retrieving file if existing")
+    info('Retrieving file if existing')
     const files = await getPrApi().listFiles({
       ...context.repo,
       pull_number: context.payload.pull_request.number,
     })
     const file = files.data.find((f) => f.filename === 'vulns.js')
-    var fileT
-    info("Files found in PR")
-    for (fileT in files.data) {
-      info(fileT)
-    }
-    
+    info("Files: ")
+    files.data.forEach(element => {
+      info(element.filename)
+    });
+
     if (file) {
       const diffHunk = file.patch // Get the patch (diff hunk) for this file
       const filename = file.filename // Get the filename
@@ -66,10 +65,11 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
         const optimizedResult = optimize(input);
         \`\`\`
         `,
-        event: 'REQUEST_CHANGES',
+        // event: 'REQUEST_CHANGES',
         commit_id: context.payload.pull_request.head.sha, // Latest commit SHA
         path: 'vulns.js',
-        line: 5,
+        // line: 5,
+        position: 2,
         headers: {
           'X-GitHub-Api-Version': '2022-11-28',
         },

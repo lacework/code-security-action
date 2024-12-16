@@ -36,17 +36,18 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
       ...context.repo,
       pull_number: context.payload.pull_request.number,
     })
-    const file = files.data.find((f) => f.filename === 'vulns.js')
-    info("Files: ")
-    files.data.forEach(element => {
+    const file = files.data.find((f) => f.filename === 'vuln.js')
+    info('Files: ')
+    files.data.forEach((element) => {
       info(element.filename)
-    });
+      info(element.patch ?? 'No patch')
+    })
 
     if (file) {
       const diffHunk = file.patch // Get the patch (diff hunk) for this file
       const filename = file.filename // Get the filename
       // Pass these to the function
-      info(filename)
+      info("Found it: " + filename)
       if (diffHunk) info(diffHunk)
     }
 
@@ -54,7 +55,6 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
       info('Posting review now to PR')
       info(messageWithHash)
       info('Posting this message now to PR')
-      info(messageWithHash)
       await getPrApi().createReviewComment({
         ...context.repo,
         pull_number: context.payload.pull_request.number,
@@ -67,7 +67,7 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
         `,
         // event: 'REQUEST_CHANGES',
         commit_id: context.payload.pull_request.head.sha, // Latest commit SHA
-        path: 'vulns.js',
+        path: 'vuln.js',
         // line: 5,
         position: 2,
         headers: {

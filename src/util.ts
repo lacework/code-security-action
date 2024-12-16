@@ -91,64 +91,63 @@ export function getOrDefault(name: string, defaultValue: string) {
   return defaultValue
 }
 
-// This interface will be used to store the vulnerabilities found in the comparison report. 
+// This interface will be used to store the vulnerabilities found in the comparison report.
 export interface VulnerabilityEntry {
-  name: string; // Title of the vulnerability (e.g., CVE-2021-1234, cookie-without-domain-js) - SCA/SAST tool specific.
-  url: string; // Where to find the vulnerability inside the codebase. 
-  line: number; // Line number where the vulnerability was - extracted from the URL. 
-  details: string; // Description of the vulnerability.
-  SmartFix?: string; // Specific to SCA - will be used to suggest the right version to upgrade to.
+  name: string // Title of the vulnerability (e.g., CVE-2021-1234, cookie-without-domain-js) - SCA/SAST tool specific.
+  url: string // Where to find the vulnerability inside the codebase.
+  line: number // Line number where the vulnerability was - extracted from the URL.
+  details: string // Description of the vulnerability.
+  SmartFix?: string // Specific to SCA - will be used to suggest the right version to upgrade to.
 }
 
-// This function is used to break the vulnerabilities clumped together into individual vulnerabilities. We aim to store information such as SmartFix version, line number, etc. 
+// This function is used to break the vulnerabilities clumped together into individual vulnerabilities. We aim to store information such as SmartFix version, line number, etc.
 export function parseVulnerabilities(message: string) {
-  const entries: VulnerabilityEntry[] = [];
-  const lines = message.split("\n");
+  const entries: VulnerabilityEntry[] = []
+  const lines = message.split('\n')
 
-  let currentEntry: Partial<VulnerabilityEntry> | null = null;
+  let currentEntry: Partial<VulnerabilityEntry> | null = null
 
   for (const line of lines) {
-    const trimmedLine = line.trim();
-    info('Trimmed line: ' + trimmedLine);
+    const trimmedLine = line.trim()
+    info('Trimmed line: ' + trimmedLine)
 
     // Start of a new vulnerability entry
-    const match = /^\* ([^\s]+) \((.+)\)/.exec(trimmedLine);
+    const match = /^\* ([^\s]+) \((.+)\)/.exec(trimmedLine)
     if (match) {
       // Push the previous entry to the list, if any
       if (currentEntry && currentEntry.name && currentEntry.details) {
-        entries.push(currentEntry as VulnerabilityEntry);
+        entries.push(currentEntry as VulnerabilityEntry)
       }
 
       // Create a new entry
       currentEntry = {
         name: match[1], // Vulnerability name (e.g., CVE-2021-1234)
         details: match[2], // Details in parentheses
-      };
-      continue;
+      }
+      continue
     }
 
     // Parse SmartFix field
     if (currentEntry) {
-      const smartFixMatch = /^SmartFix:\s*(.+)$/.exec(trimmedLine);
+      const smartFixMatch = /^SmartFix:\s*(.+)$/.exec(trimmedLine)
       if (smartFixMatch) {
-        currentEntry.SmartFix = smartFixMatch[1];
-        continue; // Skip to next line after processing SmartFix
+        currentEntry.SmartFix = smartFixMatch[1]
+        continue // Skip to next line after processing SmartFix
       }
     }
 
     // Skip unsupported lines
-    const isSupportedLine = /^\*|SmartFix:/.test(trimmedLine);
+    const isSupportedLine = /^\*|SmartFix:/.test(trimmedLine)
     if (!isSupportedLine) {
-      info('Skipping unsupported line: ' + trimmedLine);
-      continue;
+      info('Skipping unsupported line: ' + trimmedLine)
+      continue
     }
   }
 
   // Push the last entry, if any
   if (currentEntry && currentEntry.name && currentEntry.details) {
-    entries.push(currentEntry as VulnerabilityEntry);
+    entries.push(currentEntry as VulnerabilityEntry)
   }
 
-  return entries;
+  return entries
 }
-

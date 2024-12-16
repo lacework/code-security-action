@@ -106,7 +106,7 @@ async function displayResults() {
       `results-new/${scaReport}`
     )
   }
-  info("What even is this" + issuesByTool['sca'])
+  info('What even is this' + issuesByTool['sca'])
   const commentStart = Date.now()
   if (Object.values(issuesByTool).some((x) => x.length > 0) && getInput('token').length > 0) {
     info('Posting comment to GitHub PR as there were new issues introduced:')
@@ -123,7 +123,10 @@ async function displayResults() {
     info('Here is message: ' + message)
     var entries = parseVulnerabilities(message)
     for (const entry of entries) {
-      info('Here is entry this: ' + entry)
+      info('Here is entry this: ')
+      info('Name: ' + entry.name)
+      info('Details: ' + entry.details)
+      info('SmartFix: ' + (entry.SmartFix ?? "No SmartFix"))
     }
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {

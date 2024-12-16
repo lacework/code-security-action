@@ -37,11 +37,6 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
       pull_number: context.payload.pull_request.number,
     })
     const file = files.data.find((f) => f.filename === 'vuln.js')
-    info('Files: ')
-    files.data.forEach((element) => {
-      info(element.filename)
-      info(element.patch ?? 'No patch')
-    })
 
     if (file) {
       const diffHunk = file.patch // Get the patch (diff hunk) for this file

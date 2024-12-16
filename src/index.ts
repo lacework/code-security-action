@@ -110,14 +110,16 @@ async function displayResults() {
     info('Posting comment to GitHub PR as there were new issues introduced:')
     let message = `Lacework Code Security found potential new issues in this PR.`
     for (const [, issues] of Object.entries(issuesByTool)) {
+      info("Here is an issue: " + issues)
       if (issues.length > 0) {
         message += issues
       }
     }
+    info("What is footer: " + getInput('footer'))
     if (getInput('footer') !== '') {
       message += '\n\n' + getInput('footer')
     }
-    info(message)
+    info("Here is message: " + message)
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {
       setOutput('posted-comment', commentUrl)

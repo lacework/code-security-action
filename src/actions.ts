@@ -54,8 +54,6 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
         ...context.repo,
         pull_number: context.payload.pull_request.number,
         body: `
-        ### Suggested Fix
-        
         \`\`\`
         const optimizedResult = optimize(input);
         \`\`\`

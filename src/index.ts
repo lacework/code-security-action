@@ -18,6 +18,7 @@ import {
   getOrDefault,
   getRequiredEnvVariable,
   getRunUrl,
+  parseVulnerabilities,
   telemetryCollector,
 } from './util'
 import { downloadKeys, trustedKeys } from './keys'
@@ -105,21 +106,25 @@ async function displayResults() {
       `results-new/${scaReport}`
     )
   }
+  info("What even is this" + issuesByTool['sca'])
   const commentStart = Date.now()
   if (Object.values(issuesByTool).some((x) => x.length > 0) && getInput('token').length > 0) {
     info('Posting comment to GitHub PR as there were new issues introduced:')
     let message = `Lacework Code Security found potential new issues in this PR.`
     for (const [, issues] of Object.entries(issuesByTool)) {
-      info("Here is an issue: " + issues)
+      info('Here is an issue: ' + issues)
       if (issues.length > 0) {
         message += issues
       }
     }
-    info("What is footer: " + getInput('footer'))
     if (getInput('footer') !== '') {
       message += '\n\n' + getInput('footer')
     }
-    info("Here is message: " + message)
+    info('Here is message: ' + message)
+    var entries = parseVulnerabilities(message)
+    for (const entry of entries) {
+      info('Here is entry this: ' + entry)
+    }
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {
       setOutput('posted-comment', commentUrl)

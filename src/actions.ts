@@ -47,7 +47,7 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
       const diffHunk = file.patch // Get the patch (diff hunk) for this file
       const filename = file.filename // Get the filename
       // Pass these to the function
-      info("Found it: " + filename)
+      info('Found it: ' + filename)
       if (diffHunk) info(diffHunk)
     }
 
@@ -61,18 +61,18 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
         body: `
         ### Suggested Fix
         
-        \`\`\`suggestion
+        \`\`\`
         const optimizedResult = optimize(input);
         \`\`\`
         `,
-        // event: 'REQUEST_CHANGES',
+        event: 'REQUEST_CHANGES',
         commit_id: context.payload.pull_request.head.sha, // Latest commit SHA
         path: 'vuln.js',
         // line: 5,
         position: 2,
-        headers: {
-          'X-GitHub-Api-Version': '2022-11-28',
-        },
+        // headers: {
+        //   'X-GitHub-Api-Version': '2022-11-28',
+        // },
       })
       return (
         await getIssuesApi().createComment({

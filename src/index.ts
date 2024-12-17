@@ -128,6 +128,7 @@ async function displayResults() {
       info('Details: ' + entry.details)
       info('SmartFix: ' + (entry.SmartFix ?? 'No SmartFix'))
       info('URL: ' + entry.url)
+      info('Line: ' + entry.line)
     }
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {

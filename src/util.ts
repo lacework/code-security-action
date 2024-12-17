@@ -124,10 +124,17 @@ export function parseVulnerabilities(message: string) {
         name: match[1], // Vulnerability name (e.g., CVE-2021-1234)
         details: match[2], // Details in parentheses
       }
-      
+
       if (currentEntry.details) {
         const url = extractUrl(currentEntry.details)
-        if (url) currentEntry.url = url
+        if (url) {
+          currentEntry.url = url
+          // Extract the line number from the URL.
+          const lineNumber = extractLineNumber(url);
+          if (lineNumber) {
+            currentEntry.line = lineNumber;
+          }
+        }
       }
     }
 
@@ -156,14 +163,20 @@ export function parseVulnerabilities(message: string) {
   return entries
 }
 
-// This function identifies the URL from the details of the vulnerability. CVEs and CWEs have the URLs in the second block of paranthesis. For reference, here are examples: 
+// This function identifies the URL from the details of the vulnerability. CVEs and CWEs have the URLs in the second block of paranthesis. For reference, here are examples:
 // CVE-XX-YY ([pom.xml: com.artifact:artifact@1.4.6](https://github.com/lacework-dev/WebGoat/blob/faf0ff128a287a3a341c90e61720313b98d43ea3/pom.xml#L308))
 // no-csrf-protection-in-express-js ([vuln.js: https://github.com/lacework-dev/WebGoat](https://github.com/lacework-dev/WebGoat/blob/faf0ff128a287a3a341c90e61720313b98d43ea3/vuln.js#L2))
 function extractUrl(details: string): string | undefined {
   // Match the URL inside parentheses at the end of the details string
-  const match = /\((https?:\/\/[^\s)]+)\)/.exec(details);
+  const match = /\((https?:\/\/[^\s)]+)\)/.exec(details)
   if (match) {
-    return match[1]; // Extracted URL
+    return match[1] // Extracted URL
   }
-  return undefined; // Fallback if no URL is found
+  return undefined // Fallback if no URL is found
+}
+
+// This function will take in the URL as input and extract the line number from it. The format is https://.....#L<number>
+function extractLineNumber(url: string): number | undefined {
+  const match = /#L(\d+)$/.exec(url); // Match #L<number> at the end of the URL
+  return match ? parseInt(match[1], 10) : undefined;
 }

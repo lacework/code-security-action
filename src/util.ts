@@ -138,9 +138,9 @@ export function parseVulnerabilities(message: string) {
           }
         }
 
-        const filePath = extractFilePath(currentEntry.details);
+        const filePath = extractFilePath(currentEntry.details)
         if (filePath) {
-          currentEntry.filePath = filePath;
+          currentEntry.filePath = filePath
         }
       }
     }
@@ -190,6 +190,6 @@ function extractLineNumber(url: string): number | undefined {
 
 // This function will extract the file path from the details string. The file path is the text before the ':' in square brackets.
 function extractFilePath(details: string): string | undefined {
-  const match = /\[([^\s:]+):/.exec(details); // Match the text before ':' in square brackets
-  return match ? match[1] : undefined;
+  const match = /\[([^\s:]+):/.exec(details) // Match the text before ':' in square brackets
+  return match ? match[1] : undefined
 }

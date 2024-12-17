@@ -3,6 +3,7 @@ import { existsSync, appendFileSync } from 'fs'
 import {
   downloadArtifact,
   postCommentIfInPr,
+  postReviewComment,
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
@@ -106,13 +107,11 @@ async function displayResults() {
       `results-new/${scaReport}`
     )
   }
-  info('What even is this' + issuesByTool['sca'])
   const commentStart = Date.now()
   if (Object.values(issuesByTool).some((x) => x.length > 0) && getInput('token').length > 0) {
     info('Posting comment to GitHub PR as there were new issues introduced:')
     let message = `Lacework Code Security found potential new issues in this PR.`
     for (const [, issues] of Object.entries(issuesByTool)) {
-      info('Here is an issue: ' + issues)
       if (issues.length > 0) {
         message += issues
       }
@@ -121,9 +120,13 @@ async function displayResults() {
       message += '\n\n' + getInput('footer')
     }
     info('Here is message: ' + message)
+
+    // Breaking the message into individual vulnerability entries. 
     var entries = parseVulnerabilities(message)
+
+    // For each entry post a review comment to the PR. 
     for (const entry of entries) {
-      info('Here is entry this: ')
+      info('Here is an entry: ')
       info('Name: ' + entry.name)
       info('Details: ' + entry.details)
       info('SmartFix: ' + (entry.SmartFix ?? 'No SmartFix'))
@@ -131,6 +134,10 @@ async function displayResults() {
       info('URL: ' + entry.url)
       info('Line: ' + entry.line)
       info('FilePath: ' + (entry.filePath ?? 'No FilePath'))
+
+      // Post a review comment to the PR.
+      info('Trying to post review comment for ' + entry.name + " " + entry.details)
+      await postReviewComment(entry)
     }
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {

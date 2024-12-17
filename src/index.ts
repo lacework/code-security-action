@@ -130,6 +130,7 @@ async function displayResults() {
       info('SmartFixVersion: ' + (entry.SmartFixVersion ?? 'No SmartFixVersion'))
       info('URL: ' + entry.url)
       info('Line: ' + entry.line)
+      info('FilePath: ' + (entry.filePath ?? 'No FilePath'))
     }
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {

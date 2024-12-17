@@ -97,7 +97,8 @@ export interface VulnerabilityEntry {
   url: string // Where to find the vulnerability inside the codebase.
   line: number // Line number where the vulnerability was - extracted from the URL.
   details: string // Description of the vulnerability.
-  SmartFix?: string // Specific to SCA - will be used to suggest the right version to upgrade to and contains supporting text. 
+  filePath?: string // Path to the file where the vulnerability was found.
+  SmartFix?: string // Specific to SCA - will be used to suggest the right version to upgrade to and contains supporting text.
   SmartFixVersion?: string // Specific to SCA - will be used to suggest the right version to upgrade to.
 }
 
@@ -136,15 +137,20 @@ export function parseVulnerabilities(message: string) {
             currentEntry.line = lineNumber
           }
         }
+
+        const filePath = extractFilePath(currentEntry.details);
+        if (filePath) {
+          currentEntry.filePath = filePath;
+        }
       }
     }
 
     // Parse SmartFix field
     if (currentEntry) {
-      const smartFixMatch = /^SmartFix:\s*(\d+\.\d+\.\d+)(.*)$/.exec(trimmedLine);
+      const smartFixMatch = /^SmartFix:\s*(\d+\.\d+\.\d+)(.*)$/.exec(trimmedLine)
       if (smartFixMatch) {
-        currentEntry.SmartFix = smartFixMatch[0].trim(); // Full SmartFix text
-        currentEntry.SmartFixVersion = smartFixMatch[1]; // Extracted version
+        currentEntry.SmartFix = smartFixMatch[0].trim() // Full SmartFix text
+        currentEntry.SmartFixVersion = smartFixMatch[1] // Extracted version
       }
     }
 
@@ -180,4 +186,10 @@ function extractUrl(details: string): string | undefined {
 function extractLineNumber(url: string): number | undefined {
   const match = /#L(\d+)$/.exec(url) // Match #L<number> at the end of the URL
   return match ? parseInt(match[1], 10) : undefined
+}
+
+// This function will extract the file path from the details string. The file path is the text before the ':' in square brackets.
+function extractFilePath(details: string): string | undefined {
+  const match = /\[([^\s:]+):/.exec(details); // Match the text before ':' in square brackets
+  return match ? match[1] : undefined;
 }

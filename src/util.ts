@@ -196,6 +196,8 @@ function extractFilePath(details: string): string | undefined {
 
 // This function will calculate the "position" parameter based on the diff hunk and the target line number.
 export function calculatePosition(patch: string, targetLine: number): number | undefined {
+  info("Here is patch: " + patch)
+  info("Here is targetLine: " + targetLine)
   const patchLines = patch.split('\n')
   let position = 0 // Position in the diff
   let currentLine = 0 // Tracks the file's line number

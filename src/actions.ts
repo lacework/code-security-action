@@ -3,7 +3,7 @@ import { startGroup, endGroup, getInput, info } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
 import { retry } from '@octokit/plugin-retry'
 import { Md5 } from 'ts-md5'
-import { VulnerabilityEntry } from './util'
+import { VulnerabilityEntry, calculatePosition } from './util'
 
 export async function uploadArtifact(artifactName: string, ...files: string[]) {
   startGroup('Uploading artifact ' + artifactName)
@@ -151,7 +151,7 @@ async function findExistingComment(stepHash: string): Promise<number | undefined
   return undefined
 }
 
-// Function that looks if a review comment exists already. 
+// Function that looks if a review comment exists already.
 async function findExistingReviewComment(stepHash: string): Promise<any | undefined> {
   const { owner, repo } = context.repo
   const pullNumber = context.payload.pull_request?.number
@@ -165,25 +165,47 @@ async function findExistingReviewComment(stepHash: string): Promise<any | undefi
     pull_number: pullNumber,
   })
 
-  // Find the comment matching the unique stepHash in the body. 
+  // Find the comment matching the unique stepHash in the body.
   return comments.find((comment) => comment.body?.includes(stepHash))
 }
 
-
 // This function will take in a VulnerabilityEntry and create or update a review comment on the PR.
 export async function postReviewComment(entry: VulnerabilityEntry) {
+  if (context.payload.pull_request) {
   // Post a review comment to the PR.
   try {
     // Extract necessary data from context
     const { owner, repo } = context.repo
-    const pullNumber = context.payload.pull_request?.number
-    const commitId = context.payload.pull_request?.head?.sha
+    const pullNumber = context.payload.pull_request.number
+    const commitId = context.payload.pull_request.head.sha
 
     if (!pullNumber || !commitId) {
-      throw new Error("Pull request number or commit SHA is missing from the context.")
+      throw new Error('Pull request number or commit SHA is missing from the context.')
     }
 
     const stepHash = `<!-- Vulnerability: ${entry.name}-${entry.line}-${entry.filePath} -->` // Unique comment identifier
+
+    // Fetch the PR and look for for the diff incorporating the current entry's file. 
+    const { data: files } = await getPrApi().listFiles({
+      owner,
+      repo,
+      pull_number: pullNumber,
+    })
+
+    const file = files.find((f) => f.filename === entry.filePath)
+    if (!file || !file.patch) {
+      throw new Error(`Patch not found for file: ${entry.filePath}`)
+    }
+
+    // Calculate position in the diff
+    const position = calculatePosition(file.patch, entry.line)
+    if (!position) {
+      throw new Error(
+        `Could not determine diff position for line ${entry.line} in file ${entry.filePath}`
+      );
+    }
+
+    info(`Calculated position for ${entry.name} at ${entry.filePath}:${entry.line}: ${position}`)
 
     // Check for an existing comment
     const foundComment = await findExistingReviewComment(stepHash)
@@ -201,7 +223,7 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
       `
 
     if (foundComment) {
-      info("Found existing review comment.")
+      info('Found existing review comment.')
       // Update the existing comment
       await getPrApi().updateReviewComment({
         owner,
@@ -211,7 +233,7 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
       })
       info(`Updated comment for ${entry.name} at ${entry.filePath}:${entry.line}`)
     } else {
-      info("Trying to create new review comment.")
+      info('Trying to create new review comment.')
       // Create a new review comment
       await getPrApi().createReviewComment({
         owner,
@@ -219,15 +241,16 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
         pull_number: pullNumber,
         commit_id: commitId,
         path: entry.filePath,
-        position: entry.line, // Will need position mapping later
+        position: position, // Will need position mapping later
         body: commentBody,
-      });
+      })
       info(`Created comment for ${entry.name} at ${entry.filePath}:${entry.line}`)
     }
   } catch (error) {
     console.error(`Failed to post or update comment for ${entry.name}:`, error)
     throw error
   }
+}
 }
 
 function makeOctokit() {

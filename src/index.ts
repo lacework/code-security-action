@@ -121,10 +121,10 @@ async function displayResults() {
     }
     info('Here is message: ' + message)
 
-    // Breaking the message into individual vulnerability entries. 
+    // Breaking the message into individual vulnerability entries.
     var entries = parseVulnerabilities(message)
 
-    // For each entry post a review comment to the PR. 
+    // For each entry post a review comment to the PR.
     for (const entry of entries) {
       info('Here is an entry: ')
       info('Name: ' + entry.name)
@@ -136,7 +136,7 @@ async function displayResults() {
       info('FilePath: ' + (entry.filePath ?? 'No FilePath'))
 
       // Post a review comment to the PR.
-      info('Trying to post review comment for ' + entry.name + " " + entry.details)
+      info('Trying to post review comment for ' + entry.name + ' ' + entry.details)
       await postReviewComment(entry)
     }
     const commentUrl = await postCommentIfInPr(message)

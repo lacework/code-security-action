@@ -193,3 +193,32 @@ function extractFilePath(details: string): string | undefined {
   const match = /\[([^\s:]+):/.exec(details) // Match the text before ':' in square brackets
   return match ? match[1] : undefined
 }
+
+// This function will calculate the "position" parameter based on the diff hunk and the target line number.
+export function calculatePosition(patch: string, targetLine: number): number | undefined {
+  const patchLines = patch.split("\n");
+  let position = 0; // Position in the diff
+  let currentLine = 0; // Tracks the file's line number
+
+  for (const line of patchLines) {
+    position++;
+
+    if (line.startsWith("@@")) {
+      // Extract the starting line number from the diff hunk header
+      const match = /@@ -\d+,\d+ \+(\d+),(\d+) @@/.exec(line);
+      if (match) {
+        currentLine = parseInt(match[1], 10) - 1; // Start line in the new file
+      }
+    } else if (!line.startsWith("-")) {
+      // Skip lines removed from the old file
+      currentLine++;
+    }
+
+    // Check if we've reached the target line
+    if (currentLine === targetLine) {
+      return position; // Return the position in the diff
+    }
+  }
+
+  return undefined; // Line not found in the patch
+}

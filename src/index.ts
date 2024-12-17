@@ -127,6 +127,7 @@ async function displayResults() {
       info('Name: ' + entry.name)
       info('Details: ' + entry.details)
       info('SmartFix: ' + (entry.SmartFix ?? 'No SmartFix'))
+      info('SmartFixVersion: ' + (entry.SmartFixVersion ?? 'No SmartFixVersion'))
       info('URL: ' + entry.url)
       info('Line: ' + entry.line)
     }

@@ -97,7 +97,8 @@ export interface VulnerabilityEntry {
   url: string // Where to find the vulnerability inside the codebase.
   line: number // Line number where the vulnerability was - extracted from the URL.
   details: string // Description of the vulnerability.
-  SmartFix?: string // Specific to SCA - will be used to suggest the right version to upgrade to.
+  SmartFix?: string // Specific to SCA - will be used to suggest the right version to upgrade to and contains supporting text. 
+  SmartFixVersion?: string // Specific to SCA - will be used to suggest the right version to upgrade to.
 }
 
 // This function is used to break the vulnerabilities clumped together into individual vulnerabilities. We aim to store information such as SmartFix version, line number, etc.
@@ -130,9 +131,9 @@ export function parseVulnerabilities(message: string) {
         if (url) {
           currentEntry.url = url
           // Extract the line number from the URL.
-          const lineNumber = extractLineNumber(url);
+          const lineNumber = extractLineNumber(url)
           if (lineNumber) {
-            currentEntry.line = lineNumber;
+            currentEntry.line = lineNumber
           }
         }
       }
@@ -140,10 +141,10 @@ export function parseVulnerabilities(message: string) {
 
     // Parse SmartFix field
     if (currentEntry) {
-      const smartFixMatch = /^SmartFix:\s*(.+)$/.exec(trimmedLine)
+      const smartFixMatch = /^SmartFix:\s*(\d+\.\d+\.\d+)(.*)$/.exec(trimmedLine);
       if (smartFixMatch) {
-        currentEntry.SmartFix = smartFixMatch[1]
-        continue // Skip to next line after processing SmartFix
+        currentEntry.SmartFix = smartFixMatch[0].trim(); // Full SmartFix text
+        currentEntry.SmartFixVersion = smartFixMatch[1]; // Extracted version
       }
     }
 
@@ -177,6 +178,6 @@ function extractUrl(details: string): string | undefined {
 
 // This function will take in the URL as input and extract the line number from it. The format is https://.....#L<number>
 function extractLineNumber(url: string): number | undefined {
-  const match = /#L(\d+)$/.exec(url); // Match #L<number> at the end of the URL
-  return match ? parseInt(match[1], 10) : undefined;
+  const match = /#L(\d+)$/.exec(url) // Match #L<number> at the end of the URL
+  return match ? parseInt(match[1], 10) : undefined
 }

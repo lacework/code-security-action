@@ -126,7 +126,8 @@ async function displayResults() {
       info('Here is entry this: ')
       info('Name: ' + entry.name)
       info('Details: ' + entry.details)
-      info('SmartFix: ' + (entry.SmartFix ?? "No SmartFix"))
+      info('SmartFix: ' + (entry.SmartFix ?? 'No SmartFix'))
+      info('URL: ' + entry.url)
     }
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {

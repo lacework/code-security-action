@@ -206,8 +206,8 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
       // Calculate position in the diff
       const position = calculatePosition(file.patch, entry.line)
       if (!position) {
-        info("Could not find an appropriate position in the diff. Skipping review comment.")
-        return 
+        info('Could not find an appropriate position in the diff. Skipping review comment.')
+        return
       }
 
       info(`Calculated position for ${entry.name} at ${entry.filePath}:${entry.line}: ${position}`)
@@ -252,7 +252,7 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
         info(`Created comment for ${entry.name} at ${entry.filePath}:${entry.line}`)
       }
     } catch (error) {
-      info(`Failed to post or update comment for ${entry.name}:`, error)
+      info(`Failed to post or update comment for ${entry.name}:` + error)
     }
   }
 }

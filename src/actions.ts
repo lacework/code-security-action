@@ -196,7 +196,6 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
         const diffHunk = file.patch // Get the patch (diff hunk) for this file
         const filename = file.filename // Get the filename
         // Pass these to the function
-        info('Found it: ' + filename)
         if (diffHunk) info(diffHunk)
       }
 
@@ -207,9 +206,8 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
       // Calculate position in the diff
       const position = calculatePosition(file.patch, entry.line)
       if (!position) {
-        throw new Error(
-          `Could not determine diff position for line ${entry.line} in file ${entry.filePath}`
-        )
+        info("Could not find an appropriate position in the diff. Skipping review comment.")
+        return 
       }
 
       info(`Calculated position for ${entry.name} at ${entry.filePath}:${entry.line}: ${position}`)
@@ -254,8 +252,7 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
         info(`Created comment for ${entry.name} at ${entry.filePath}:${entry.line}`)
       }
     } catch (error) {
-      console.error(`Failed to post or update comment for ${entry.name}:`, error)
-      throw error
+      info(`Failed to post or update comment for ${entry.name}:`, error)
     }
   }
 }

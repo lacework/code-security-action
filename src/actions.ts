@@ -172,46 +172,53 @@ async function findExistingReviewComment(stepHash: string): Promise<any | undefi
 // This function will take in a VulnerabilityEntry and create or update a review comment on the PR.
 export async function postReviewComment(entry: VulnerabilityEntry) {
   if (context.payload.pull_request) {
-  // Post a review comment to the PR.
-  try {
-    // Extract necessary data from context
-    const { owner, repo } = context.repo
-    const pullNumber = context.payload.pull_request.number
-    const commitId = context.payload.pull_request.head.sha
+    // Post a review comment to the PR.
+    try {
+      // Extract necessary data from context
+      const { owner, repo } = context.repo
+      const pullNumber = context.payload.pull_request.number
+      const commitId = context.payload.pull_request.head.sha
 
-    if (!pullNumber || !commitId) {
-      throw new Error('Pull request number or commit SHA is missing from the context.')
-    }
+      if (!pullNumber || !commitId) {
+        throw new Error('Pull request number or commit SHA is missing from the context.')
+      }
 
-    const stepHash = `<!-- Vulnerability: ${entry.name}-${entry.line}-${entry.filePath} -->` // Unique comment identifier
+      const stepHash = `<!-- Vulnerability: ${entry.name}-${entry.line}-${entry.filePath} -->` // Unique comment identifier
 
-    // Fetch the PR and look for for the diff incorporating the current entry's file. 
-    const { data: files } = await getPrApi().listFiles({
-      owner,
-      repo,
-      pull_number: pullNumber,
-    })
+      // Fetch the PR and look for for the diff incorporating the current entry's file.
+      const files = await getPrApi().listFiles({
+        ...context.repo,
+        pull_number: context.payload.pull_request.number,
+      })
 
-    const file = files.find((f) => f.filename === entry.filePath)
-    if (!file || !file.patch) {
-      throw new Error(`Patch not found for file: ${entry.filePath}`)
-    }
+      const file = files.data.find((f) => f.filename === entry.filePath)
+      if (file) {
+        const diffHunk = file.patch // Get the patch (diff hunk) for this file
+        const filename = file.filename // Get the filename
+        // Pass these to the function
+        info('Found it: ' + filename)
+        if (diffHunk) info(diffHunk)
+      }
 
-    // Calculate position in the diff
-    const position = calculatePosition(file.patch, entry.line)
-    if (!position) {
-      throw new Error(
-        `Could not determine diff position for line ${entry.line} in file ${entry.filePath}`
-      );
-    }
+      if (!file || !file.patch) {
+        throw new Error(`Patch not found for file: ${entry.filePath}`)
+      }
 
-    info(`Calculated position for ${entry.name} at ${entry.filePath}:${entry.line}: ${position}`)
+      // Calculate position in the diff
+      const position = calculatePosition(file.patch, entry.line)
+      if (!position) {
+        throw new Error(
+          `Could not determine diff position for line ${entry.line} in file ${entry.filePath}`
+        )
+      }
 
-    // Check for an existing comment
-    const foundComment = await findExistingReviewComment(stepHash)
+      info(`Calculated position for ${entry.name} at ${entry.filePath}:${entry.line}: ${position}`)
 
-    // Comment body
-    const commentBody = `
+      // Check for an existing comment
+      const foundComment = await findExistingReviewComment(stepHash)
+
+      // Comment body
+      const commentBody = `
       ${stepHash}
       \`\`\`suggestion
       // Suggested Fix
@@ -222,35 +229,35 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
       \`\`\`
       `
 
-    if (foundComment) {
-      info('Found existing review comment.')
-      // Update the existing comment
-      await getPrApi().updateReviewComment({
-        owner,
-        repo,
-        comment_id: foundComment.id,
-        body: commentBody,
-      })
-      info(`Updated comment for ${entry.name} at ${entry.filePath}:${entry.line}`)
-    } else {
-      info('Trying to create new review comment.')
-      // Create a new review comment
-      await getPrApi().createReviewComment({
-        owner,
-        repo,
-        pull_number: pullNumber,
-        commit_id: commitId,
-        path: entry.filePath,
-        position: position, // Will need position mapping later
-        body: commentBody,
-      })
-      info(`Created comment for ${entry.name} at ${entry.filePath}:${entry.line}`)
+      if (foundComment) {
+        info('Found existing review comment.')
+        // Update the existing comment
+        await getPrApi().updateReviewComment({
+          owner,
+          repo,
+          comment_id: foundComment.id,
+          body: commentBody,
+        })
+        info(`Updated comment for ${entry.name} at ${entry.filePath}:${entry.line}`)
+      } else {
+        info('Trying to create new review comment.')
+        // Create a new review comment
+        await getPrApi().createReviewComment({
+          owner,
+          repo,
+          pull_number: pullNumber,
+          commit_id: commitId,
+          path: entry.filePath,
+          position: position, // Will need position mapping later
+          body: commentBody,
+        })
+        info(`Created comment for ${entry.name} at ${entry.filePath}:${entry.line}`)
+      }
+    } catch (error) {
+      console.error(`Failed to post or update comment for ${entry.name}:`, error)
+      throw error
     }
-  } catch (error) {
-    console.error(`Failed to post or update comment for ${entry.name}:`, error)
-    throw error
   }
-}
 }
 
 function makeOctokit() {

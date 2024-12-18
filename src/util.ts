@@ -258,9 +258,10 @@ export function groupVulnerabilitiesByLineAndType(vulnerabilities: Vulnerability
 export function generateCombinedReviewBody(
   groupedVulnerabilities: { CVE: VulnerabilityEntry[]; CWE: VulnerabilityEntry[] },
   filePath: string,
-  line: number
+  line: number,
+  stepHash: string
 ): string {
-  let body = ``
+  let body = `${stepHash}\n\n`
 
   if (groupedVulnerabilities.CVE.length > 0) {
     body += `\n#### CVEs:\n`

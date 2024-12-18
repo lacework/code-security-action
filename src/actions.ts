@@ -220,7 +220,7 @@ export async function postReviewComment(
       const foundComment = await findExistingReviewComment(stepHash)
 
       // Comment body
-      const commentBody = generateCombinedReviewBody(groupedVulnerabilities, filePath, line)
+      const commentBody = generateCombinedReviewBody(groupedVulnerabilities, filePath, line, stepHash)
 
       if (foundComment) {
         info('Found existing review comment.')

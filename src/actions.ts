@@ -217,15 +217,18 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
 
       // Comment body
       const commentBody = `
-      ${stepHash}
-      \`\`\`suggestion
-      // Suggested Fix
-      // Vulnerability: ${entry.name}
-      // Line: ${entry.line}
-      // Details: ${entry.details}
-      const optimizedResult = optimize(input);
-      \`\`\`
-      `
+        ${stepHash}
+        ### Vulnerability: ${entry.name}
+
+        **Details**: ${entry.details}
+
+        \`\`\`suggestion
+        // Suggested Fix
+        const optimizedResult = optimize(input);
+        \`\`\`
+
+        _Line: ${entry.line}_
+        `;
 
       if (foundComment) {
         info('Found existing review comment.')

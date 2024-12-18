@@ -128,12 +128,12 @@ async function displayResults() {
 
     const groupedVulnerabilities = groupVulnerabilitiesByLineAndType(entries)
 
-    for(const key of Object.keys(groupedVulnerabilities)) {
+    for (const key of Object.keys(groupedVulnerabilities)) {
       const [filePath, line] = key.split(':')
       const groupedEntries = groupedVulnerabilities[key]
-      // For each file/line, we will post the batch of vulnerabilities affecting it. 
+      // For each file/line, we will post the batch of vulnerabilities affecting it.
       info('Trying to post review comment for ' + filePath + ' ' + line)
-      await postReviewComment(groupedEntries, filePath, parseInt(line, 10)) 
+      await postReviewComment(groupedEntries, filePath, parseInt(line, 10))
     }
 
     // For each entry post a review comment to the PR.

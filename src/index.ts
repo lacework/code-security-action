@@ -19,10 +19,12 @@ import {
   getOrDefault,
   getRequiredEnvVariable,
   getRunUrl,
+  groupVulnerabilitiesByLineAndType,
   parseVulnerabilities,
   telemetryCollector,
 } from './util'
 import { downloadKeys, trustedKeys } from './keys'
+import { group } from 'console'
 
 const scaSarifReport = 'scaReport/output.sarif'
 const scaReport = 'sca.sarif'
@@ -124,10 +126,21 @@ async function displayResults() {
     // Breaking the message into individual vulnerability entries.
     var entries = parseVulnerabilities(message)
 
+    const groupedVulnerabilities = groupVulnerabilitiesByLineAndType(entries)
+
+    for(const key of Object.keys(groupedVulnerabilities)) {
+      const [filePath, line] = key.split(':')
+      const groupedEntries = groupedVulnerabilities[key]
+      // For each file/line, we will post the batch of vulnerabilities affecting it. 
+      info('Trying to post review comment for ' + filePath + ' ' + line)
+      await postReviewComment(groupedEntries, filePath, parseInt(line, 10)) 
+    }
+
     // For each entry post a review comment to the PR.
     for (const entry of entries) {
       info('Here is an entry: ')
       info('Name: ' + entry.name)
+      info('Type: ' + entry.type)
       info('Details: ' + entry.details)
       info('SmartFix: ' + (entry.SmartFix ?? 'No SmartFix'))
       info('SmartFixVersion: ' + (entry.SmartFixVersion ?? 'No SmartFixVersion'))
@@ -136,8 +149,8 @@ async function displayResults() {
       info('FilePath: ' + (entry.filePath ?? 'No FilePath'))
 
       // Post a review comment to the PR.
-      info('Trying to post review comment for ' + entry.name + ' ' + entry.details)
-      await postReviewComment(entry)
+      // info('Trying to post review comment for ' + entry.name + ' ' + entry.details)
+      // await postReviewComment(entry)
     }
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {

@@ -3,7 +3,7 @@ import { startGroup, endGroup, getInput, info } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
 import { retry } from '@octokit/plugin-retry'
 import { Md5 } from 'ts-md5'
-import { VulnerabilityEntry, calculatePosition } from './util'
+import { VulnerabilityEntry, calculatePosition, generateCombinedReviewBody } from './util'
 
 export async function uploadArtifact(artifactName: string, ...files: string[]) {
   startGroup('Uploading artifact ' + artifactName)
@@ -170,7 +170,11 @@ async function findExistingReviewComment(stepHash: string): Promise<any | undefi
 }
 
 // This function will take in a VulnerabilityEntry and create or update a review comment on the PR.
-export async function postReviewComment(entry: VulnerabilityEntry) {
+export async function postReviewComment(
+  groupedVulnerabilities: { CVE: VulnerabilityEntry[]; CWE: VulnerabilityEntry[] },
+  filePath: string,
+  line: number
+) {
   if (context.payload.pull_request) {
     // Post a review comment to the PR.
     try {
@@ -183,7 +187,7 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
         throw new Error('Pull request number or commit SHA is missing from the context.')
       }
 
-      const stepHash = `<!-- Vulnerability: ${entry.name}-${entry.line}-${entry.filePath} -->` // Unique comment identifier
+      const stepHash = `<!-- Vulnerabilities: ${filePath}-${line} -->` // Unique comment identifier
 
       // Fetch the PR and look for for the diff incorporating the current entry's file.
       const files = await getPrApi().listFiles({
@@ -191,7 +195,7 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
         pull_number: context.payload.pull_request.number,
       })
 
-      const file = files.data.find((f) => f.filename === entry.filePath)
+      const file = files.data.find((f) => f.filename === filePath)
       if (file) {
         const diffHunk = file.patch // Get the patch (diff hunk) for this file
         const filename = file.filename // Get the filename
@@ -200,35 +204,24 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
       }
 
       if (!file || !file.patch) {
-        throw new Error(`Patch not found for file: ${entry.filePath}`)
+        throw new Error(`Patch not found for file: ${filePath}`)
       }
 
       // Calculate position in the diff
-      const position = calculatePosition(file.patch, entry.line)
+      const position = calculatePosition(file.patch, line)
       if (!position) {
         info('Could not find an appropriate position in the diff. Skipping review comment.')
         return
       }
 
-      info(`Calculated position for ${entry.name} at ${entry.filePath}:${entry.line}: ${position}`)
+      info(`Calculated position for ${filePath}:${line}: ${position}`)
 
       // Check for an existing comment
       const foundComment = await findExistingReviewComment(stepHash)
 
       // Comment body
-      const commentBody = `
-        ${stepHash}
-        ### Vulnerability: ${entry.name}
+      const commentBody = generateCombinedReviewBody(groupedVulnerabilities, filePath, line);
 
-        **Details**: ${entry.details}
-
-        \`\`\`suggestion
-        // Suggested Fix
-        const optimizedResult = optimize(input);
-        \`\`\`
-
-        _Line: ${entry.line}_
-        `;
 
       if (foundComment) {
         info('Found existing review comment.')
@@ -239,7 +232,7 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
           comment_id: foundComment.id,
           body: commentBody,
         })
-        info(`Updated comment for ${entry.name} at ${entry.filePath}:${entry.line}`)
+        info(`Updated comment for ${filePath}:${line}`)
       } else {
         info('Trying to create new review comment.')
         // Create a new review comment
@@ -248,14 +241,14 @@ export async function postReviewComment(entry: VulnerabilityEntry) {
           repo,
           pull_number: pullNumber,
           commit_id: commitId,
-          path: entry.filePath,
+          path: filePath,
           position: position, // Will need position mapping later
           body: commentBody,
         })
-        info(`Created comment for ${entry.name} at ${entry.filePath}:${entry.line}`)
+        info(`Created comment for ${filePath}:${line}`)
       }
     } catch (error) {
-      info(`Failed to post or update comment for ${entry.name}:` + error)
+      info(`Failed to post or update comment for ${filePath}:${line}:` + error)
     }
   }
 }

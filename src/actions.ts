@@ -30,44 +30,9 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
     const stepHash = getStepHash()
     const foundComment = await findExistingComment(stepHash)
     const escapedMessage = message.replaceAll(/(\s)#([0-9]+\s)/g, '$1#&#8203;$2')
-    const messageWithHash = appendHash(escapedMessage, stepHash)
-
-    info('Retrieving file if existing')
-    const files = await getPrApi().listFiles({
-      ...context.repo,
-      pull_number: context.payload.pull_request.number,
-    })
-    const file = files.data.find((f) => f.filename === 'vuln.js')
-
-    if (file) {
-      const diffHunk = file.patch // Get the patch (diff hunk) for this file
-      const filename = file.filename // Get the filename
-      // Pass these to the function
-      info('Found it: ' + filename)
-      if (diffHunk) info(diffHunk)
-    }
+    const messageWithHash = appendHash(escapedMessage, stepHash)  
 
     if (foundComment === undefined) {
-      info('Posting review now to PR')
-      info(messageWithHash)
-      info('Posting this message now to PR')
-      await getPrApi().createReviewComment({
-        ...context.repo,
-        pull_number: context.payload.pull_request.number,
-        body: `
-        \`\`\`
-        const optimizedResult = optimize(input);
-        \`\`\`
-        `,
-        event: 'REQUEST_CHANGES',
-        commit_id: context.payload.pull_request.head.sha, // Latest commit SHA
-        path: 'vuln.js',
-        // line: 5,
-        position: 2,
-        // headers: {
-        //   'X-GitHub-Api-Version': '2022-11-28',
-        // },
-      })
       return (
         await getIssuesApi().createComment({
           ...context.repo,
@@ -220,7 +185,12 @@ export async function postReviewComment(
       const foundComment = await findExistingReviewComment(stepHash)
 
       // Comment body
-      const commentBody = generateCombinedReviewBody(groupedVulnerabilities, filePath, line, stepHash)
+      const commentBody = generateCombinedReviewBody(
+        groupedVulnerabilities,
+        filePath,
+        line,
+        stepHash
+      )
 
       if (foundComment) {
         info('Found existing review comment.')

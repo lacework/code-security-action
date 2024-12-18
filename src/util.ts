@@ -94,7 +94,7 @@ export function getOrDefault(name: string, defaultValue: string) {
 // This interface will be used to store the vulnerabilities found in the comparison report.
 export interface VulnerabilityEntry {
   name: string // Title of the vulnerability (e.g., CVE-2021-1234, cookie-without-domain-js) - SCA/SAST tool specific.
-  type: "CVE" | "CWE" // Type of the vulnerability. 
+  type: 'CVE' | 'CWE' // Type of the vulnerability.
   url: string // Where to find the vulnerability inside the codebase.
   line: number // Line number where the vulnerability was - extracted from the URL.
   details: string // Description of the vulnerability.
@@ -128,9 +128,9 @@ export function parseVulnerabilities(message: string) {
         details: match[2], // Details in parentheses
       }
 
-      // Determine the type of vulnerability based on naming. 
+      // Determine the type of vulnerability based on naming.
       if (currentEntry.name) {
-        if(currentEntry.name.startsWith('CVE')) {
+        if (currentEntry.name.startsWith('CVE')) {
           currentEntry.type = 'CVE'
         } else {
           currentEntry.type = 'CWE'
@@ -237,49 +237,46 @@ export function calculatePosition(patch: string, targetLine: number): number | u
 
 // This function will group the vulnerabilities by file path and line number information, as well as type (CVE or CWE).
 export function groupVulnerabilitiesByLineAndType(vulnerabilities: VulnerabilityEntry[]) {
-  // The key will be a combination of the file path and line number. This will be used later in identifying PR review comments. 
-  const groupedVulnerabilities: Record<string, { CVE: VulnerabilityEntry[]; CWE: VulnerabilityEntry[] }> = {};
+  // The key will be a combination of the file path and line number. This will be used later in identifying PR review comments.
+  const groupedVulnerabilities: Record<
+    string,
+    { CVE: VulnerabilityEntry[]; CWE: VulnerabilityEntry[] }
+  > = {}
 
   for (const entry of vulnerabilities) {
-    const key = `${entry.filePath}:${entry.line}`;
+    const key = `${entry.filePath}:${entry.line}`
     if (!groupedVulnerabilities[key]) {
-      groupedVulnerabilities[key] = { CVE: [], CWE: [] };
+      groupedVulnerabilities[key] = { CVE: [], CWE: [] }
     }
-    groupedVulnerabilities[key][entry.type].push(entry);
+    groupedVulnerabilities[key][entry.type].push(entry)
   }
 
-  return groupedVulnerabilities;
+  return groupedVulnerabilities
 }
 
-// This function will generate a body message reflecting all the vulnerabilities found for a particular line inside a specific file. 
+// This function will generate a body message reflecting all the vulnerabilities found for a particular line inside a specific file.
 export function generateCombinedReviewBody(
-  groupedVulnerabilities: {CVE: VulnerabilityEntry[], CWE: VulnerabilityEntry[]}, 
+  groupedVulnerabilities: { CVE: VulnerabilityEntry[]; CWE: VulnerabilityEntry[] },
   filePath: string,
-  line: number): string {
-
-  let body = `
-    ### Vulnerabilities Found
-
-    **File**: ${filePath}  
-    **Line**: ${line}
-
-    `;
+  line: number
+): string {
+  let body = ``
 
   if (groupedVulnerabilities.CVE.length > 0) {
-    body += `#### CVEs:\n`;
+    body += `\n#### CVEs:\n`
     groupedVulnerabilities.CVE.forEach((entry) => {
-      body += `- **${entry.name}**: ${entry.details}\n`;
-    });
+      body += `- **${entry.name}**: ${entry.details}\n`
+    })
   }
 
   if (groupedVulnerabilities.CWE.length > 0) {
-    body += `#### CWEs:\n`;
+    body += `\n#### CWEs:\n`
     groupedVulnerabilities.CWE.forEach((entry) => {
-      body += `- **${entry.name}**: ${entry.details}\n`;
-    });
+      body += `- **${entry.name}**: ${entry.details}\n`
+    })
   }
 
-  body += `\n\`\`\`suggestion\n// Suggested Fix\nSomething code related goes inside here;\n\`\`\``;
+  body += `\n\`\`\`suggestion\n// Suggested Fix\nSomething code related goes inside here;\n\`\`\``
 
-  return body;
+  return body
 }

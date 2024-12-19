@@ -101,6 +101,7 @@ export interface VulnerabilityEntry {
   filePath?: string // Path to the file where the vulnerability was found.
   SmartFix?: string // Specific to SCA - will be used to suggest the right version to upgrade to and contains supporting text.
   SmartFixVersion?: string // Specific to SCA - will be used to suggest the right version to upgrade to.
+  moreDetails?: string // Additional details about the vulnerability to be printed in the PR.
 }
 
 // This function is used to break the vulnerabilities clumped together into individual vulnerabilities. We aim to store information such as SmartFix version, line number, etc.
@@ -152,6 +153,11 @@ export function parseVulnerabilities(message: string) {
         if (filePath) {
           currentEntry.filePath = filePath
         }
+
+        const moreDetails = extractMoreDetails(currentEntry.details)
+        if (moreDetails) {
+          currentEntry.moreDetails = moreDetails
+        }
       }
     }
 
@@ -202,6 +208,12 @@ function extractLineNumber(url: string): number | undefined {
 function extractFilePath(details: string): string | undefined {
   const match = /\[([^\s:]+):/.exec(details) // Match the text before ':' in square brackets
   return match ? match[1] : undefined
+}
+
+// This function will extract the entire <details> block from the details string. This will be used to provide more context in the PR review comment.
+function extractMoreDetails(details: string): string | undefined {
+  const match = /(<details>.+<\/details>)/s.exec(details);
+  return match ? match[1].trim() : undefined;
 }
 
 // This function will calculate the "position" parameter based on the diff hunk and the target line number.
@@ -266,14 +278,14 @@ export function generateCombinedReviewBody(
   if (groupedVulnerabilities.CVE.length > 0) {
     body += `\n#### CVEs:\n`
     groupedVulnerabilities.CVE.forEach((entry) => {
-      body += `- **${entry.name}**: ${entry.details}\n`
+      body += `- **${entry.name}**: ${entry.moreDetails}\n`
     })
   }
 
   if (groupedVulnerabilities.CWE.length > 0) {
     body += `\n#### CWEs:\n`
     groupedVulnerabilities.CWE.forEach((entry) => {
-      body += `- **${entry.name}**: ${entry.details}\n`
+      body += `- **${entry.name}**: ${entry.moreDetails}\n`
     })
   }
 

@@ -30,7 +30,7 @@ export async function postCommentIfInPr(message: string): Promise<string | undef
     const stepHash = getStepHash()
     const foundComment = await findExistingComment(stepHash)
     const escapedMessage = message.replaceAll(/(\s)#([0-9]+\s)/g, '$1#&#8203;$2')
-    const messageWithHash = appendHash(escapedMessage, stepHash)  
+    const messageWithHash = appendHash(escapedMessage, stepHash)
 
     if (foundComment === undefined) {
       return (

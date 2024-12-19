@@ -157,6 +157,8 @@ export function parseVulnerabilities(message: string) {
         const moreDetails = extractMoreDetails(currentEntry.details)
         if (moreDetails) {
           currentEntry.moreDetails = moreDetails
+        } else {
+          currentEntry.moreDetails = 'No more details provided.'
         }
       }
     }
@@ -278,14 +280,14 @@ export function generateCombinedReviewBody(
   if (groupedVulnerabilities.CVE.length > 0) {
     body += `\n#### CVEs:\n`
     groupedVulnerabilities.CVE.forEach((entry) => {
-      body += `- **${entry.name}**: ${entry.moreDetails || "No more details provided."}\n`
+      body += `- **${entry.name}**: ${entry.moreDetails || 'No more details provided.'}\n`
     })
   }
 
   if (groupedVulnerabilities.CWE.length > 0) {
     body += `\n#### CWEs:\n`
     groupedVulnerabilities.CWE.forEach((entry) => {
-      body += `- **${entry.name}**: ${entry.moreDetails || "No more details provided."}\n`
+      body += `- **${entry.name}**: ${entry.moreDetails || 'No more details provided.'}\n`
     })
   }
 

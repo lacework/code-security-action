@@ -213,8 +213,7 @@ function extractFilePath(details: string): string | undefined {
 // This function will extract the entire <details> block from the details string. This will be used to provide more context in the PR review comment.
 function extractMoreDetails(details: string): string | undefined {
   const match = /(<details>.+<\/details>)/s.exec(details)
-  // If there are no details, return an empty string.
-  return match ? match[1].trim() : ""
+  return match ? match[1].trim() : undefined
 }
 
 // This function will calculate the "position" parameter based on the diff hunk and the target line number.
@@ -279,14 +278,14 @@ export function generateCombinedReviewBody(
   if (groupedVulnerabilities.CVE.length > 0) {
     body += `\n#### CVEs:\n`
     groupedVulnerabilities.CVE.forEach((entry) => {
-      body += `- **${entry.name}**: ${entry.moreDetails}\n`
+      body += `- **${entry.name}**: ${entry.moreDetails || "No more details provided."}\n`
     })
   }
 
   if (groupedVulnerabilities.CWE.length > 0) {
     body += `\n#### CWEs:\n`
     groupedVulnerabilities.CWE.forEach((entry) => {
-      body += `- **${entry.name}**: ${entry.moreDetails}\n`
+      body += `- **${entry.name}**: ${entry.moreDetails || "No more details provided."}\n`
     })
   }
 

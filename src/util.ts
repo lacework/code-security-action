@@ -214,10 +214,18 @@ function extractFilePath(details: string): string | undefined {
 
 // This function will extract the entire <details> block from the details string. This will be used to provide more context in the PR review comment.
 function extractMoreDetails(details: string): string | undefined {
-  info("Here is what we are working with: " + details)
-  const match = /(<details>.+<\/details>)/s.exec(details)
-  info('Here is more details trimmed: ' + (match ? match[1].trim() : "No more details found"))
-  return match ? match[1].trim() : undefined
+  const parts = details.split("<details><summary>More details</summary>");
+
+  if (parts.length > 1) {
+    // If the <details> block is present, append </details> to the second part
+    const moreDetailsContent = parts[1].trim();
+    if (!moreDetailsContent.endsWith("</details>")) {
+      return `<details><summary>More details</summary>${moreDetailsContent}</details>`;
+    }
+    return `<details><summary>More details</summary>${moreDetailsContent}`;
+  }
+
+  return undefined; // No <details> block found
 }
 
 // This function will calculate the "position" parameter based on the diff hunk and the target line number.

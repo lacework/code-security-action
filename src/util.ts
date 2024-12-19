@@ -113,7 +113,6 @@ export function parseVulnerabilities(message: string) {
 
   for (const line of lines) {
     const trimmedLine = line.trim()
-    info('Trimmed line: ' + trimmedLine)
 
     // Start of a new vulnerability entry
     const match = /^\*\s*([^\s]+)\s+(.*)$/.exec(trimmedLine)
@@ -230,8 +229,6 @@ function extractMoreDetails(details: string): string | undefined {
 
 // This function will calculate the "position" parameter based on the diff hunk and the target line number.
 export function calculatePosition(patch: string, targetLine: number): number | undefined {
-  info('Here is patch: ' + patch)
-  info('Here is targetLine: ' + targetLine)
   const patchLines = patch.split('\n')
   let position = 0 // Position in the diff
   let currentLine = 0 // Tracks the file's line number
@@ -304,4 +301,19 @@ export function generateCombinedReviewBody(
   body += `\n\`\`\`suggestion\n// Suggested Fix\nSomething code related goes inside here;\n\`\`\``
 
   return body
+}
+
+export function printEntries(entries: VulnerabilityEntry[]) {
+  for (const entry of entries) {
+    info('Here is an entry: ')
+    info('Name: ' + entry.name)
+    info('Type: ' + entry.type)
+    info('Details: ' + entry.details)
+    info('SmartFix: ' + (entry.SmartFix ?? 'No SmartFix'))
+    info('SmartFixVersion: ' + (entry.SmartFixVersion ?? 'No SmartFixVersion'))
+    info('URL: ' + entry.url)
+    info('Line: ' + entry.line)
+    info('FilePath: ' + (entry.filePath ?? 'No FilePath'))
+    info('More Details: ' + (entry.moreDetails ?? 'No More Details'))
+  }
 }

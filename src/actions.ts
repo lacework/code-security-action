@@ -161,12 +161,6 @@ export async function postReviewComment(
       })
 
       const file = files.data.find((f) => f.filename === filePath)
-      if (file) {
-        const diffHunk = file.patch // Get the patch (diff hunk) for this file
-        const filename = file.filename // Get the filename
-        // Pass these to the function
-        if (diffHunk) info(diffHunk)
-      }
 
       if (!file || !file.patch) {
         throw new Error(`Patch not found for file: ${filePath}`)

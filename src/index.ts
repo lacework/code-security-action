@@ -121,8 +121,7 @@ async function displayResults() {
     if (getInput('footer') !== '') {
       message += '\n\n' + getInput('footer')
     }
-    info('Here is message: ' + message)
-
+    
     // Breaking the message into individual vulnerability entries.
     var entries = parseVulnerabilities(message)
 
@@ -132,27 +131,10 @@ async function displayResults() {
       const [filePath, line] = key.split(':')
       const groupedEntries = groupedVulnerabilities[key]
       // For each file/line, we will post the batch of vulnerabilities affecting it.
-      info('Trying to post review comment for ' + filePath + ' ' + line)
+      info('Posting a review comment for ' + filePath + ' ' + line)
       await postReviewComment(groupedEntries, filePath, parseInt(line, 10))
     }
 
-    // For each entry post a review comment to the PR.
-    for (const entry of entries) {
-      info('Here is an entry: ')
-      info('Name: ' + entry.name)
-      info('Type: ' + entry.type)
-      info('Details: ' + entry.details)
-      info('SmartFix: ' + (entry.SmartFix ?? 'No SmartFix'))
-      info('SmartFixVersion: ' + (entry.SmartFixVersion ?? 'No SmartFixVersion'))
-      info('URL: ' + entry.url)
-      info('Line: ' + entry.line)
-      info('FilePath: ' + (entry.filePath ?? 'No FilePath'))
-      info('More Details: ' + (entry.moreDetails ?? 'No More Details'))
-
-      // Post a review comment to the PR.
-      // info('Trying to post review comment for ' + entry.name + ' ' + entry.details)
-      // await postReviewComment(entry)
-    }
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {
       setOutput('posted-comment', commentUrl)

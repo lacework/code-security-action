@@ -147,6 +147,7 @@ async function displayResults() {
       info('URL: ' + entry.url)
       info('Line: ' + entry.line)
       info('FilePath: ' + (entry.filePath ?? 'No FilePath'))
+      info('More Details: ' + (entry.moreDetails ?? 'No More Details'))
 
       // Post a review comment to the PR.
       // info('Trying to post review comment for ' + entry.name + ' ' + entry.details)

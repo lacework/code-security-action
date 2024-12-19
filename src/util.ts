@@ -126,7 +126,7 @@ export function parseVulnerabilities(message: string) {
       // Create a new entry
       currentEntry = {
         name: match[1], // Vulnerability name (e.g., CVE-2021-1234)
-        details: match[2], // Details after name 
+        details: match[2], // Details after name
       }
 
       // Determine the type of vulnerability based on naming.

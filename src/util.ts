@@ -214,7 +214,9 @@ function extractFilePath(details: string): string | undefined {
 
 // This function will extract the entire <details> block from the details string. This will be used to provide more context in the PR review comment.
 function extractMoreDetails(details: string): string | undefined {
+  info("Here is what we are working with: " + details)
   const match = /(<details>.+<\/details>)/s.exec(details)
+  info('Here is more details trimmed: ' + (match ? match[1].trim() : "No more details found"))
   return match ? match[1].trim() : undefined
 }
 

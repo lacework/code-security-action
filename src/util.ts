@@ -116,7 +116,7 @@ export function parseVulnerabilities(message: string) {
     info('Trimmed line: ' + trimmedLine)
 
     // Start of a new vulnerability entry
-    const match = /^\*\s*([^\s]+)\s*(.+)$/.exec(trimmedLine)
+    const match = /^\*\s*([^\s]+)\s+(.*)$/.exec(trimmedLine)
     if (match) {
       // Push the previous entry to the list, if any
       if (currentEntry && currentEntry.name && currentEntry.details) {
@@ -126,7 +126,7 @@ export function parseVulnerabilities(message: string) {
       // Create a new entry
       currentEntry = {
         name: match[1], // Vulnerability name (e.g., CVE-2021-1234)
-        details: match[2], // Details in parentheses
+        details: match[2], // Details after name 
       }
 
       // Determine the type of vulnerability based on naming.

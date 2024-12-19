@@ -116,7 +116,7 @@ export function parseVulnerabilities(message: string) {
     info('Trimmed line: ' + trimmedLine)
 
     // Start of a new vulnerability entry
-    const match = /^\* ([^\s]+) \((.+)\)/.exec(trimmedLine)
+    const match = /^\*\s*([^\s]+)\s*(.+)$/.exec(trimmedLine)
     if (match) {
       // Push the previous entry to the list, if any
       if (currentEntry && currentEntry.name && currentEntry.details) {
@@ -214,18 +214,18 @@ function extractFilePath(details: string): string | undefined {
 
 // This function will extract the entire <details> block from the details string. This will be used to provide more context in the PR review comment.
 function extractMoreDetails(details: string): string | undefined {
-  const parts = details.split("<details><summary>More details</summary>");
+  const parts = details.split('<details><summary>More details</summary>')
 
   if (parts.length > 1) {
     // If the <details> block is present, append </details> to the second part
-    const moreDetailsContent = parts[1].trim();
-    if (!moreDetailsContent.endsWith("</details>")) {
-      return `<details><summary>More details</summary>${moreDetailsContent}</details>`;
+    const moreDetailsContent = parts[1].trim()
+    if (!moreDetailsContent.endsWith('</details>')) {
+      return `<details><summary>More details</summary>${moreDetailsContent}</details>`
     }
-    return `<details><summary>More details</summary>${moreDetailsContent}`;
+    return `<details><summary>More details</summary>${moreDetailsContent}`
   }
 
-  return undefined; // No <details> block found
+  return undefined // No <details> block found
 }
 
 // This function will calculate the "position" parameter based on the diff hunk and the target line number.

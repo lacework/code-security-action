@@ -1,0 +1,4 @@
+default:
+  sca:
+    scan:
+      enableVulnEval: false

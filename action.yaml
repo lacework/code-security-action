@@ -20,6 +20,7 @@ inputs:
     description: 'A block of Markdown that will be appended to any PR comments posted'
     required: false
   eval-indirect-dependencies:
+    deprecationMessage: 'Deprecated in favor of SCA configurations'
     description: 'Show vulnerabilities found in transitive dependencies'
     required: false
     default: false
@@ -95,5 +96,4 @@ runs:
         debug: '${{ inputs.debug }}'
         token: '${{ inputs.token || github.token }}'
         footer: '${{ inputs.footer }}'
-        eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'
         artifact-prefix: '${{ inputs.artifact-prefix }}'

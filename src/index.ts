@@ -40,7 +40,6 @@ async function runAnalysis() {
 
   info('Analyzing ' + target)
   telemetryCollector.addField('tools', 'sca')
-  const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
 
   await downloadKeys()
@@ -59,9 +58,6 @@ async function runAnalysis() {
     '--keyring',
     trustedKeys,
   ]
-  if (indirectDeps.toLowerCase() === 'false') {
-    args.push('--eval-direct-only')
-  }
   if (debug()) {
     args.push('--debug')
   }

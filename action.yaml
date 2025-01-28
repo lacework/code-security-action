@@ -20,6 +20,7 @@ inputs:
     description: 'A block of Markdown that will be appended to any PR comments posted'
     required: false
   eval-indirect-dependencies:
+    deprecationMessage: 'This input is deprecated. Set this option in the configuration'
     description: 'Show vulnerabilities found in transitive dependencies'
     required: false
     default: false
@@ -91,4 +92,3 @@ runs:
         debug: '${{ inputs.debug }}'
         token: '${{ inputs.token || github.token }}'
         footer: '${{ inputs.footer }}'
-        eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'

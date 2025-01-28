@@ -39,7 +39,7 @@ jobs:
         uses: ./../action
         with:
           target: push
-          sources: ${{ github.workspace }}
+          working-directory: ${{ github.workspace }}
           debug: true
       - name: Check run succeeded
         env:

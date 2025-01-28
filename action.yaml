@@ -23,10 +23,6 @@ inputs:
     description: 'Show vulnerabilities found in transitive dependencies'
     required: false
     default: false
-  autofix:
-    description: 'Set to true to enable automated pull-requests for fix suggestions'
-    required: false
-    default: false
 outputs:
   old-completed:
     description: 'If running a target called old, whether the analysis for this was completed'
@@ -119,4 +115,3 @@ runs:
         token: '${{ inputs.token || github.token }}'
         footer: '${{ inputs.footer }}'
         eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'
-        autofix: '${{ inputs.autofix }}'

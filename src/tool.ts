@@ -1,18 +1,11 @@
-import { info, startGroup, endGroup, error } from '@actions/core'
+import { endGroup, info, startGroup } from '@actions/core'
 import { context } from '@actions/github'
 import { existsSync, readFileSync } from 'fs'
-import {
-  callCommand,
-  callLaceworkCli,
-  debug,
-  getOptionalEnvVariable,
-  getRequiredEnvVariable,
-  telemetryCollector,
-} from './util'
 import { Log } from 'sarif'
-import { LWJSON } from './lw-json'
-import { getPrApi } from './actions'
 import { simpleGit, SimpleGitOptions } from 'simple-git'
+import { getPrApi } from './actions'
+import { LWJSON } from './lw-json'
+import { callLaceworkCli, debug, getOptionalEnvVariable, getRequiredEnvVariable } from './util'
 
 export async function printResults(tool: string, sarifFile: string) {
   startGroup(`Results for ${tool}`)
@@ -198,11 +191,6 @@ export async function createPRs(jsonFile: string) {
     await prForFixSuggestion(jsonFile, fixId, repoOwner, repoName, telem)
   }
   const after = Date.now()
-  telemetryCollector.addField('autofix.totalPRs', telem.prsCounter.toString())
-  telemetryCollector.addField('autofix.updatedPRs', telem.prsUpdated.toString())
-  telemetryCollector.addField('autofix.timeAPI', telem.totalAPITime.toString())
-  telemetryCollector.addField('autofix.APIerrors', telem.errors.map(String).join(', '))
-  telemetryCollector.addField('autofix.totalTime', (after - before).toString())
 }
 
 export async function compareResults(

@@ -1,5 +1,4 @@
-import { getInput, isDebug } from '@actions/core'
-import { error, info } from '@actions/core'
+import { error, getInput, info, isDebug } from '@actions/core'
 import { spawn } from 'child_process'
 import { TelemetryCollector } from './telemetry'
 
@@ -27,6 +26,10 @@ export function autofix() {
   // autofix does fix all vulnerabilities, regardless of whether they are newly introduced or no
   // for this reason, we skip if we are scanning the old branch
   return getBooleanInput('autofix') && getInput('target') != 'old'
+}
+
+export function getWorkingDirectory() {
+  return getOrDefault('working-directory', '.')
 }
 
 export function getRunUrl(): string {

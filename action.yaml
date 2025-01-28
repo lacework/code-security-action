@@ -2,8 +2,8 @@ name: 'lacework-code-security'
 description: "Scan code with Lacework's Code Security offering"
 author: 'Lacework'
 inputs:
-  sources:
-    description: 'Sources directory to analyze'
+  working-directory:
+    description: 'Set working directory to run the analysis on'
     required: false
     default: '.'
   target:
@@ -80,7 +80,7 @@ runs:
       shell: bash
       if: ${{ inputs.debug == 'true' }}
       run: |
-          echo "LW_LOG=debug" >> $GITHUB_ENV
+        echo "LW_LOG=debug" >> $GITHUB_ENV
     - if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
@@ -113,7 +113,7 @@ runs:
     - id: run-analysis
       uses: './../lacework-code-security'
       with:
-        sources: '${{ inputs.sources }}'
+        working-directory: '${{ inputs.working-directory }}'
         target: '${{ inputs.target }}'
         debug: '${{ inputs.debug }}'
         token: '${{ inputs.token || github.token }}'

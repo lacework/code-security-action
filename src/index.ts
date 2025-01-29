@@ -1,11 +1,12 @@
 import { error, getInput, info, setOutput, warning } from '@actions/core'
-import { existsSync, appendFileSync } from 'fs'
+import { appendFileSync, existsSync } from 'fs'
 import {
   downloadArtifact,
   postCommentIfInPr,
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
+import { downloadKeys, trustedKeys } from './keys'
 import { compareResults, createPRs, printResults } from './tool'
 import {
   autofix,
@@ -15,12 +16,10 @@ import {
   getActionRef,
   getMsSinceStart,
   getOptionalEnvVariable,
-  getOrDefault,
   getRequiredEnvVariable,
   getRunUrl,
   telemetryCollector,
 } from './util'
-import { downloadKeys, trustedKeys } from './keys'
 
 const scaSarifReport = 'scaReport/output.sarif'
 const scaReport = 'sca.sarif'
@@ -60,7 +59,6 @@ async function runAnalysis() {
     'ci',
     '--keyring',
     trustedKeys,
-    '--secret',
   ]
   if (indirectDeps.toLowerCase() === 'false') {
     args.push('--eval-direct-only')

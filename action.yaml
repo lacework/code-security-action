@@ -80,7 +80,7 @@ runs:
       shell: bash
       if: ${{ inputs.debug == 'true' }}
       run: |
-          echo "LW_LOG=debug" >> $GITHUB_ENV
+        echo "LW_LOG=debug" >> $GITHUB_ENV
     - if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       run: |

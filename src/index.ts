@@ -7,9 +7,8 @@ import {
   uploadArtifact,
 } from './actions'
 import { downloadKeys, trustedKeys } from './keys'
-import { compareResults, createPRs, printResults } from './tool'
+import { compareResults, printResults } from './tool'
 import {
-  autofix,
   callCommand,
   callLaceworkCli,
   debug,
@@ -66,18 +65,12 @@ async function runAnalysis() {
   if (debug()) {
     args.push('--debug')
   }
-  if (autofix()) {
-    args.push('--fix-suggestions')
-  }
   await callLaceworkCli(...args)
   // make a copy of the sarif file
   args = [scaSarifReport, scaReport]
   await callCommand('cp', ...args)
 
   await printResults('sca', scaReport)
-  if (autofix()) {
-    await createPRs(scaLWJSONReport)
-  }
   toUpload.push(scaReport)
 
   const uploadStart = Date.now()

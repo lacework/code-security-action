@@ -10,7 +10,7 @@ This repository contains a GitHub Action for using Lacework's code security offe
 
 Before attempting to run this action, you should add three secrets `LW_ACCOUNT_NAME`, `LW_API_KEY` and `LW_API_SECRET` to your GitHub repository (or, better yet, your GitHub organization so they can be shared accross all your repositories). The value for these secrets can be obtained by following the instructions [here](https://docs.lacework.com/console/api-access-keys) to create an API key and then download it.
 
-### On pull requests
+### Running on pull requests
 
 To run an analysis on pull requests that highlights new alerts, create a file called `.github/workflows/lacework-code-security-pr.yml` with this content:
 
@@ -23,14 +23,14 @@ permissions:
   pull-requests: write
 
 env:
-  LW_ACCOUNT_NAME: ${{ secrets._LW_ACCOUNT_NAME }}
+  LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_NAME }}
   LW_API_KEY: ${{ secrets.LW_API_KEY }}
   LW_API_SECRET: ${{ secrets.LW_API_SECRET }}
 
 name: Lacework Code Security (PR)
 jobs:
   run-analysis:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Run analysis
     strategy:
       matrix:
@@ -48,7 +48,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
   display-results:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Display results
     needs:
       - run-analysis
@@ -60,14 +60,20 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### On push
+### Running on push or in scheduled mode
 
-To run an analysis on pushes that logs alerts, create a file called `.github/workflows/lacework-code-security-push.yml` with this content:
+To run an analysis on pushes or on a scheduled fashion and upload findings to the Lacework UI, create a file called `.github/workflows/lacework-code-security-push.yml` with this content:
 
 ```yaml
 on:
   push:
+    # Run the scan on evey push in main
     branches: [main]
+    # Run the scan evey day at 7:00am
+    schedule:
+      - cron: '0 7 * * *'
+    # To manually trigger scans from the GitHub UI
+    workflow_dispatch:
 
 env:
   LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_NAME }}
@@ -77,7 +83,7 @@ env:
 name: Lacework Code Security (Push)
 jobs:
   run-analysis:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Run analysis
     steps:
       - name: Checkout repository

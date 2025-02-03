@@ -8,15 +8,13 @@ const artifact = new DefaultArtifactClient()
 
 export async function uploadArtifact(artifactName: string, ...files: string[]) {
   startGroup('Uploading artifact ' + artifactName)
-  await artifact.uploadArtifact(artifactName, files, '.')
+  await artifact.uploadArtifact(artifactName, files)
   endGroup()
 }
 
 export async function downloadArtifact(artifactName: string) {
   startGroup('Downloading artifact ' + artifactName)
-  await artifact.downloadArtifact(artifactName, '.', {
-    createArtifactFolder: true,
-  })
+  await artifact.downloadArtifact(artifactName)
   endGroup()
 }
 

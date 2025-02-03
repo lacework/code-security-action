@@ -1,4 +1,4 @@
-import { create } from '@actions/artifact'
+import * as artifact from '@actions/artifact'
 import { startGroup, endGroup, getInput } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
 import { retry } from '@octokit/plugin-retry'
@@ -6,13 +6,13 @@ import { Md5 } from 'ts-md5'
 
 export async function uploadArtifact(artifactName: string, ...files: string[]) {
   startGroup('Uploading artifact ' + artifactName)
-  await create().uploadArtifact(artifactName, files, '.')
+  await artifact.create().uploadArtifact(artifactName, files, '.')
   endGroup()
 }
 
 export async function downloadArtifact(artifactName: string) {
   startGroup('Downloading artifact ' + artifactName)
-  await create().downloadArtifact(artifactName, '.', {
+  await artifact.create().downloadArtifact(artifactName, '.', {
     createArtifactFolder: true,
   })
   endGroup()

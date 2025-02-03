@@ -55,7 +55,7 @@ jobs:
             exit 1
           fi
       - name: Download results
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: results-push
           path: artifact

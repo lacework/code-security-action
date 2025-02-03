@@ -20,6 +20,8 @@ import {
   telemetryCollector,
 } from './util'
 
+import path from 'path'
+
 const scaSarifReport = 'scaReport/output.sarif'
 const scaReport = 'sca.sarif'
 const scaLWJSONReport = 'scaReport/output-lw.json'
@@ -74,7 +76,12 @@ async function runAnalysis() {
   toUpload.push(scaReport)
 
   const uploadStart = Date.now()
-  await uploadArtifact('results-' + target, ...toUpload)
+  const artifactPrefix = getInput('artifact-prefix')
+  if (artifactPrefix !== '') {
+    await uploadArtifact(artifactPrefix + '-results-' + target, ...toUpload)
+  } else {
+    await uploadArtifact('results-' + target, ...toUpload)
+  }
   telemetryCollector.addField('duration.upload-artifacts', (Date.now() - uploadStart).toString())
   setOutput(`${target}-completed`, true)
 }
@@ -82,20 +89,22 @@ async function runAnalysis() {
 async function displayResults() {
   info('Displaying results')
   const downloadStart = Date.now()
-  await downloadArtifact('results-old')
-  await downloadArtifact('results-new')
+  const artifactOld = await downloadArtifact('results-old')
+  const artifactNew = await downloadArtifact('results-new')
   telemetryCollector.addField(
     'duration.download-artifacts',
     (Date.now() - downloadStart).toString()
   )
+  const sarifFileOld = path.join(artifactOld, scaReport)
+  const sarifFileNew = path.join(artifactNew, scaReport)
+
   const issuesByTool: { [tool: string]: string } = {}
-  if (existsSync(`results-old/${scaReport}`) && existsSync(`results-new/${scaReport}`)) {
-    issuesByTool['sca'] = await compareResults(
-      'sca',
-      `results-old/${scaReport}`,
-      `results-new/${scaReport}`
-    )
+  if (existsSync(sarifFileOld) && existsSync(sarifFileNew)) {
+    issuesByTool['sca'] = await compareResults('sca', sarifFileOld, sarifFileNew)
+  } else {
+    throw new Error('SARIF file not found for SCA')
   }
+
   const commentStart = Date.now()
   if (Object.values(issuesByTool).some((x) => x.length > 0) && getInput('token').length > 0) {
     info('Posting comment to GitHub PR as there were new issues introduced:')

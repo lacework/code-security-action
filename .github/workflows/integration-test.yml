@@ -44,6 +44,7 @@ jobs:
           target: push
           sources: ${{ github.workspace }}
           debug: true
+          artifact-prefix: ${{ matrix.os }}
       - name: Check run succeeded
         env:
           RUN_OUTPUT: ${{ steps.run-action.outputs.push-completed }}
@@ -55,9 +56,9 @@ jobs:
             exit 1
           fi
       - name: Download results
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: results-push
+          name: ${{ matrix.os }}-results-push
           path: artifact
       - name: Check results
         working-directory: artifact

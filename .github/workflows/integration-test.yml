@@ -27,23 +27,20 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+
       - name: Move action
         run: |
           mkdir ../action
           mv * ../action
-          mv ../action/sample-repo/* .
+
       - name: Run action
         id: run-action
         uses: ./../action
         with:
           target: push
-          sources: ${{ github.workspace }}
-          debug: true
+          sources: sample-repo
+          # debug: true
+
       - name: Check run succeeded
         env:
           RUN_OUTPUT: ${{ steps.run-action.outputs.push-completed }}
@@ -54,14 +51,17 @@ jobs:
             echo "::error Test run failed!"
             exit 1
           fi
+
       - name: Download results
         uses: actions/download-artifact@v3
         with:
           name: results-push
           path: artifact
+
       - name: Check results
         working-directory: artifact
         run: |
+          cat sca.sarif
           export SCA_RESULTS=`jq '.runs | map (.results | length) | add' sca.sarif`
           echo "Got $SCA_RESULTS from SCA"
           if [ "$SCA_RESULTS" -eq 0 ]; then

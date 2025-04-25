@@ -23,6 +23,10 @@ inputs:
     description: 'Show vulnerabilities found in transitive dependencies'
     required: false
     default: false
+  artifact-prefix:
+    description: 'Prefix for the artifact name'
+    required: false
+    default: ''
 outputs:
   old-completed:
     description: 'If running a target called old, whether the analysis for this was completed'
@@ -92,3 +96,4 @@ runs:
         token: '${{ inputs.token || github.token }}'
         footer: '${{ inputs.footer }}'
         eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'
+        artifact-prefix: '${{ inputs.artifact-prefix }}'

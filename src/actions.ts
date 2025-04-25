@@ -1,21 +1,30 @@
-import { create } from '@actions/artifact'
-import { startGroup, endGroup, getInput } from '@actions/core'
+import { DefaultArtifactClient } from '@actions/artifact'
+import { endGroup, getInput, startGroup } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
 import { retry } from '@octokit/plugin-retry'
+import path from 'path'
 import { Md5 } from 'ts-md5'
+
+const artifact = new DefaultArtifactClient()
 
 export async function uploadArtifact(artifactName: string, ...files: string[]) {
   startGroup('Uploading artifact ' + artifactName)
-  await create().uploadArtifact(artifactName, files, '.')
+  await artifact.uploadArtifact(artifactName, files, '.')
   endGroup()
 }
 
-export async function downloadArtifact(artifactName: string) {
+export async function downloadArtifact(artifactName: string): Promise<string> {
   startGroup('Downloading artifact ' + artifactName)
-  await create().downloadArtifact(artifactName, '.', {
-    createArtifactFolder: true,
-  })
+  const getReponse = await artifact.getArtifact(artifactName)
+  const option = {
+    path: path.join(process.env['GITHUB_WORKSPACE'] || '.', artifactName),
+  }
+  const downloadReponse = await artifact.downloadArtifact(getReponse.artifact.id, option)
+  if (downloadReponse.downloadPath === undefined) {
+    throw new Error('Failed to download artifact ' + artifactName)
+  }
   endGroup()
+  return downloadReponse.downloadPath
 }
 
 export async function postCommentIfInPr(message: string): Promise<string | undefined> {

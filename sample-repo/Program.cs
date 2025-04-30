@@ -7,6 +7,7 @@ class PulseTaintTests
     [HttpPost]
     static void httpPostSourceToSqlSink(string inputParameter)
     {
-        using var _ = new SqlCommand(inputParameter);
+        string query = "SELECT * FROM " + inputParameter;
+        using var _ = new SqlCommand(query);
     }
 }

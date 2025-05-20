@@ -51,7 +51,6 @@ async function runAnalysis() {
     'sca',
     'scan',
     '.',
-    '--save-results',
     '-o',
     scaDir,
     '--formats',
@@ -61,6 +60,9 @@ async function runAnalysis() {
     '--keyring',
     trustedKeys,
   ]
+  if (target === 'push') {
+    args.push('--save-results')
+  }
   if (indirectDeps.toLowerCase() === 'false') {
     args.push('--eval-direct-only')
   }

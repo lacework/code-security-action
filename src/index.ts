@@ -110,7 +110,7 @@ async function displayResults() {
   const commentStart = Date.now()
   if (Object.values(issuesByTool).some((x) => x.length > 0) && getInput('token').length > 0) {
     info('Posting comment to GitHub PR as there were new issues introduced:')
-    let message = `Lacework Code Security found potential new issues in this PR.`
+    let message = ''
     for (const [, issues] of Object.entries(issuesByTool)) {
       if (issues.length > 0) {
         message += issues

@@ -1,8 +1,6 @@
-<img src="https://techally-content.s3-us-west-1.amazonaws.com/public-content/lacework_logo_full.png" width="600">
+# FortiCNAPP Code Security for GitHub Actions
 
-# Lacework Code Security for GitHub Actions
-
-This repository contains a GitHub Action for using Lacework's code security offering on your code. In order for the code in this repository to run, you must be a Lacework customer that has been opted into the beta of our code security program. Please contact Lacework support for more information.
+This repository contains a GitHub Action for using FortiCNAPP's code security offering on your code. In order for the code in this repository to run, you must be a FortiCNAPP customer. Please contact Fortinet support for more information.
 
 ## Usage
 
@@ -96,4 +94,4 @@ jobs:
 
 ## License
 
-The code contained in this repository is released as open-source under the Apache 2.0 license. However, the underlying analysis tools are subject to their own licensing conditions. Thus, you will not be able to use the code found here without having purchased the Lacework code security offering.
+The code contained in this repository is released as open-source under the Apache 2.0 license. However, the underlying analysis tools are subject to their own licensing conditions. Thus, you will not be able to use the code found here without having purchased the FortiCNAPP code security offering.

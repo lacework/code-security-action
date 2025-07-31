@@ -7,7 +7,7 @@ import {
   uploadArtifact,
 } from './actions'
 import { downloadKeys, trustedKeys } from './keys'
-import { compareResults, printResults } from './tool'
+import { compareResults } from './tool'
 import {
   callCommand,
   callLaceworkCli,
@@ -74,7 +74,6 @@ async function runAnalysis() {
   args = [scaSarifReport, scaReport]
   await callCommand('cp', ...args)
 
-  await printResults('sca', scaReport)
   toUpload.push(scaReport)
 
   const uploadStart = Date.now()

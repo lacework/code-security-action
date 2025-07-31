@@ -1,30 +1,10 @@
-import { endGroup, info, startGroup } from '@actions/core'
+import { endGroup, startGroup } from '@actions/core'
 import { context } from '@actions/github'
 import { existsSync, readFileSync } from 'fs'
-import { Log } from 'sarif'
 import { simpleGit, SimpleGitOptions } from 'simple-git'
 import { getPrApi } from './actions'
 import { LWJSON } from './lw-json'
 import { callLaceworkCli, debug, getOptionalEnvVariable, getRequiredEnvVariable } from './util'
-
-export async function printResults(tool: string, sarifFile: string) {
-  startGroup(`Results for ${tool}`)
-  let foundSomething = false
-  const results: Log = JSON.parse(readFileSync(sarifFile, 'utf8'))
-  for (const run of results.runs) {
-    if (Array.isArray(run.results) && run.results.length > 0) {
-      foundSomething = true
-      info('Found ' + run.results?.length + ' results using ' + tool)
-      for (const vuln of run.results) {
-        info(JSON.stringify(vuln, null, 2))
-      }
-    }
-  }
-  if (!foundSomething) {
-    info(`No ${tool} issues were found`)
-  }
-  endGroup()
-}
 
 export function splitStringAtFirstSlash(inputString: string | undefined): [string, string] {
   if (inputString != null) {

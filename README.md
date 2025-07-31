@@ -1,3 +1,5 @@
+![Forticnapp Logo](lacework_FTNT_logo.png?raw=true)
+
 # FortiCNAPP Code Security for GitHub Actions
 
 This repository contains a GitHub Action for using FortiCNAPP's code security offering on your code. In order for the code in this repository to run, you must be a FortiCNAPP customer. Please contact Fortinet support for more information.

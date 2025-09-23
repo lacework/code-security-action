@@ -1,6 +1,8 @@
 import { error, getInput, info, isDebug } from '@actions/core'
+import { context } from '@actions/github'
 import { spawn } from 'child_process'
 import { TelemetryCollector } from './telemetry'
+import { readFileSync } from 'fs'
 
 export const telemetryCollector = new TelemetryCollector()
 
@@ -82,4 +84,26 @@ export function getOrDefault(name: string, defaultValue: string) {
   const setTo = getInput(name)
   if (setTo !== undefined && setTo.length > 0) return setTo
   return defaultValue
+}
+
+export function generateUILink() {
+  const eventPath = process.env.GITHUB_EVENT_PATH!
+  const eventData = JSON.parse(readFileSync(eventPath, 'utf8'))
+  const defaultBranch = eventData.repository?.default_branch
+
+  const targetBranch = getRequiredEnvVariable('GITHUB_BASE_REF')
+
+  if (targetBranch !== defaultBranch) return ''
+
+  let url =
+    `https://${process.env.LW_ACCOUNT_NAME}.lacework.net` +
+    `/ui/investigation/codesec/applications/repositories/` +
+    `${context.repo.owner}%2F${context.repo.repo}` +
+    `/${defaultBranch}`
+
+  if (process.env.LW_SUBACCOUNT_NAME) {
+    url += '?accountName=' + process.env.LW_SUBACCOUNT_NAME
+  }
+
+  return url
 }

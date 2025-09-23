@@ -4,7 +4,13 @@ import { existsSync, readFileSync } from 'fs'
 import { simpleGit, SimpleGitOptions } from 'simple-git'
 import { getPrApi } from './actions'
 import { LWJSON } from './lw-json'
-import { callLaceworkCli, debug, getOptionalEnvVariable, getRequiredEnvVariable } from './util'
+import {
+  callLaceworkCli,
+  debug,
+  generateUILink,
+  getOptionalEnvVariable,
+  getRequiredEnvVariable,
+} from './util'
 
 export function splitStringAtFirstSlash(inputString: string | undefined): [string, string] {
   if (inputString != null) {
@@ -193,6 +199,10 @@ export async function compareResults(
     '--deployment',
     'ci',
   ]
+
+  const uiLink = generateUILink()
+  if (uiLink) args.push(...['--ui-link', uiLink])
+
   if (debug()) args.push('--debug')
   await callLaceworkCli(...args)
   endGroup()

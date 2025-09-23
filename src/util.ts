@@ -101,7 +101,7 @@ export function generateUILink() {
   let url =
     `https://${lwAccountName}.lacework.net` +
     `/ui/investigation/codesec/applications/repositories/` +
-    `${context.repo.owner}%2F${context.repo.repo}` +
+    `github.com%2F${context.repo.owner}%2F${context.repo.repo}` +
     `/${defaultBranch}`
 
   if (process.env.LW_SUBACCOUNT_NAME) {

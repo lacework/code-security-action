@@ -188,8 +188,6 @@ export async function compareResults(
     newReport,
     '--markdown',
     `${tool}.md`,
-    '--link',
-    `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/blob/${context.sha}/$FILENAME#L$LINENUMBER`,
     '--markdown-variant',
     'GitHub',
     '--deployment',

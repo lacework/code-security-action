@@ -95,8 +95,11 @@ export function generateUILink() {
 
   if (targetBranch !== defaultBranch) return ''
 
+  let lwAccountName = process.env.LW_ACCOUNT_NAME
+  lwAccountName = lwAccountName?.replace(/\.lacework\.net$/, '')
+
   let url =
-    `https://${process.env.LW_ACCOUNT_NAME}.lacework.net` +
+    `https://${lwAccountName}.lacework.net` +
     `/ui/investigation/codesec/applications/repositories/` +
     `${context.repo.owner}%2F${context.repo.repo}` +
     `/${defaultBranch}`

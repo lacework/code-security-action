@@ -115,6 +115,13 @@ async function displayResults() {
         message += issues
       }
     }
+
+    let exceptionDocsLink =
+      'https://docs.fortinet.com/document/forticnapp/latest/administration-guide/975371'
+    message +=
+      '\n Please refer to the documentation if you want to add exceptions to any findings directly from the codesec.yaml file: ' +
+      exceptionDocsLink
+
     if (getInput('footer') !== '') {
       message += '\n\n' + getInput('footer')
     }

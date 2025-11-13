@@ -1,64 +1,99 @@
 name: 'lacework-code-security'
 description: "Scan code with Lacework's Code Security offering"
 author: 'Lacework'
-
 inputs:
-  account:
-    description: 'Lacework account'
-    required: true
-  api-key:
-    description: 'Lacework API key'
-    required: true
-  secret:
-    description: 'Lacework secret'
-    required: true
-  run-sca:
-    description: 'Enable sca scanning'
-    default: 'false'
-  run-iac:
-    description: 'Enable iac scanning'
-    default: 'false'
-  # github-token:
-  #   description: 'GitHub token for PR comments'
-  #   required: true
-
+  sources:
+    description: 'Sources directory to analyze'
+    required: false
+    default: '.'
+  target:
+    description: 'One of push, old or new to represent which is being analyzed'
+    required: false
+  debug:
+    description: 'Set to true to enable debug logging'
+    required: false
+    default: false
+  token:
+    description: 'Set to a GitHub token for the repository with write permissions for PRs to enable PR comments'
+    required: false
+  footer:
+    description: 'A block of Markdown that will be appended to any PR comments posted'
+    required: false
+  eval-indirect-dependencies:
+    description: 'Show vulnerabilities found in transitive dependencies'
+    required: false
+    default: false
+  artifact-prefix:
+    description: 'Prefix for the artifact name'
+    required: false
+    default: ''
+outputs:
+  old-completed:
+    description: 'If running a target called old, whether the analysis for this was completed'
+    value: ${{ steps.run-analysis.outputs.old-completed }}
+  new-completed:
+    description: 'If running a target called new, whether the analysis for this was completed'
+    value: ${{ steps.run-analysis.outputs.new-completed }}
+  push-completed:
+    description: 'If running a target called push, whether the analysis for this was completed'
+    value: ${{ steps.run-analysis.outputs.push-completed }}
+  display-completed:
+    description: 'If displaying results, whether this was completed'
+    value: ${{ steps.run-analysis.outputs.display-completed }}
+  comment-posted:
+    description: 'If a comment was posted, a link to this comment'
+    value: ${{ steps.run-analysis.outputs.comment-posted }}
 runs:
   using: 'composite'
   steps:
-    - name: Login to Docker 
-      uses: docker/login-action@v3 
-      with: 
-        username: ${{ secrets.DOCKERHUB_USERNAME }} # should be lwdevops
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Run Lacework Scan
-      run: |
-        docker run --rm \
-          -v /var/run/docker.sock:/var/run/docker.sock \
-          -v ${{ github.workspace }}:/workspace \
-          -e HOST_REPO_PATH=${{ github.workspace }} \
-          -e LW_ACCOUNT=${{ inputs.account }} \
-          -e LW_API_KEY=${{ inputs.api-key }} \
-          -e LW_SECRET=${{ inputs.secret }} \
-          -e RUN_SCA=${{ inputs.run-sca }} \
-          -e RUN_IAC=${{ inputs.run-iac }} \
-          -e GITHUB_EVENT_NAME=${{ github.event_name }} \
-          lacework/codesec-integrations:test
+    - if: runner.os == 'Linux'
       shell: bash
-    
-    # - name: Comment on PR
-    #   if: github.event_name == 'pull_request'
-    #   uses: actions/github-script@v7
-    #   with:
-    #     github-token: ${{ inputs.github-token }}
-    #     script: |
-    #       const fs = require('fs');
-    #       if (fs.existsSync('output_markdown.md')) {
-    #         const comment = fs.readFileSync('output_markdown.md', 'utf8');
-    #         github.rest.issues.createComment({
-    #           owner: context.repo.owner,
-    #           repo: context.repo.repo,
-    #           issue_number: context.issue.number,
-    #           body: comment
-    #         });
-    #       }
+      run: echo "LACEWORK_START_TIME=$(date --rfc-3339=seconds)" >> $GITHUB_ENV
+    - if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew install coreutils
+        echo "LACEWORK_START_TIME=$(gdate --rfc-3339=seconds)" >> $GITHUB_ENV
+    - id: init
+      shell: bash
+      env:
+        LACEWORK_ACTION_REF: '${{ github.action_ref }}'
+      run: |
+        LACEWORK_CONTEXT_ID=`echo $RANDOM | md5sum | head -c 32`
+        echo "Lacework context ID: $LACEWORK_CONTEXT_ID"
+        echo "LACEWORK_CONTEXT_ID=$(echo $LACEWORK_CONTEXT_ID)" >> $GITHUB_ENV
+        echo "LACEWORK_ACTION_REF=$(echo $LACEWORK_ACTION_REF)" >> $GITHUB_ENV
+        curl https://raw.githubusercontent.com/lacework/go-sdk/main/cli/install.sh | bash
+    - name: Sets LW_LOG var for debug
+      shell: bash
+      if: ${{ inputs.debug == 'true' }}
+      run: |
+        echo "LW_LOG=debug" >> $GITHUB_ENV
+    - name: Install Lacework CLI component
+      shell: bash
+      run: |
+        lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" component install sca
+        lacework --noninteractive -a "${LW_ACCOUNT_NAME}" -k "${LW_API_KEY}" -s "${LW_API_SECRET}" version
+      env:
+        CDK_DOWNLOAD_TIMEOUT_MINUTES: 2
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 18
+    - shell: bash
+      run: |
+        rm -rf ../lacework-code-security
+        cp -r "${{ github.action_path }}" ../lacework-code-security
+        cd ../lacework-code-security
+        HUSKY=0 npm install
+        npm run compile
+        yq -i -o yaml 'del(.runs.steps) | del(.outputs) | .runs.using="node16" | .runs.main="dist/src/index.js" | .runs.post="dist/src/post.js"' action.yaml
+    - id: run-analysis
+      uses: './../lacework-code-security'
+      with:
+        sources: '${{ inputs.sources }}'
+        target: '${{ inputs.target }}'
+        debug: '${{ inputs.debug }}'
+        token: '${{ inputs.token || github.token }}'
+        footer: '${{ inputs.footer }}'
+        eval-indirect-dependencies: '${{ inputs.eval-indirect-dependencies }}'
+        artifact-prefix: '${{ inputs.artifact-prefix }}'

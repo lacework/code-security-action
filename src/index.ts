@@ -6,7 +6,6 @@ import {
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import { downloadKeys, trustedKeys } from './keys'
 import { compareResults } from './tool'
 import {
   callCommand,
@@ -45,21 +44,8 @@ async function runAnalysis() {
   const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
 
-  await downloadKeys()
   // command to print both sarif and lwjson formats
-  var args = [
-    'sca',
-    'scan',
-    '.',
-    '-o',
-    scaDir,
-    '--formats',
-    'sarif,lw-json',
-    '--deployment',
-    'ci',
-    '--keyring',
-    trustedKeys,
-  ]
+  var args = ['sca', 'scan', '.', '-o', scaDir, '--formats', 'sarif,lw-json', '--deployment', 'ci']
   if (target === 'push') {
     args.push('--save-results')
   }

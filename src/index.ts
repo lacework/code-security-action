@@ -41,16 +41,12 @@ async function runAnalysis() {
 
   info('Analyzing ' + target)
   telemetryCollector.addField('tools', 'sca')
-  const indirectDeps = getInput('eval-indirect-dependencies')
   const toUpload: string[] = []
 
   // command to print both sarif and lwjson formats
   var args = ['sca', 'scan', '.', '-o', scaDir, '--formats', 'sarif,lw-json', '--deployment', 'ci']
   if (target === 'push') {
     args.push('--save-results')
-  }
-  if (indirectDeps.toLowerCase() === 'false') {
-    args.push('--eval-direct-only')
   }
   if (debug()) {
     args.push('--debug')

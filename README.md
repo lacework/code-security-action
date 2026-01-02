@@ -38,7 +38,7 @@ jobs:
         target: [new, old]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
       - name: Checkout old
@@ -88,7 +88,7 @@ jobs:
     name: Run analysis
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: Analyze
         uses: lacework/code-security-action@v1
         with:

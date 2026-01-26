@@ -2,7 +2,7 @@ import { error, getInput, info, isDebug } from '@actions/core'
 import { context } from '@actions/github'
 import { spawn } from 'child_process'
 import { TelemetryCollector } from './telemetry'
-import { readFileSync } from 'fs'
+import { readFileSync, readFile } from 'fs'
 
 export const telemetryCollector = new TelemetryCollector()
 
@@ -109,4 +109,47 @@ export function generateUILink() {
   }
 
   return url
+}
+
+// codesecTool: this method is to be used in 3 ways depending on action and scanTarget
+// 1. action: scan, scanTarget: new/old -> will produce an analysis report that will be used in generating the PR comment
+// 2. action: scan, scanTarget: scan -> will scan the repo and send the results back to lacework (use in scheduled events)
+// 3. action: compare -> will use the previously generated new/old targets to compare them and generate the diffed markdown that will be displayed in the PR comment
+export async function codesecRun(action: string, runIac: boolean = true, runSca: boolean = true, scanTarget?: string): Promise<void> {
+  const dockerArgs = [
+    'run',
+    '--rm',
+    '-v',
+    '/var/run/docker.sock:/var/run/docker.sock',
+    '-v',
+    `${process.cwd()}:/workspace`,
+    '-e',
+    `HOST_REPO_PATH=${process.cwd()}`,
+    '-e',
+    `ACCOUNT=${getRequiredEnvVariable('LW_ACCOUNT_NAME')}`,
+    '-e',
+    `API_KEY=${getRequiredEnvVariable('LW_API_KEY')}`,
+    '-e',
+    `SECRET=${getRequiredEnvVariable('LW_API_SECRET')}`,
+    '-e',
+    `RUN_IAC=${runIac}`,
+    '-e',
+    `RUN_SCA=${runSca}`,
+    '-e', 
+    `SCAN_TARGET=${scanTarget}`,
+    'codesec-integrations:test', 
+    `${action}`
+  ]
+
+  info('Running codesec-integrations')
+  await callCommand('docker', ...dockerArgs)
+}
+
+export async function readMarkdownFile(filePath: string): Promise<string> {
+  try {
+    const content = await readFile(filePath, 'utf-8');
+    return content;
+  } catch (error) {
+    throw new Error(`Failed to read scanner output file: ${error}`);
+  }
 }

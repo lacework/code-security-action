@@ -10,12 +10,14 @@ import { compareResults } from './tool'
 import {
   callCommand,
   callLaceworkCli,
+  codesecRun,
   debug,
   getActionRef,
   getMsSinceStart,
   getOptionalEnvVariable,
   getRequiredEnvVariable,
   getRunUrl,
+  readMarkdownFile,
   telemetryCollector,
 } from './util'
 
@@ -43,6 +45,16 @@ async function runAnalysis() {
   telemetryCollector.addField('tools', 'sca')
   const toUpload: string[] = []
 
+
+  // codesec-integrations method start
+  var targetScan = target
+  if (target == 'push') {
+    targetScan = 'scan'
+  }
+  await codesecRun("scan", false, false, targetScan)
+
+  // codesec-integrations method end 
+
   // command to print both sarif and lwjson formats
   var args = ['sca', 'scan', '.', '-o', scaDir, '--formats', 'sarif,lw-json', '--deployment', 'ci']
   if (target === 'push') {
@@ -52,6 +64,14 @@ async function runAnalysis() {
     args.push('--debug')
   }
   await callLaceworkCli(...args)
+
+  // codesec-integrations start 
+  
+  var scaSarifReportIntegrations = `scan-results/sca/sca-${targetScan}.sarif`
+  args = [scaSarifReportIntegrations, scaReport]
+
+  // codesec-integrations end
+
   // make a copy of the sarif file
   args = [scaSarifReport, scaReport]
   await callCommand('cp', ...args)
@@ -71,6 +91,37 @@ async function runAnalysis() {
 
 async function displayResults() {
   info('Displaying results')
+  // codesec-integrations start
+
+  // we call compare on an already twice scanned repo with the new/old target. 
+  if ((existsSync("scan-results/sca/sca-new.sarif") && existsSync("scan-results/sca/sca-old.sarif")) ||
+      (existsSync("scan-results/iac/iac-new.sarif") && existsSync("scan-results/sca/iac-old.sarif"))) {
+    await codesecRun("compare", false, false)
+    var mergedOutput = "scan-results/compare/merged-compare.md"
+    // If agreed to be able to run only one type, we need to revisit the conditional to take into account only one type of scanning as well
+    // var scaOutput = "scan-results/compare/sca-compare.md"
+    // var iacOutput = "scan-results/compare/iac-compare.md"
+    if (existsSync(mergedOutput)) {
+      var message: string = await readMarkdownFile(mergedOutput)
+
+      // Check if compare contains "Found <non-zero number> ..." that indicates there are newly found violations
+      const hasViolations = /Found\s+[1-9]\d*\s+/.test(message);
+      if (hasViolations) {
+        info('Posting comment to GitHub PR as there were new issues introduced:')
+        const commentUrl = await postCommentIfInPr(message)
+        if (commentUrl !== undefined) {
+          setOutput('posted-comment', commentUrl)
+        }
+      } else {
+        await resolveExistingCommentIfFound()
+      }
+      
+    }
+  } else {
+    throw new Error('SARIF file not found for SCA or IAC')
+  }
+ 
+  // codesec-integrations end 
   const downloadStart = Date.now()
   const artifactOld = await downloadArtifact('results-old')
   const artifactNew = await downloadArtifact('results-new')

@@ -115,7 +115,12 @@ export function generateUILink() {
 // 1. action: scan, scanTarget: new/old -> will produce an analysis report that will be used in generating the PR comment
 // 2. action: scan, scanTarget: scan -> will scan the repo and send the results back to lacework (use in scheduled events)
 // 3. action: compare -> will use the previously generated new/old targets to compare them and generate the diffed markdown that will be displayed in the PR comment
-export async function codesecRun(action: string, runIac: boolean = true, runSca: boolean = true, scanTarget?: string): Promise<void> {
+export async function codesecRun(
+  action: string,
+  runIac: boolean = true,
+  runSca: boolean = true,
+  scanTarget?: string
+): Promise<void> {
   const dockerArgs = [
     'run',
     '--rm',
@@ -135,10 +140,10 @@ export async function codesecRun(action: string, runIac: boolean = true, runSca:
     `RUN_IAC=${runIac}`,
     '-e',
     `RUN_SCA=${runSca}`,
-    '-e', 
+    '-e',
     `SCAN_TARGET=${scanTarget}`,
-    'codesec-integrations:test', 
-    `${action}`
+    'codesec-integrations:test',
+    `${action}`,
   ]
 
   info('Running codesec-integrations')
@@ -147,9 +152,9 @@ export async function codesecRun(action: string, runIac: boolean = true, runSca:
 
 export async function readMarkdownFile(filePath: string): Promise<string> {
   try {
-    const content = await readFile(filePath, 'utf-8');
-    return content;
+    const content = await readFile(filePath, 'utf-8')
+    return content
   } catch (error) {
-    throw new Error(`Failed to read scanner output file: ${error}`);
+    throw new Error(`Failed to read scanner output file: ${error}`)
   }
 }

@@ -31,7 +31,7 @@ async function runAnalysis() {
   const target = getInput('target')
 
   let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')
-  const prMode = currBranch !== '' 
+  const prMode = currBranch !== ''
   if (prMode) {
     // running on a PR
     if (target == 'old') {
@@ -42,8 +42,8 @@ async function runAnalysis() {
   }
 
   // Check cache for base branch scan
-  // TODO: add LACEWORK_DISABLE_CACHE env variable documentation 
-  let cacheHit = false 
+  // TODO: add LACEWORK_DISABLE_CACHE env variable documentation
+  let cacheHit = false
   if (target === 'old') {
     cacheHit = await restoreCachedScan()
     info(`Cache ${cacheHit ? 'hit' : 'miss'} for ${target} target`)
@@ -100,8 +100,8 @@ async function runAnalysis() {
   telemetryCollector.addField('duration.upload-artifacts', (Date.now() - uploadStart).toString())
   setOutput(`${target}-completed`, true)
 
-  // save to cache results if not in PR mode 
-  if((target === 'old' && !cacheHit) || (target === 'push')) {
+  // save to cache results if not in PR mode
+  if ((target === 'old' && !cacheHit) || target === 'push') {
     mkdirSync('scan-results/sca', { recursive: true })
 
     if (existsSync(scaSarifReport)) {

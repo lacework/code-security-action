@@ -31,8 +31,7 @@ export async function saveCachedScan(): Promise<void> {
 
   try {
     // Verify we have results to save
-    if (existsSync('scan-results/sca/sca.sarif') &&
-        existsSync('scan-results/sca/sca.json')) {
+    if (existsSync('scan-results/sca/sca.sarif') && existsSync('scan-results/sca/sca.json')) {
       await cache.saveCache(['scan-results'], CACHE_KEY)
       info('Successfully saved scan results to cache')
     } else {

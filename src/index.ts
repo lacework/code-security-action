@@ -1,11 +1,12 @@
 import { error, getInput, info, setOutput, warning } from '@actions/core'
-import { appendFileSync, existsSync } from 'fs'
+import { appendFileSync, copyFileSync, existsSync, mkdirSync } from 'fs'
 import {
   downloadArtifact,
   postCommentIfInPr,
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
+import { restoreCachedScan, saveCachedScan } from './cache'
 import { compareResults } from './tool'
 import {
   callCommand,
@@ -30,13 +31,44 @@ async function runAnalysis() {
   const target = getInput('target')
 
   let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')
-  if (currBranch !== '') {
+  const prMode = currBranch !== '' 
+  if (prMode) {
     // running on a PR
     if (target == 'old') {
       process.env['LW_CODESEC_GIT_BRANCH'] = getOptionalEnvVariable('GITHUB_BASE_REF', '')
     } else {
       process.env['LW_CODESEC_GIT_BRANCH'] = currBranch
     }
+  }
+
+  // Check cache for base branch scan
+  // TODO: add LACEWORK_DISABLE_CACHE env variable documentation 
+  let cacheHit = false 
+  if (target === 'old') {
+    cacheHit = await restoreCachedScan()
+    info(`Cache ${cacheHit ? 'hit' : 'miss'} for ${target} target`)
+    if (cacheHit) {
+      info('Using cached base branch scan results')
+      // Copy cached files to expected locations
+      mkdirSync(scaDir, { recursive: true })
+      copyFileSync('scan-results/sca/sca.sarif', scaSarifReport)
+      copyFileSync('scan-results/sca/sca.sarif', scaReport)
+      if (existsSync('scan-results/sca/sca.json')) {
+        copyFileSync('scan-results/sca/sca.json', scaLWJSONReport)
+      }
+
+      // Upload artifact and complete
+      const toUpload = [scaReport]
+      const artifactPrefix = getInput('artifact-prefix')
+      if (artifactPrefix !== '') {
+        await uploadArtifact(artifactPrefix + '-results-old', ...toUpload)
+      } else {
+        await uploadArtifact('results-old', ...toUpload)
+      }
+      setOutput('old-completed', true)
+      return
+    }
+    // Cache miss - continue to scan normally
   }
 
   info('Analyzing ' + target)
@@ -67,6 +99,20 @@ async function runAnalysis() {
   }
   telemetryCollector.addField('duration.upload-artifacts', (Date.now() - uploadStart).toString())
   setOutput(`${target}-completed`, true)
+
+  // save to cache results if not in PR mode 
+  if((target === 'old' && !cacheHit) || (target === 'push')) {
+    mkdirSync('scan-results/sca', { recursive: true })
+
+    if (existsSync(scaSarifReport)) {
+      copyFileSync(scaSarifReport, 'scan-results/sca/sca.sarif')
+    }
+    if (existsSync(scaLWJSONReport)) {
+      copyFileSync(scaLWJSONReport, 'scan-results/sca/sca.json')
+    }
+
+    await saveCachedScan()
+  }
 }
 
 async function displayResults() {

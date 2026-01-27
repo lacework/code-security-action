@@ -19,15 +19,14 @@ inputs:
   footer:
     description: 'A block of Markdown that will be appended to any PR comments posted'
     required: false
-  eval-indirect-dependencies:
-    deprecationMessage: 'Deprecated in favor of SCA configurations'
-    description: 'Show vulnerabilities found in transitive dependencies'
-    required: false
-    default: false
   artifact-prefix:
     description: 'Prefix for the artifact name'
     required: false
     default: ''
+  code-scanning-path:
+    description: 'Path to write code scanning SARIF file'
+    required: false
+    default: 'code-scanning.sarif'
 outputs:
   old-completed:
     description: 'If running a target called old, whether the analysis for this was completed'
@@ -97,3 +96,4 @@ runs:
         token: '${{ inputs.token || github.token }}'
         footer: '${{ inputs.footer }}'
         artifact-prefix: '${{ inputs.artifact-prefix }}'
+        code-scanning-path: '${{ inputs.code-scanning-path }}'

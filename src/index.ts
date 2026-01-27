@@ -1,16 +1,15 @@
 import { error, getInput, info, setOutput, warning } from '@actions/core'
-import { appendFileSync, existsSync } from 'fs'
+import { appendFileSync, existsSync, readFileSync } from 'fs'
 import {
   downloadArtifact,
   postCommentIfInPr,
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import { compareResults } from './tool'
 import {
-  callCommand,
   callLaceworkCli,
   debug,
+  generateUILink,
   getActionRef,
   getMsSinceStart,
   getOptionalEnvVariable,
@@ -21,10 +20,9 @@ import {
 
 import path from 'path'
 
-const scaSarifReport = 'scaReport/output.sarif'
-const scaReport = 'sca.sarif'
-const scaLWJSONReport = 'scaReport/output-lw.json'
-const scaDir = 'scaReport'
+const artifactPrefix = getInput('artifact-prefix')
+const sarifReportPath = getInput('code-scanning-path')
+const comparisonMarkdownPath = 'comparison.md'
 
 async function runAnalysis() {
   const target = getInput('target')
@@ -40,11 +38,20 @@ async function runAnalysis() {
   }
 
   info('Analyzing ' + target)
-  telemetryCollector.addField('tools', 'sca')
   const toUpload: string[] = []
 
   // command to print both sarif and lwjson formats
-  var args = ['sca', 'scan', '.', '-o', scaDir, '--formats', 'sarif,lw-json', '--deployment', 'ci']
+  var args = [
+    'sca',
+    'scan',
+    '.',
+    '--formats',
+    'sarif',
+    '--output',
+    sarifReportPath,
+    '--deployment',
+    'ci',
+  ]
   if (target === 'push') {
     args.push('--save-results')
   }
@@ -52,56 +59,70 @@ async function runAnalysis() {
     args.push('--debug')
   }
   await callLaceworkCli(...args)
-  // make a copy of the sarif file
-  args = [scaSarifReport, scaReport]
-  await callCommand('cp', ...args)
-
-  toUpload.push(scaReport)
+  toUpload.push(sarifReportPath)
 
   const uploadStart = Date.now()
-  const artifactPrefix = getInput('artifact-prefix')
-  if (artifactPrefix !== '') {
-    await uploadArtifact(artifactPrefix + '-results-' + target, ...toUpload)
-  } else {
-    await uploadArtifact('results-' + target, ...toUpload)
-  }
+
+  await uploadArtifact(getArtifactName(target), ...toUpload)
+
   telemetryCollector.addField('duration.upload-artifacts', (Date.now() - uploadStart).toString())
   setOutput(`${target}-completed`, true)
+}
+
+export async function compareResults(oldReport: string, newReport: string): Promise<string> {
+  const args = [
+    'sca',
+    'compare',
+    '--old',
+    oldReport,
+    '--new',
+    newReport,
+    '--output',
+    sarifReportPath,
+    '--markdown',
+    comparisonMarkdownPath,
+    '--markdown-variant',
+    'GitHub',
+    '--deployment',
+    'ci',
+  ]
+  const uiLink = generateUILink()
+  if (uiLink) args.push(...['--ui-link', uiLink])
+  if (debug()) args.push('--debug')
+
+  await callLaceworkCli(...args)
+  await uploadArtifact(getArtifactName('compare'), sarifReportPath, comparisonMarkdownPath)
+
+  return existsSync(comparisonMarkdownPath) ? readFileSync(comparisonMarkdownPath, 'utf8') : ''
 }
 
 async function displayResults() {
   info('Displaying results')
   const downloadStart = Date.now()
-  const artifactOld = await downloadArtifact('results-old')
-  const artifactNew = await downloadArtifact('results-new')
+  const artifactOld = await downloadArtifact(getArtifactName('old'))
+  const artifactNew = await downloadArtifact(getArtifactName('new'))
   telemetryCollector.addField(
     'duration.download-artifacts',
     (Date.now() - downloadStart).toString()
   )
-  const sarifFileOld = path.join(artifactOld, scaReport)
-  const sarifFileNew = path.join(artifactNew, scaReport)
+  const sarifFileOld = path.join(artifactOld, sarifReportPath)
+  const sarifFileNew = path.join(artifactNew, sarifReportPath)
 
-  const issuesByTool: { [tool: string]: string } = {}
+  var compareMessage: string
   if (existsSync(sarifFileOld) && existsSync(sarifFileNew)) {
-    issuesByTool['sca'] = await compareResults('sca', sarifFileOld, sarifFileNew)
+    compareMessage = await compareResults(sarifFileOld, sarifFileNew)
   } else {
-    throw new Error('SARIF file not found for SCA')
+    throw new Error('SARIF file not found')
   }
 
   const commentStart = Date.now()
-  if (Object.values(issuesByTool).some((x) => x.length > 0) && getInput('token').length > 0) {
+  if (compareMessage.length > 0 && getInput('token').length > 0) {
     info('Posting comment to GitHub PR as there were new issues introduced:')
-    let message = ''
-    for (const [, issues] of Object.entries(issuesByTool)) {
-      if (issues.length > 0) {
-        message += issues
-      }
-    }
     if (getInput('footer') !== '') {
-      message += '\n\n' + getInput('footer')
+      compareMessage += '\n\n' + getInput('footer')
     }
-    info(message)
-    const commentUrl = await postCommentIfInPr(message)
+    info(compareMessage)
+    const commentUrl = await postCommentIfInPr(compareMessage)
     if (commentUrl !== undefined) {
       setOutput('posted-comment', commentUrl)
     }
@@ -110,6 +131,14 @@ async function displayResults() {
   }
   telemetryCollector.addField('duration.comment', (Date.now() - commentStart).toString())
   setOutput(`display-completed`, true)
+}
+
+function getArtifactName(target: string): string {
+  var artifactName = 'results-'
+  if (artifactPrefix !== '') {
+    artifactName = artifactPrefix + '-' + artifactName
+  }
+  return artifactName + target
 }
 
 async function main() {

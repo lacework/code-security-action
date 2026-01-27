@@ -61,8 +61,8 @@ export async function saveCachedScan(): Promise<void> {
 
     if (hasScaSarif && hasScaJson) {
       info(`Saving cache with key: ${CACHE_KEY}`)
-      await cache.saveCache(['scan-results'], CACHE_KEY)
-      info('Successfully saved scan results to cache')
+      const savedKey = await cache.saveCache(['scan-results'], CACHE_KEY)
+      info(`Successfully saved scan results to cache - ${savedKey}`)
     } else {
       warning('No scan results found to cache')
     }

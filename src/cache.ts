@@ -3,9 +3,8 @@ import { info, warning } from '@actions/core'
 import { existsSync } from 'fs'
 
 // Choose the baseBranch - In PR mode we look for base ref to search for name of target brancg
-const baseBranch =  process.env.GITHUB_BASE_REF ||
-                    process.env.GITHUB_REF?.replace('refs/heads/', '') ||
-                    'main'
+const baseBranch =
+  process.env.GITHUB_BASE_REF || process.env.GITHUB_REF?.replace('refs/heads/', '') || 'main'
 const CACHE_KEY = `lacework-scan-${baseBranch}`
 
 export async function restoreCachedScan(): Promise<boolean> {

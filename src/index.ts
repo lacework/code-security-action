@@ -101,7 +101,7 @@ async function runAnalysis() {
   setOutput(`${target}-completed`, true)
 
   // save to cache results if not in PR mode
-  if ((target === 'old' && !cacheHit) || target === 'push') {
+  if (!prMode && target === 'push') {
     mkdirSync('scan-results/sca', { recursive: true })
 
     if (existsSync(scaSarifReport)) {

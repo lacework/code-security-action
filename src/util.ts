@@ -1,8 +1,8 @@
 import { error, getInput, info, isDebug } from '@actions/core'
 import { context } from '@actions/github'
 import { spawn } from 'child_process'
-import { TelemetryCollector } from './telemetry'
 import { readFileSync } from 'fs'
+import { TelemetryCollector } from './telemetry'
 
 export const telemetryCollector = new TelemetryCollector()
 

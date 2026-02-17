@@ -2,9 +2,6 @@ import { error, getInput, info, isDebug } from '@actions/core'
 import { context } from '@actions/github'
 import { spawn } from 'child_process'
 import { readFileSync } from 'fs'
-import { TelemetryCollector } from './telemetry'
-
-export const telemetryCollector = new TelemetryCollector()
 
 export function getMsSinceStart(): string {
   const now = Date.now()
@@ -74,6 +71,7 @@ export async function callLaceworkCli(...args: string[]) {
     apiKey,
     '--api_secret',
     apiSecret,
+    'sca',
     ...args,
   ]
   info('Calling lacework ' + expandedArgs.join(' '))

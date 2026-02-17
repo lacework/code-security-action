@@ -1,22 +1,12 @@
-import { error, getInput, info, setOutput, warning } from '@actions/core'
-import { appendFileSync, existsSync, readFileSync } from 'fs'
+import { error, getInput, info, setOutput } from '@actions/core'
+import { existsSync, readFileSync } from 'fs'
 import {
   downloadArtifact,
   postCommentIfInPr,
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import {
-  callLaceworkCli,
-  debug,
-  generateUILink,
-  getActionRef,
-  getMsSinceStart,
-  getOptionalEnvVariable,
-  getRequiredEnvVariable,
-  getRunUrl,
-  telemetryCollector,
-} from './util'
+import { callLaceworkCli, debug, generateUILink, getOptionalEnvVariable } from './util'
 
 import path from 'path'
 
@@ -41,17 +31,7 @@ async function runAnalysis() {
   const toUpload: string[] = []
 
   // command to print both sarif and lwjson formats
-  var args = [
-    'sca',
-    'scan',
-    '.',
-    '--formats',
-    'sarif',
-    '--output',
-    sarifReportPath,
-    '--deployment',
-    'ci',
-  ]
+  var args = ['scan', '.', '--formats', 'sarif', '--output', sarifReportPath, '--deployment', 'ci']
   if (target === 'push') {
     args.push('--save-results')
   }
@@ -64,14 +44,11 @@ async function runAnalysis() {
   const uploadStart = Date.now()
 
   await uploadArtifact(getArtifactName(target), ...toUpload)
-
-  telemetryCollector.addField('duration.upload-artifacts', (Date.now() - uploadStart).toString())
   setOutput(`${target}-completed`, true)
 }
 
 export async function compareResults(oldReport: string, newReport: string): Promise<string> {
   const args = [
-    'sca',
     'compare',
     '--old',
     oldReport,
@@ -101,10 +78,6 @@ async function displayResults() {
   const downloadStart = Date.now()
   const artifactOld = await downloadArtifact(getArtifactName('old'))
   const artifactNew = await downloadArtifact(getArtifactName('new'))
-  telemetryCollector.addField(
-    'duration.download-artifacts',
-    (Date.now() - downloadStart).toString()
-  )
   const sarifFileOld = path.join(artifactOld, sarifReportPath)
   const sarifFileNew = path.join(artifactNew, sarifReportPath)
 
@@ -129,7 +102,6 @@ async function displayResults() {
   } else {
     await resolveExistingCommentIfFound()
   }
-  telemetryCollector.addField('duration.comment', (Date.now() - commentStart).toString())
   setOutput(`display-completed`, true)
 }
 
@@ -142,29 +114,15 @@ function getArtifactName(target: string): string {
 }
 
 async function main() {
-  telemetryCollector.addField('duration.install', getMsSinceStart())
-  telemetryCollector.addField('version', getActionRef())
-  telemetryCollector.addField('url', getRunUrl())
-  telemetryCollector.addField('repository', getRequiredEnvVariable('GITHUB_REPOSITORY'))
   if (getInput('target') !== '') {
-    telemetryCollector.addField('run-type', 'analysis')
     await runAnalysis()
   } else {
-    telemetryCollector.addField('run-type', 'display')
     await displayResults()
   }
 }
 
 main()
   .catch((e) => {
-    telemetryCollector.addError('error', e)
     error(e.message) // TODO: Use setFailed once we want failures to be fatal
   })
-  .finally(async () => {
-    telemetryCollector.addField('metadata.integration', 'github')
-    telemetryCollector.addField('duration.total', getMsSinceStart())
-    await telemetryCollector.report().catch((err) => {
-      warning('Failed to report telemetry: ' + err.message)
-    })
-    appendFileSync(getRequiredEnvVariable('GITHUB_ENV'), 'LACEWORK_WROTE_TELEMETRY=true\n')
-  })
+  .finally(async () => {})

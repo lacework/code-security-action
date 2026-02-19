@@ -1,14 +1,7 @@
 import { info, warning } from '@actions/core'
 import { context } from '@actions/github'
 import { getActionsApi } from './actions'
-import {
-  getActionRef,
-  getMsSinceStart,
-  getOptionalEnvVariable,
-  getRequiredEnvVariable,
-  getRunUrl,
-  telemetryCollector,
-} from './util'
+import { getOptionalEnvVariable, getRequiredEnvVariable } from './util'
 
 async function main() {
   if (getOptionalEnvVariable('LACEWORK_WROTE_TELEMETRY', 'false') !== 'true') {
@@ -27,12 +20,6 @@ async function main() {
     }
 
     info('Reporting unknown failure')
-    telemetryCollector.addField('version', getActionRef())
-    telemetryCollector.addField('url', getRunUrl())
-    telemetryCollector.addField('repository', getRequiredEnvVariable('GITHUB_REPOSITORY'))
-    telemetryCollector.addField('duration.total', getMsSinceStart())
-    telemetryCollector.addField('error', 'Unknown catastrophic error')
-    await telemetryCollector.report()
   } else {
     info('Telemetry has been reported previously')
   }

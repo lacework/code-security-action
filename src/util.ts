@@ -2,7 +2,10 @@ import { error, getInput, info, isDebug } from '@actions/core'
 import { context } from '@actions/github'
 import { spawn } from 'child_process'
 import { TelemetryCollector } from './telemetry'
-import { readFileSync, readFile } from 'fs'
+import { readFileSync } from 'fs'
+import * as tmp from 'tmp'
+import * as path from 'path'
+import { mkdirSync, existsSync } from 'fs'
 
 export const telemetryCollector = new TelemetryCollector()
 
@@ -111,49 +114,172 @@ export function generateUILink() {
   return url
 }
 
-// codesecTool: this method is to be used in 3 ways depending on action and scanTarget
-// 1. action: scan, scanTarget: new/old -> will produce an analysis report that will be used in generating the PR comment
-// 2. action: scan, scanTarget: scan -> will scan the repo and send the results back to lacework (use in scheduled events)
-// 3. action: compare -> will use the previously generated new/old targets to compare them and generate the diffed markdown that will be displayed in the PR comment
+// codesecRun - Docker-based scanner using codesec:latest image
+// Follows the pattern from test-unified-scanner.sh for CI runner compatibility
+//
+// Modes:
+// 1. action='scan', scanTarget='new'/'old' -> produces analysis for PR comment
+// 2. action='scan', scanTarget='scan' -> full scan for scheduled events (uploads to Lacework)
+// 3. action='compare' -> compares new/old results, generates diff markdown for PR comment
+//
+// Parameters:
+// - runIac/runSca: which scanners to enable (default false - enable when ready to test)
+// - scanTarget: 'new', 'old', or 'scan' depending on mode
 export async function codesecRun(
   action: string,
-  runIac: boolean = true,
-  runSca: boolean = true,
+  runIac: boolean = false,
+  runSca: boolean = false,
   scanTarget?: string
 ): Promise<void> {
-  const dockerArgs = [
-    'run',
-    '--rm',
-    '-v',
-    '/var/run/docker.sock:/var/run/docker.sock',
-    '-v',
-    `${process.cwd()}:/workspace`,
-    '-e',
-    `HOST_REPO_PATH=${process.cwd()}`,
-    '-e',
-    `ACCOUNT=${getRequiredEnvVariable('LW_ACCOUNT_NAME')}`,
-    '-e',
-    `API_KEY=${getRequiredEnvVariable('LW_API_KEY')}`,
-    '-e',
-    `SECRET=${getRequiredEnvVariable('LW_API_SECRET')}`,
-    '-e',
-    `RUN_IAC=${runIac}`,
-    '-e',
-    `RUN_SCA=${runSca}`,
-    '-e',
-    `SCAN_TARGET=${scanTarget}`,
-    'codesec-integrations:test',
-    `${action}`,
-  ]
+  const lwAccount = getRequiredEnvVariable('LW_ACCOUNT_NAME')
+  const lwApiKey = getRequiredEnvVariable('LW_API_KEY')
+  const lwApiSecret = getRequiredEnvVariable('LW_API_SECRET')
 
-  info('Running codesec-integrations')
-  await callCommand('docker', ...dockerArgs)
+  // Create temp directory for scan results (auto-cleaned after use)
+  const tmpDir = tmp.dirSync({ unsafeCleanup: true })
+  const reportsDir = path.join(tmpDir.name, 'scan-results')
+
+  try {
+    if (action === 'scan') {
+      // Scan mode: mount repo as /app/src, results go to /tmp/scan-results/ in container
+      const containerName = `codesec-scan-${scanTarget || 'default'}`
+
+      info(`Running codesec scan (target: ${scanTarget || 'scan'})`)
+
+      // Run the scanner
+      const dockerArgs = [
+        'run',
+        '--name',
+        containerName,
+        '-v',
+        `${process.cwd()}:/app/src`,
+        '-e',
+        `WORKSPACE=src`,
+        '-e',
+        `LW_ACCOUNT=${lwAccount}`,
+        '-e',
+        `LW_API_KEY=${lwApiKey}`,
+        '-e',
+        `LW_API_SECRET=${lwApiSecret}`,
+        '-e',
+        `RUN_SCA=${runSca}`,
+        '-e',
+        `RUN_IAC=${runIac}`,
+        '-e',
+        `SCAN_TARGET=${scanTarget || 'scan'}`,
+        'codesec:latest',
+        'scan',
+      ]
+
+      await callCommand('docker', ...dockerArgs)
+
+      // Copy results out of container to temp dir
+      if (runSca) {
+        const scaDir = path.join(reportsDir, 'sca')
+        mkdirSync(scaDir, { recursive: true })
+        await callCommand(
+          'docker',
+          'container',
+          'cp',
+          `${containerName}:/tmp/scan-results/sca/sca-${scanTarget || 'scan'}.sarif`,
+          path.join(scaDir, `sca-${scanTarget || 'scan'}.sarif`)
+        )
+      }
+
+      if (runIac) {
+        const iacDir = path.join(reportsDir, 'iac')
+        mkdirSync(iacDir, { recursive: true })
+        await callCommand(
+          'docker',
+          'container',
+          'cp',
+          `${containerName}:/tmp/scan-results/iac/iac-${scanTarget || 'scan'}.json`,
+          path.join(iacDir, `iac-${scanTarget || 'scan'}.json`)
+        )
+      }
+
+      // Cleanup container
+      await callCommand('docker', 'rm', containerName)
+    } else if (action === 'compare') {
+      // Compare mode: copy scan results into place first, then run compare
+      const srcDir = path.join(reportsDir, 'sca')
+      const scaOld = path.join(srcDir, 'sca-old.sarif')
+      const scaNew = path.join(srcDir, 'sca-new.sarif')
+
+      // Verify required files exist before running compare
+      if (!existsSync(scaOld) || !existsSync(scaNew)) {
+        throw new Error(`Compare requires sca-old.sarif and sca-new.sarif. Found: old=${existsSync(scaOld)}, new=${existsSync(scaNew)}`)
+      }
+
+      const containerName = 'codesec-compare'
+
+      info('Running codesec compare')
+
+      // Note: mounts both the repo and the scan-results directory separately
+      const dockerArgs = [
+        'run',
+        '--name',
+        containerName,
+        '-v',
+        `${process.cwd()}:/app/src`,
+        '-v',
+        `${path.join(process.cwd(), 'scan-results')}:/app/scan-results`,
+        '-e',
+        `WORKSPACE=src`,
+        '-e',
+        `LW_ACCOUNT=${lwAccount}`,
+        '-e',
+        `LW_API_KEY=${lwApiKey}`,
+        '-e',
+        `LW_API_SECRET=${lwApiSecret}`,
+        '-e',
+        `RUN_SCA=true`,
+        '-e',
+        `RUN_IAC=true`,
+        'codesec:latest',
+        'compare',
+      ]
+
+      await callCommand('docker', ...dockerArgs)
+
+      // Copy comparison results out
+      const compareDir = path.join(reportsDir, 'compare')
+      mkdirSync(compareDir, { recursive: true })
+
+      await callCommand(
+        'docker',
+        'container',
+        'cp',
+        `${containerName}:/tmp/sca-compare.md`,
+        path.join(compareDir, 'sca-compare.md')
+      )
+      await callCommand(
+        'docker',
+        'container',
+        'cp',
+        `${containerName}:/tmp/iac-compare.md`,
+        path.join(compareDir, 'iac-compare.md')
+      )
+      await callCommand(
+        'docker',
+        'container',
+        'cp',
+        `${containerName}:/tmp/merged-compare.md`,
+        path.join(compareDir, 'merged-compare.md')
+      )
+
+      // Cleanup container
+      await callCommand('docker', 'rm', containerName)
+    }
+  } finally {
+    // Always cleanup temp directory, even if something fails
+    tmpDir.removeCallback()
+  }
 }
 
-export async function readMarkdownFile(filePath: string): Promise<string> {
+export function readMarkdownFile(filePath: string): string {
   try {
-    const content = await readFile(filePath, 'utf-8')
-    return content
+    return readFileSync(filePath, 'utf-8')
   } catch (error) {
     throw new Error(`Failed to read scanner output file: ${error}`)
   }

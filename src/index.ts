@@ -1,17 +1,12 @@
 import { error, getInput, info, setOutput, warning } from '@actions/core'
 import { appendFileSync, existsSync } from 'fs'
 import {
-  downloadArtifact,
   postCommentIfInPr,
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import { compareResults } from './tool'
 import {
-  callCommand,
-  callLaceworkCli,
   codesecRun,
-  debug,
   getActionRef,
   getMsSinceStart,
   getOptionalEnvVariable,
@@ -21,12 +16,11 @@ import {
   telemetryCollector,
 } from './util'
 
-import path from 'path'
-
-const scaSarifReport = 'scaReport/output.sarif'
-const scaReport = 'sca.sarif'
-const scaLWJSONReport = 'scaReport/output-lw.json'
-const scaDir = 'scaReport'
+// Constants for old Lacework CLI flow - kept for reference when re-enabling
+// const scaSarifReport = 'scaReport/output.sarif'
+// const scaReport = 'sca.sarif'
+// const scaLWJSONReport = 'scaReport/output-lw.json'
+// const scaDir = 'scaReport'
 
 async function runAnalysis() {
   const target = getInput('target')
@@ -45,37 +39,36 @@ async function runAnalysis() {
   telemetryCollector.addField('tools', 'sca')
   const toUpload: string[] = []
 
-  // codesec-integrations method start
+  // Run codesec Docker scanner
+  // targetScan: 'new'/'old' for PR mode, 'scan' for push mode (uploads to Lacework UI)
   var targetScan = target
   if (target == 'push') {
     targetScan = 'scan'
   }
-  await codesecRun('scan', false, false, targetScan)
+  await codesecRun('scan', true, true, targetScan)
 
-  // codesec-integrations method end
+  // TODO: Copy SARIF from codesec results to expected location for artifact upload
+  // The codesec scanner outputs to scan-results/sca/sca-{target}.sarif
+  // For now, keeping the old Lacework CLI flow commented below as fallback
 
-  // command to print both sarif and lwjson formats
-  var args = ['sca', 'scan', '.', '-o', scaDir, '--formats', 'sarif,lw-json', '--deployment', 'ci']
-  if (target === 'push') {
-    args.push('--save-results')
+  /*
+   * OLD LACEWORK CLI FLOW - Commented out, to be removed once codesec is fully tested
+   *
+   * var args = ['sca', 'scan', '.', '-o', scaDir, '--formats', 'sarif,lw-json', '--deployment', 'ci']
+   * if (target === 'push') { args.push('--save-results') }
+   * if (debug()) { args.push('--debug') }
+   * await callLaceworkCli(...args)
+   * args = [scaSarifReport, scaReport]
+   * await callCommand('cp', ...args)
+   * toUpload.push(scaReport)
+   */
+
+  // Placeholder: upload the SARIF from codesec results
+  // TODO: Update this path once codesec output location is finalized
+  const scaSarifFromCodesec = `scan-results/sca/sca-${targetScan}.sarif`
+  if (existsSync(scaSarifFromCodesec)) {
+    toUpload.push(scaSarifFromCodesec)
   }
-  if (debug()) {
-    args.push('--debug')
-  }
-  await callLaceworkCli(...args)
-
-  // codesec-integrations start
-
-  var scaSarifReportIntegrations = `scan-results/sca/sca-${targetScan}.sarif`
-  args = [scaSarifReportIntegrations, scaReport]
-
-  // codesec-integrations end
-
-  // make a copy of the sarif file
-  args = [scaSarifReport, scaReport]
-  await callCommand('cp', ...args)
-
-  toUpload.push(scaReport)
 
   const uploadStart = Date.now()
   const artifactPrefix = getInput('artifact-prefix')
@@ -90,78 +83,58 @@ async function runAnalysis() {
 
 async function displayResults() {
   info('Displaying results')
-  // codesec-integrations start
 
-  // we call compare on an already twice scanned repo with the new/old target.
-  if (
-    (existsSync('scan-results/sca/sca-new.sarif') &&
-      existsSync('scan-results/sca/sca-old.sarif')) ||
-    (existsSync('scan-results/iac/iac-new.sarif') && existsSync('scan-results/sca/iac-old.sarif'))
-  ) {
-    await codesecRun('compare', false, false)
-    var mergedOutput = 'scan-results/compare/merged-compare.md'
-    // If agreed to be able to run only one type, we need to revisit the conditional to take into account only one type of scanning as well
-    // var scaOutput = "scan-results/compare/sca-compare.md"
-    // var iacOutput = "scan-results/compare/iac-compare.md"
-    if (existsSync(mergedOutput)) {
-      var message: string = await readMarkdownFile(mergedOutput)
+  // Use codesec compare - expects scan-results/sca/sca-{new,old}.sarif to exist
+  // These are produced by the previous scan steps with target='new' and target='old'
+  const scaOldExists = existsSync('scan-results/sca/sca-old.sarif')
+  const scaNewExists = existsSync('scan-results/sca/sca-new.sarif')
 
-      // Check if compare contains "Found <non-zero number> ..." that indicates there are newly found violations
-      const hasViolations = /Found\s+[1-9]\d*\s+/.test(message)
-      if (hasViolations) {
-        info('Posting comment to GitHub PR as there were new issues introduced:')
-        const commentUrl = await postCommentIfInPr(message)
-        if (commentUrl !== undefined) {
-          setOutput('posted-comment', commentUrl)
-        }
-      } else {
-        await resolveExistingCommentIfFound()
-      }
-    }
-  } else {
-    throw new Error('SARIF file not found for SCA or IAC')
+  if (!scaOldExists || !scaNewExists) {
+    throw new Error(
+      `SARIF files not found for comparison. old=${scaOldExists}, new=${scaNewExists}`
+    )
   }
 
-  // codesec-integrations end
-  const downloadStart = Date.now()
-  const artifactOld = await downloadArtifact('results-old')
-  const artifactNew = await downloadArtifact('results-new')
-  telemetryCollector.addField(
-    'duration.download-artifacts',
-    (Date.now() - downloadStart).toString()
-  )
-  const sarifFileOld = path.join(artifactOld, scaReport)
-  const sarifFileNew = path.join(artifactNew, scaReport)
+  // Run codesec compare mode
+  await codesecRun('compare', false, false)
 
-  const issuesByTool: { [tool: string]: string } = {}
-  if (existsSync(sarifFileOld) && existsSync(sarifFileNew)) {
-    issuesByTool['sca'] = await compareResults('sca', sarifFileOld, sarifFileNew)
-  } else {
-    throw new Error('SARIF file not found for SCA')
+  // Read the merged comparison output
+  const mergedOutput = 'scan-results/compare/merged-compare.md'
+  if (!existsSync(mergedOutput)) {
+    throw new Error(`Comparison output not found at ${mergedOutput}`)
   }
 
-  const commentStart = Date.now()
-  if (Object.values(issuesByTool).some((x) => x.length > 0) && getInput('token').length > 0) {
-    info('Posting comment to GitHub PR as there were new issues introduced:')
-    let message = ''
-    for (const [, issues] of Object.entries(issuesByTool)) {
-      if (issues.length > 0) {
-        message += issues
-      }
-    }
-    if (getInput('footer') !== '') {
-      message += '\n\n' + getInput('footer')
-    }
-    info(message)
+  const message = readMarkdownFile(mergedOutput)
+
+  // Check if there are new violations (non-zero count in "Found N new potential violations")
+  const hasViolations = /Found\s+[1-9]\d*\s+/.test(message)
+
+  if (hasViolations && getInput('token').length > 0) {
+    info('Posting comment to GitHub PR as there were new issues introduced')
     const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {
       setOutput('posted-comment', commentUrl)
     }
   } else {
+    // No new violations or no token - resolve existing comment if found
     await resolveExistingCommentIfFound()
   }
-  telemetryCollector.addField('duration.comment', (Date.now() - commentStart).toString())
-  setOutput(`display-completed`, true)
+
+  setOutput('display-completed', true)
+
+  /*
+   * OLD FLOW - Commented out, to be removed once codesec is fully tested
+   *
+   * const downloadStart = Date.now()
+   * const artifactOld = await downloadArtifact('results-old')
+   * const artifactNew = await downloadArtifact('results-new')
+   * const sarifFileOld = path.join(artifactOld, scaReport)
+   * const sarifFileNew = path.join(artifactNew, scaReport)
+   * const compareMessage = await compareResults(sarifFileOld, sarifFileNew)
+   * if (compareMessage.length > 0 && getInput('token').length > 0) {
+   *   await postCommentIfInPr(compareMessage)
+   * }
+   */
 }
 
 async function main() {

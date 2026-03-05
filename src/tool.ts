@@ -1,3 +1,7 @@
+// DISABLED: This file is no longer used - codesecRun('compare') handles comparison
+// Keeping commented for reference when migrating back to Lacework CLI
+
+/*
 import { endGroup, startGroup } from '@actions/core'
 import { existsSync, readFileSync } from 'fs'
 import { callLaceworkCli, debug, generateUILink } from './util'
@@ -31,3 +35,4 @@ export async function compareResults(
   endGroup()
   return existsSync(`${tool}.md`) ? readFileSync(`${tool}.md`, 'utf8') : ''
 }
+*/

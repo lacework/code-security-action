@@ -1,7 +1,9 @@
 import { error, getInput, info, setOutput, warning } from '@actions/core'
-import { appendFileSync, existsSync } from 'fs'
-import { postCommentIfInPr, resolveExistingCommentIfFound, uploadArtifact } from './actions'
+import { appendFileSync, existsSync, mkdirSync } from 'fs'
+import * as path from 'path'
+import { downloadArtifact, postCommentIfInPr, resolveExistingCommentIfFound, uploadArtifact } from './actions'
 import {
+  callCommand,
   codesecRun,
   getActionRef,
   getMsSinceStart,
@@ -41,29 +43,12 @@ async function runAnalysis() {
   if (target == 'push') {
     targetScan = 'scan'
   }
-  await codesecRun('scan', true, true, targetScan)
+  const resultsPath = await codesecRun('scan', true, true, targetScan)
 
-  // TODO: Copy SARIF from codesec results to expected location for artifact upload
-  // The codesec scanner outputs to scan-results/sca/sca-{target}.sarif
-  // For now, keeping the old Lacework CLI flow commented below as fallback
-
-  /*
-   * OLD LACEWORK CLI FLOW - Commented out, to be removed once codesec is fully tested
-   *
-   * var args = ['sca', 'scan', '.', '-o', scaDir, '--formats', 'sarif,lw-json', '--deployment', 'ci']
-   * if (target === 'push') { args.push('--save-results') }
-   * if (debug()) { args.push('--debug') }
-   * await callLaceworkCli(...args)
-   * args = [scaSarifReport, scaReport]
-   * await callCommand('cp', ...args)
-   * toUpload.push(scaReport)
-   */
-
-  // Placeholder: upload the SARIF from codesec results
-  // TODO: Update this path once codesec output location is finalized
-  const scaSarifFromCodesec = `scan-results/sca/sca-${targetScan}.sarif`
-  if (existsSync(scaSarifFromCodesec)) {
-    toUpload.push(scaSarifFromCodesec)
+  // Upload SARIF from the returned results path
+  const scaSarifFile = path.join(resultsPath, 'sca', `sca-${targetScan}.sarif`)
+  if (existsSync(scaSarifFile)) {
+    toUpload.push(scaSarifFile)
   }
 
   const uploadStart = Date.now()
@@ -80,8 +65,18 @@ async function runAnalysis() {
 async function displayResults() {
   info('Displaying results')
 
-  // Use codesec compare - expects scan-results/sca/sca-{new,old}.sarif to exist
-  // These are produced by the previous scan steps with target='new' and target='old'
+  // Download artifacts from previous jobs
+  const artifactOld = await downloadArtifact('results-old')
+  const artifactNew = await downloadArtifact('results-new')
+
+  // Create local scan-results directory for compare
+  mkdirSync('scan-results/sca', { recursive: true })
+
+  // Copy SARIF files from artifacts to expected location for compare
+  await callCommand('cp', path.join(artifactOld, 'sca-old.sarif'), 'scan-results/sca/sca-old.sarif')
+  await callCommand('cp', path.join(artifactNew, 'sca-new.sarif'), 'scan-results/sca/sca-new.sarif')
+
+  // Verify files exist
   const scaOldExists = existsSync('scan-results/sca/sca-old.sarif')
   const scaNewExists = existsSync('scan-results/sca/sca-new.sarif')
 

@@ -130,17 +130,16 @@ export async function codesecRun(
   runIac: boolean = false,
   runSca: boolean = false,
   scanTarget?: string
-): Promise<void> {
+): Promise<string> {
   const lwAccount = getRequiredEnvVariable('LW_ACCOUNT_NAME')
   const lwApiKey = getRequiredEnvVariable('LW_API_KEY')
   const lwApiSecret = getRequiredEnvVariable('LW_API_SECRET')
 
-  // Create temp directory for scan results (auto-cleaned after use)
+  // Create temp directory for scan results
   const tmpDir = tmp.dirSync({ unsafeCleanup: true })
   const reportsDir = path.join(tmpDir.name, 'scan-results')
 
-  try {
-    if (action === 'scan') {
+  if (action === 'scan') {
       // Scan mode: mount repo as /app/src, results go to /tmp/scan-results/ in container
       const containerName = `codesec-scan-${scanTarget || 'default'}`
 
@@ -275,10 +274,7 @@ export async function codesecRun(
       // Cleanup container
       await callCommand('docker', 'rm', containerName)
     }
-  } finally {
-    // Always cleanup temp directory, even if something fails
-    tmpDir.removeCallback()
-  }
+  return reportsDir
 }
 
 export function readMarkdownFile(filePath: string): string {

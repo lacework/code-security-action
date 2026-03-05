@@ -167,7 +167,7 @@ export async function codesecRun(
         `RUN_IAC=${runIac}`,
         '-e',
         `SCAN_TARGET=${scanTarget || 'scan'}`,
-        'codesec:latest',
+        'lacework/codesec:latest',
         'scan',
       ]
 
@@ -240,7 +240,7 @@ export async function codesecRun(
         `RUN_SCA=true`,
         '-e',
         `RUN_IAC=true`,
-        'codesec:latest',
+        'lacework/codesec:latest',
         'compare',
       ]
 

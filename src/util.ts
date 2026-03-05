@@ -3,7 +3,6 @@ import { context } from '@actions/github'
 import { spawn } from 'child_process'
 import { TelemetryCollector } from './telemetry'
 import { readFileSync } from 'fs'
-import * as tmp from 'tmp'
 import * as path from 'path'
 import { mkdirSync, existsSync } from 'fs'
 
@@ -135,9 +134,8 @@ export async function codesecRun(
   const lwApiKey = getRequiredEnvVariable('LW_API_KEY')
   const lwApiSecret = getRequiredEnvVariable('LW_API_SECRET')
 
-  // Create temp directory for scan results
-  const tmpDir = tmp.dirSync({ unsafeCleanup: true })
-  const reportsDir = path.join(tmpDir.name, 'scan-results')
+  // Create scan-results directory in workspace (required for artifact upload)
+  const reportsDir = path.join(process.cwd(), 'scan-results')
 
   if (action === 'scan') {
     // Scan mode: mount repo as /app/src, results go to /tmp/scan-results/ in container

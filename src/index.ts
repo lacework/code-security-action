@@ -1,7 +1,12 @@
 import { error, getInput, info, setOutput, warning } from '@actions/core'
 import { appendFileSync, existsSync, mkdirSync } from 'fs'
 import * as path from 'path'
-import { downloadArtifact, postCommentIfInPr, resolveExistingCommentIfFound, uploadArtifact } from './actions'
+import {
+  downloadArtifact,
+  postCommentIfInPr,
+  resolveExistingCommentIfFound,
+  uploadArtifact,
+} from './actions'
 import {
   callCommand,
   codesecRun,

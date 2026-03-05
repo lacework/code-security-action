@@ -140,140 +140,140 @@ export async function codesecRun(
   const reportsDir = path.join(tmpDir.name, 'scan-results')
 
   if (action === 'scan') {
-      // Scan mode: mount repo as /app/src, results go to /tmp/scan-results/ in container
-      const containerName = `codesec-scan-${scanTarget || 'default'}`
+    // Scan mode: mount repo as /app/src, results go to /tmp/scan-results/ in container
+    const containerName = `codesec-scan-${scanTarget || 'default'}`
 
-      info(`Running codesec scan (target: ${scanTarget || 'scan'})`)
+    info(`Running codesec scan (target: ${scanTarget || 'scan'})`)
 
-      // Run the scanner
-      const dockerArgs = [
-        'run',
-        '--name',
-        containerName,
-        '-v',
-        `${process.cwd()}:/app/src`,
-        '-e',
-        `WORKSPACE=src`,
-        '-e',
-        `LW_ACCOUNT=${lwAccount}`,
-        '-e',
-        `LW_API_KEY=${lwApiKey}`,
-        '-e',
-        `LW_API_SECRET=${lwApiSecret}`,
-        '-e',
-        `RUN_SCA=${runSca}`,
-        '-e',
-        `RUN_IAC=${runIac}`,
-        '-e',
-        `SCAN_TARGET=${scanTarget || 'scan'}`,
-        'lacework/codesec:latest',
-        'scan',
-      ]
+    // Run the scanner
+    const dockerArgs = [
+      'run',
+      '--name',
+      containerName,
+      '-v',
+      `${process.cwd()}:/app/src`,
+      '-e',
+      `WORKSPACE=src`,
+      '-e',
+      `LW_ACCOUNT=${lwAccount}`,
+      '-e',
+      `LW_API_KEY=${lwApiKey}`,
+      '-e',
+      `LW_API_SECRET=${lwApiSecret}`,
+      '-e',
+      `RUN_SCA=${runSca}`,
+      '-e',
+      `RUN_IAC=${runIac}`,
+      '-e',
+      `SCAN_TARGET=${scanTarget || 'scan'}`,
+      'lacework/codesec:latest',
+      'scan',
+    ]
 
-      await callCommand('docker', ...dockerArgs)
+    await callCommand('docker', ...dockerArgs)
 
-      // Copy results out of container to temp dir
-      if (runSca) {
-        const scaDir = path.join(reportsDir, 'sca')
-        mkdirSync(scaDir, { recursive: true })
-        await callCommand(
-          'docker',
-          'container',
-          'cp',
-          `${containerName}:/tmp/scan-results/sca/sca-${scanTarget || 'scan'}.sarif`,
-          path.join(scaDir, `sca-${scanTarget || 'scan'}.sarif`)
-        )
-      }
-
-      if (runIac) {
-        const iacDir = path.join(reportsDir, 'iac')
-        mkdirSync(iacDir, { recursive: true })
-        await callCommand(
-          'docker',
-          'container',
-          'cp',
-          `${containerName}:/tmp/scan-results/iac/iac-${scanTarget || 'scan'}.json`,
-          path.join(iacDir, `iac-${scanTarget || 'scan'}.json`)
-        )
-      }
-
-      // Cleanup container
-      await callCommand('docker', 'rm', containerName)
-    } else if (action === 'compare') {
-      // Compare mode: copy scan results into place first, then run compare
-      const srcDir = path.join(reportsDir, 'sca')
-      const scaOld = path.join(srcDir, 'sca-old.sarif')
-      const scaNew = path.join(srcDir, 'sca-new.sarif')
-
-      // Verify required files exist before running compare
-      if (!existsSync(scaOld) || !existsSync(scaNew)) {
-        throw new Error(
-          `Compare requires sca-old.sarif and sca-new.sarif. Found: old=${existsSync(
-            scaOld
-          )}, new=${existsSync(scaNew)}`
-        )
-      }
-
-      const containerName = 'codesec-compare'
-
-      info('Running codesec compare')
-
-      // Note: mounts both the repo and the scan-results directory separately
-      const dockerArgs = [
-        'run',
-        '--name',
-        containerName,
-        '-v',
-        `${process.cwd()}:/app/src`,
-        '-v',
-        `${path.join(process.cwd(), 'scan-results')}:/app/scan-results`,
-        '-e',
-        `WORKSPACE=src`,
-        '-e',
-        `LW_ACCOUNT=${lwAccount}`,
-        '-e',
-        `LW_API_KEY=${lwApiKey}`,
-        '-e',
-        `LW_API_SECRET=${lwApiSecret}`,
-        '-e',
-        `RUN_SCA=true`,
-        '-e',
-        `RUN_IAC=true`,
-        'lacework/codesec:latest',
-        'compare',
-      ]
-
-      await callCommand('docker', ...dockerArgs)
-
-      // Copy comparison results out
-      const compareDir = path.join(reportsDir, 'compare')
-      mkdirSync(compareDir, { recursive: true })
-
+    // Copy results out of container to temp dir
+    if (runSca) {
+      const scaDir = path.join(reportsDir, 'sca')
+      mkdirSync(scaDir, { recursive: true })
       await callCommand(
         'docker',
         'container',
         'cp',
-        `${containerName}:/tmp/sca-compare.md`,
-        path.join(compareDir, 'sca-compare.md')
+        `${containerName}:/tmp/scan-results/sca/sca-${scanTarget || 'scan'}.sarif`,
+        path.join(scaDir, `sca-${scanTarget || 'scan'}.sarif`)
       )
-      await callCommand(
-        'docker',
-        'container',
-        'cp',
-        `${containerName}:/tmp/iac-compare.md`,
-        path.join(compareDir, 'iac-compare.md')
-      )
-      await callCommand(
-        'docker',
-        'container',
-        'cp',
-        `${containerName}:/tmp/merged-compare.md`,
-        path.join(compareDir, 'merged-compare.md')
-      )
-
-      // Cleanup container
-      await callCommand('docker', 'rm', containerName)
     }
+
+    if (runIac) {
+      const iacDir = path.join(reportsDir, 'iac')
+      mkdirSync(iacDir, { recursive: true })
+      await callCommand(
+        'docker',
+        'container',
+        'cp',
+        `${containerName}:/tmp/scan-results/iac/iac-${scanTarget || 'scan'}.json`,
+        path.join(iacDir, `iac-${scanTarget || 'scan'}.json`)
+      )
+    }
+
+    // Cleanup container
+    await callCommand('docker', 'rm', containerName)
+  } else if (action === 'compare') {
+    // Compare mode: copy scan results into place first, then run compare
+    const srcDir = path.join(reportsDir, 'sca')
+    const scaOld = path.join(srcDir, 'sca-old.sarif')
+    const scaNew = path.join(srcDir, 'sca-new.sarif')
+
+    // Verify required files exist before running compare
+    if (!existsSync(scaOld) || !existsSync(scaNew)) {
+      throw new Error(
+        `Compare requires sca-old.sarif and sca-new.sarif. Found: old=${existsSync(
+          scaOld
+        )}, new=${existsSync(scaNew)}`
+      )
+    }
+
+    const containerName = 'codesec-compare'
+
+    info('Running codesec compare')
+
+    // Note: mounts both the repo and the scan-results directory separately
+    const dockerArgs = [
+      'run',
+      '--name',
+      containerName,
+      '-v',
+      `${process.cwd()}:/app/src`,
+      '-v',
+      `${path.join(process.cwd(), 'scan-results')}:/app/scan-results`,
+      '-e',
+      `WORKSPACE=src`,
+      '-e',
+      `LW_ACCOUNT=${lwAccount}`,
+      '-e',
+      `LW_API_KEY=${lwApiKey}`,
+      '-e',
+      `LW_API_SECRET=${lwApiSecret}`,
+      '-e',
+      `RUN_SCA=true`,
+      '-e',
+      `RUN_IAC=true`,
+      'lacework/codesec:latest',
+      'compare',
+    ]
+
+    await callCommand('docker', ...dockerArgs)
+
+    // Copy comparison results out
+    const compareDir = path.join(reportsDir, 'compare')
+    mkdirSync(compareDir, { recursive: true })
+
+    await callCommand(
+      'docker',
+      'container',
+      'cp',
+      `${containerName}:/tmp/sca-compare.md`,
+      path.join(compareDir, 'sca-compare.md')
+    )
+    await callCommand(
+      'docker',
+      'container',
+      'cp',
+      `${containerName}:/tmp/iac-compare.md`,
+      path.join(compareDir, 'iac-compare.md')
+    )
+    await callCommand(
+      'docker',
+      'container',
+      'cp',
+      `${containerName}:/tmp/merged-compare.md`,
+      path.join(compareDir, 'merged-compare.md')
+    )
+
+    // Cleanup container
+    await callCommand('docker', 'rm', containerName)
+  }
   return reportsDir
 }
 

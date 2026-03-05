@@ -1,10 +1,6 @@
 import { error, getInput, info, setOutput, warning } from '@actions/core'
 import { appendFileSync, existsSync } from 'fs'
-import {
-  postCommentIfInPr,
-  resolveExistingCommentIfFound,
-  uploadArtifact,
-} from './actions'
+import { postCommentIfInPr, resolveExistingCommentIfFound, uploadArtifact } from './actions'
 import {
   codesecRun,
   getActionRef,

@@ -208,7 +208,11 @@ export async function codesecRun(
 
       // Verify required files exist before running compare
       if (!existsSync(scaOld) || !existsSync(scaNew)) {
-        throw new Error(`Compare requires sca-old.sarif and sca-new.sarif. Found: old=${existsSync(scaOld)}, new=${existsSync(scaNew)}`)
+        throw new Error(
+          `Compare requires sca-old.sarif and sca-new.sarif. Found: old=${existsSync(
+            scaOld
+          )}, new=${existsSync(scaNew)}`
+        )
       }
 
       const containerName = 'codesec-compare'

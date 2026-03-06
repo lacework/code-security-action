@@ -78,8 +78,16 @@ async function displayResults() {
   mkdirSync('scan-results/sca', { recursive: true })
 
   // Copy SARIF files from artifacts to expected location for compare
-  await callCommand('cp', path.join(artifactOld, 'scan-results/sca/sca-old.sarif'), 'scan-results/sca/sca-old.sarif')
-  await callCommand('cp', path.join(artifactNew, 'scan-results/sca/sca-new.sarif'), 'scan-results/sca/sca-new.sarif')
+  await callCommand(
+    'cp',
+    path.join(artifactOld, 'scan-results/sca/sca-old.sarif'),
+    'scan-results/sca/sca-old.sarif'
+  )
+  await callCommand(
+    'cp',
+    path.join(artifactNew, 'scan-results/sca/sca-new.sarif'),
+    'scan-results/sca/sca-new.sarif'
+  )
 
   // Verify files exist
   const scaOldExists = existsSync('scan-results/sca/sca-old.sarif')

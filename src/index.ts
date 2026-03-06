@@ -61,7 +61,8 @@ async function runAnalysis() {
 
   const uploadStart = Date.now()
   const artifactPrefix = getInput('artifact-prefix')
-  const artifactName = artifactPrefix !== '' ? artifactPrefix + '-results-' + target : 'results-' + target
+  const artifactName =
+    artifactPrefix !== '' ? artifactPrefix + '-results-' + target : 'results-' + target
   info(`Uploading artifact '${artifactName}' with ${toUpload.length} file(s)`)
   await uploadArtifact(artifactName, ...toUpload)
   telemetryCollector.addField('duration.upload-artifacts', (Date.now() - uploadStart).toString())
@@ -77,20 +78,38 @@ async function displayResults() {
 
   // Create local scan-results directory for compare
   mkdirSync('scan-results/sca', { recursive: true })
+  mkdirSync('scan-results/iac', { recursive: true })
 
-  // Copy SARIF files from artifacts to expected location for compare
+  // Copy SCA SARIF files from artifacts to expected location for compare
+  info('Copying SCA files from artifacts')
+  info(`  Old SARIF: ${path.join(artifactOld, 'scan-results/sca/sca-old.sarif')}`)
   await callCommand(
     'cp',
     path.join(artifactOld, 'scan-results/sca/sca-old.sarif'),
     'scan-results/sca/sca-old.sarif'
   )
+  info(`  New SARIF: ${path.join(artifactNew, 'scan-results/sca/sca-new.sarif')}`)
   await callCommand(
     'cp',
     path.join(artifactNew, 'scan-results/sca/sca-new.sarif'),
     'scan-results/sca/sca-new.sarif'
   )
 
-  // Verify files exist
+  // Copy IAC JSON files from artifacts to expected location for compare
+  info('Checking for IAC files in artifacts')
+  const iacOldPath = path.join(artifactOld, 'scan-results/iac/iac-old.json')
+  const iacNewPath = path.join(artifactNew, 'scan-results/iac/iac-new.json')
+  info(`  Old IAC: ${iacOldPath} (exists: ${existsSync(iacOldPath)})`)
+  info(`  New IAC: ${iacNewPath} (exists: ${existsSync(iacNewPath)})`)
+  if (existsSync(iacOldPath) && existsSync(iacNewPath)) {
+    info('  Copying IAC files')
+    await callCommand('cp', iacOldPath, 'scan-results/iac/iac-old.json')
+    await callCommand('cp', iacNewPath, 'scan-results/iac/iac-new.json')
+  } else {
+    info('  IAC files not found in artifacts, skipping IAC compare')
+  }
+
+  // Verify SCA files exist (required)
   const scaOldExists = existsSync('scan-results/sca/sca-old.sarif')
   const scaNewExists = existsSync('scan-results/sca/sca-new.sarif')
 
@@ -103,13 +122,24 @@ async function displayResults() {
   // Run codesec compare mode
   await codesecRun('compare', false, false)
 
-  // Read the merged comparison output
+  // Read the comparison output
+  // merged-compare.md exists when both SCA and IAC comparisons succeed
+  // sca-compare.md exists when only SCA comparison succeeds (partial)
   const mergedOutput = 'scan-results/compare/merged-compare.md'
-  if (!existsSync(mergedOutput)) {
-    throw new Error(`Comparison output not found at ${mergedOutput}`)
-  }
+  const scaOutput = 'scan-results/compare/sca-compare.md'
 
-  const message = readMarkdownFile(mergedOutput)
+  let message: string
+  if (existsSync(mergedOutput)) {
+    info('Using merged comparison output')
+    message = readMarkdownFile(mergedOutput)
+  } else if (existsSync(scaOutput)) {
+    info('Using SCA-only comparison output (partial)')
+    message = readMarkdownFile(scaOutput)
+  } else {
+    throw new Error(
+      `Comparison output not found. Tried: ${mergedOutput}, ${scaOutput}`
+    )
+  }
 
   // Check if there are new violations (non-zero count in "Found N new potential violations")
   const hasViolations = /Found\s+[1-9]\d*\s+/.test(message)

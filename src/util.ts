@@ -247,16 +247,24 @@ export async function codesecRun(
     const compareDir = path.join(reportsDir, 'compare')
     mkdirSync(compareDir, { recursive: true })
 
-    // Copy merged output (required) - files are at /tmp/scan-results/compare/ in container
-    await callCommand(
-      'docker',
-      'container',
-      'cp',
-      `${containerName}:/tmp/scan-results/compare/merged-compare.md`,
-      path.join(compareDir, 'merged-compare.md')
-    )
+    // Copy all available comparison outputs
+    // merged-compare.md exists when both SCA and IAC comparisons succeed
+    // sca-compare.md / iac-compare.md exist for individual comparisons
+    let copiedAny = false
 
-    // Copy individual reports if they exist (optional - may not exist if scan was skipped)
+    try {
+      await callCommand(
+        'docker',
+        'container',
+        'cp',
+        `${containerName}:/tmp/scan-results/compare/merged-compare.md`,
+        path.join(compareDir, 'merged-compare.md')
+      )
+      copiedAny = true
+    } catch {
+      info('Merged compare output not found (partial compare mode)')
+    }
+
     try {
       await callCommand(
         'docker',
@@ -265,9 +273,11 @@ export async function codesecRun(
         `${containerName}:/tmp/scan-results/compare/sca-compare.md`,
         path.join(compareDir, 'sca-compare.md')
       )
+      copiedAny = true
     } catch {
       info('SCA compare output not found (may have been skipped)')
     }
+
     try {
       await callCommand(
         'docker',
@@ -276,8 +286,13 @@ export async function codesecRun(
         `${containerName}:/tmp/scan-results/compare/iac-compare.md`,
         path.join(compareDir, 'iac-compare.md')
       )
+      copiedAny = true
     } catch {
       info('IAC compare output not found (may have been skipped)')
+    }
+
+    if (!copiedAny) {
+      throw new Error('No comparison outputs found in container')
     }
 
     // Cleanup container

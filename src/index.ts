@@ -50,13 +50,22 @@ async function runAnalysis() {
   }
   const resultsPath = await codesecRun('scan', true, true, targetScan)
 
-  // Upload SARIF from the returned results path
+  // Upload SCA SARIF from the returned results path
   const scaSarifFile = path.join(resultsPath, 'sca', `sca-${targetScan}.sarif`)
   if (existsSync(scaSarifFile)) {
-    info(`Found SARIF file to upload: ${scaSarifFile}`)
+    info(`Found SCA SARIF file to upload: ${scaSarifFile}`)
     toUpload.push(scaSarifFile)
   } else {
-    info(`SARIF file not found at: ${scaSarifFile}`)
+    info(`SCA SARIF file not found at: ${scaSarifFile}`)
+  }
+
+  // Upload IAC JSON from the returned results path
+  const iacJsonFile = path.join(resultsPath, 'iac', `iac-${targetScan}.json`)
+  if (existsSync(iacJsonFile)) {
+    info(`Found IAC JSON file to upload: ${iacJsonFile}`)
+    toUpload.push(iacJsonFile)
+  } else {
+    info(`IAC JSON file not found at: ${iacJsonFile}`)
   }
 
   const uploadStart = Date.now()

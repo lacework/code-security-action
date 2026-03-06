@@ -247,12 +247,12 @@ export async function codesecRun(
     const compareDir = path.join(reportsDir, 'compare')
     mkdirSync(compareDir, { recursive: true })
 
-    // Copy merged output (required)
+    // Copy merged output (required) - files are at /tmp/scan-results/compare/ in container
     await callCommand(
       'docker',
       'container',
       'cp',
-      `${containerName}:/tmp/merged-compare.md`,
+      `${containerName}:/tmp/scan-results/compare/merged-compare.md`,
       path.join(compareDir, 'merged-compare.md')
     )
 
@@ -262,7 +262,7 @@ export async function codesecRun(
         'docker',
         'container',
         'cp',
-        `${containerName}:/tmp/sca-compare.md`,
+        `${containerName}:/tmp/scan-results/compare/sca-compare.md`,
         path.join(compareDir, 'sca-compare.md')
       )
     } catch {
@@ -273,7 +273,7 @@ export async function codesecRun(
         'docker',
         'container',
         'cp',
-        `${containerName}:/tmp/iac-compare.md`,
+        `${containerName}:/tmp/scan-results/compare/iac-compare.md`,
         path.join(compareDir, 'iac-compare.md')
       )
     } catch {

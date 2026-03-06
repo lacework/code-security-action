@@ -53,16 +53,17 @@ async function runAnalysis() {
   // Upload SARIF from the returned results path
   const scaSarifFile = path.join(resultsPath, 'sca', `sca-${targetScan}.sarif`)
   if (existsSync(scaSarifFile)) {
+    info(`Found SARIF file to upload: ${scaSarifFile}`)
     toUpload.push(scaSarifFile)
+  } else {
+    info(`SARIF file not found at: ${scaSarifFile}`)
   }
 
   const uploadStart = Date.now()
   const artifactPrefix = getInput('artifact-prefix')
-  if (artifactPrefix !== '') {
-    await uploadArtifact(artifactPrefix + '-results-' + target, ...toUpload)
-  } else {
-    await uploadArtifact('results-' + target, ...toUpload)
-  }
+  const artifactName = artifactPrefix !== '' ? artifactPrefix + '-results-' + target : 'results-' + target
+  info(`Uploading artifact '${artifactName}' with ${toUpload.length} file(s)`)
+  await uploadArtifact(artifactName, ...toUpload)
   telemetryCollector.addField('duration.upload-artifacts', (Date.now() - uploadStart).toString())
   setOutput(`${target}-completed`, true)
 }

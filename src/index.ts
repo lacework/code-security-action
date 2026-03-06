@@ -136,9 +136,7 @@ async function displayResults() {
     info('Using SCA-only comparison output (partial)')
     message = readMarkdownFile(scaOutput)
   } else {
-    throw new Error(
-      `Comparison output not found. Tried: ${mergedOutput}, ${scaOutput}`
-    )
+    throw new Error(`Comparison output not found. Tried: ${mergedOutput}, ${scaOutput}`)
   }
 
   // Check if there are new violations (non-zero count in "Found N new potential violations")

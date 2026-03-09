@@ -198,20 +198,6 @@ export async function codesecRun(
     // Cleanup container
     await callCommand('docker', 'rm', containerName)
   } else if (action === 'compare') {
-    // Compare mode: copy scan results into place first, then run compare
-    const srcDir = path.join(reportsDir, 'sca')
-    const scaOld = path.join(srcDir, 'sca-old.sarif')
-    const scaNew = path.join(srcDir, 'sca-new.sarif')
-
-    // Verify required files exist before running compare
-    if (!existsSync(scaOld) || !existsSync(scaNew)) {
-      throw new Error(
-        `Compare requires sca-old.sarif and sca-new.sarif. Found: old=${existsSync(
-          scaOld
-        )}, new=${existsSync(scaNew)}`
-      )
-    }
-
     const containerName = 'codesec-compare'
 
     info('Running codesec compare')

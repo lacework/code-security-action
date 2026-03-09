@@ -83,63 +83,40 @@ async function displayResults() {
   mkdirSync('scan-results/sca', { recursive: true })
   mkdirSync('scan-results/iac', { recursive: true })
 
-  // Copy SCA SARIF files from artifacts to expected location for compare
-  info('Copying SCA files from artifacts')
-  info(`  Old SARIF: ${path.join(artifactOld, 'scan-results/sca/sca-old.sarif')}`)
-  await callCommand(
-    'cp',
-    path.join(artifactOld, 'scan-results/sca/sca-old.sarif'),
-    'scan-results/sca/sca-old.sarif'
-  )
-  info(`  New SARIF: ${path.join(artifactNew, 'scan-results/sca/sca-new.sarif')}`)
-  await callCommand(
-    'cp',
-    path.join(artifactNew, 'scan-results/sca/sca-new.sarif'),
-    'scan-results/sca/sca-new.sarif'
-  )
+  // Check and copy files for each scanner type
+  const scaAvailable = await prepareScannerFiles('sca', artifactOld, artifactNew)
+  const iacAvailable = await prepareScannerFiles('iac', artifactOld, artifactNew)
 
-  // Copy IAC JSON files from artifacts to expected location for compare
-  info('Checking for IAC files in artifacts')
-  const iacOldPath = path.join(artifactOld, 'scan-results/iac/iac-old.json')
-  const iacNewPath = path.join(artifactNew, 'scan-results/iac/iac-new.json')
-  info(`  Old IAC: ${iacOldPath} (exists: ${existsSync(iacOldPath)})`)
-  info(`  New IAC: ${iacNewPath} (exists: ${existsSync(iacNewPath)})`)
-  if (existsSync(iacOldPath) && existsSync(iacNewPath)) {
-    info('  Copying IAC files')
-    await callCommand('cp', iacOldPath, 'scan-results/iac/iac-old.json')
-    await callCommand('cp', iacNewPath, 'scan-results/iac/iac-new.json')
-  } else {
-    info('  IAC files not found in artifacts, skipping IAC compare')
+  // Need at least one scanner to compare
+  if (!scaAvailable && !iacAvailable) {
+    info('No scanner files available for comparison. Nothing to compare.')
+    setOutput('display-completed', true)
+    return
   }
 
-  // Verify SCA files exist (required)
-  const scaOldExists = existsSync('scan-results/sca/sca-old.sarif')
-  const scaNewExists = existsSync('scan-results/sca/sca-new.sarif')
+  // Run codesec compare mode with available scanners
+  await codesecRun('compare', iacAvailable, scaAvailable)
 
-  if (!scaOldExists || !scaNewExists) {
-    throw new Error(
-      `SARIF files not found for comparison. old=${scaOldExists}, new=${scaNewExists}`
-    )
+  // Read comparison output - check all possible outputs
+  const outputs = [
+    'scan-results/compare/merged-compare.md',
+    'scan-results/compare/sca-compare.md',
+    'scan-results/compare/iac-compare.md',
+  ]
+
+  let message: string | null = null
+  for (const output of outputs) {
+    if (existsSync(output)) {
+      info(`Using comparison output: ${output}`)
+      message = readMarkdownFile(output)
+      break
+    }
   }
 
-  // Run codesec compare mode
-  await codesecRun('compare', true, true)
-
-  // Read the comparison output
-  // merged-compare.md exists when both SCA and IAC comparisons succeed
-  // sca-compare.md exists when only SCA comparison succeeds (partial)
-  const mergedOutput = 'scan-results/compare/merged-compare.md'
-  const scaOutput = 'scan-results/compare/sca-compare.md'
-
-  let message: string
-  if (existsSync(mergedOutput)) {
-    info('Using merged comparison output')
-    message = readMarkdownFile(mergedOutput)
-  } else if (existsSync(scaOutput)) {
-    info('Using SCA-only comparison output (partial)')
-    message = readMarkdownFile(scaOutput)
-  } else {
-    throw new Error(`Comparison output not found. Tried: ${mergedOutput}, ${scaOutput}`)
+  if (!message) {
+    info('No comparison output produced. No changes detected.')
+    setOutput('display-completed', true)
+    return
   }
 
   // Check if there are new violations (non-zero count in "Found N new potential violations")
@@ -157,6 +134,29 @@ async function displayResults() {
   }
 
   setOutput('display-completed', true)
+}
+
+async function prepareScannerFiles(
+  scanner: 'sca' | 'iac',
+  artifactOld: string,
+  artifactNew: string
+): Promise<boolean> {
+  const ext = scanner === 'sca' ? 'sarif' : 'json'
+  const oldPath = path.join(artifactOld, 'scan-results', scanner, `${scanner}-old.${ext}`)
+  const newPath = path.join(artifactNew, 'scan-results', scanner, `${scanner}-new.${ext}`)
+
+  const oldExists = existsSync(oldPath)
+  const newExists = existsSync(newPath)
+
+  if (!oldExists || !newExists) {
+    info(`${scanner.toUpperCase()} files not found for compare. old=${oldExists}, new=${newExists}`)
+    return false
+  }
+
+  info(`Copying ${scanner.toUpperCase()} files for compare`)
+  await callCommand('cp', oldPath, path.join('scan-results', scanner, `${scanner}-old.${ext}`))
+  await callCommand('cp', newPath, path.join('scan-results', scanner, `${scanner}-new.${ext}`))
+  return true
 }
 
 async function main() {

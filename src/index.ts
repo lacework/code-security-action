@@ -19,12 +19,6 @@ import {
   telemetryCollector,
 } from './util'
 
-// Constants for old Lacework CLI flow - kept for reference when re-enabling
-// const scaSarifReport = 'scaReport/output.sarif'
-// const scaReport = 'sca.sarif'
-// const scaLWJSONReport = 'scaReport/output-lw.json'
-// const scaDir = 'scaReport'
-
 async function runAnalysis() {
   const target = getInput('target')
 
@@ -129,7 +123,7 @@ async function displayResults() {
   }
 
   // Run codesec compare mode
-  await codesecRun('compare', false, false)
+  await codesecRun('compare', true, true)
 
   // Read the comparison output
   // merged-compare.md exists when both SCA and IAC comparisons succeed
@@ -163,20 +157,6 @@ async function displayResults() {
   }
 
   setOutput('display-completed', true)
-
-  /*
-   * OLD FLOW - Commented out, to be removed once codesec is fully tested
-   *
-   * const downloadStart = Date.now()
-   * const artifactOld = await downloadArtifact('results-old')
-   * const artifactNew = await downloadArtifact('results-new')
-   * const sarifFileOld = path.join(artifactOld, scaReport)
-   * const sarifFileNew = path.join(artifactNew, scaReport)
-   * const compareMessage = await compareResults(sarifFileOld, sarifFileNew)
-   * if (compareMessage.length > 0 && getInput('token').length > 0) {
-   *   await postCommentIfInPr(compareMessage)
-   * }
-   */
 }
 
 async function main() {

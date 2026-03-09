@@ -234,9 +234,9 @@ export async function codesecRun(
       '-e',
       `LW_API_SECRET=${lwApiSecret}`,
       '-e',
-      `RUN_SCA=true`,
+      `RUN_SCA=${runSca}`,
       '-e',
-      `RUN_IAC=true`,
+      `RUN_IAC=${runIac}`,
       'lacework/codesec:latest',
       'compare',
     ]

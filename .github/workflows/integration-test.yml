@@ -17,13 +17,7 @@ env:
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - macos-latest
-          - ubuntu-latest
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -44,7 +38,6 @@ jobs:
           target: push
           sources: ${{ github.workspace }}
           debug: true
-          artifact-prefix: ${{ matrix.os }}
       - name: Check run succeeded
         env:
           RUN_OUTPUT: ${{ steps.run-action.outputs.push-completed }}
@@ -58,7 +51,7 @@ jobs:
       - name: Download results
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.os }}-results-push
+          name: results-push
           path: artifact
       - name: Check results
         working-directory: artifact

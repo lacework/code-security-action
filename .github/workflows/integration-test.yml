@@ -30,7 +30,11 @@ jobs:
         run: |
           mkdir ../action
           mv * ../action
-          mv ../action/sample-repo/* .
+          rsync --archive ../action/sample-repo/ .
+      - name: Compile test project
+        run: |
+          mvn --quiet clean compile
+          dotnet build --verbosity quiet .
       - name: Run action
         id: run-action
         uses: ./../action
@@ -57,13 +61,12 @@ jobs:
         working-directory: artifact
         run: |
           if [ -f scanning-report.sarif ]; then
+            export expectedScaResults=9
             export SCA_RESULTS=`jq '.runs | map (.results | length) | add' scanning-report.sarif`
-            echo "Got $SCA_RESULTS from SCA"
-            if [ "$SCA_RESULTS" -eq 0 ]; then
+            if [ "$SCA_RESULTS" -eq $expectedScaResults ]; then
+              echo "Found expected number of SCA results: $SCA_RESULTS"
+            else
               echo "::error::Expected to have $expectedScaResults SCA results!"
               exit 1
             fi
-          else
-            echo "::error::SCA results not found!"
-            exit 1
           fi

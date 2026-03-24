@@ -16,6 +16,7 @@ const comparisonMarkdownPath = 'comparison.md'
 
 async function runAnalysis() {
   const target = getInput('target')
+  const sources = getInput('sources')
 
   let currBranch = getOptionalEnvVariable('GITHUB_HEAD_REF', '')
   if (currBranch !== '') {
@@ -31,7 +32,16 @@ async function runAnalysis() {
   const toUpload: string[] = []
 
   // command to print both sarif and lwjson formats
-  var args = ['scan', '.', '--formats', 'sarif', '--output', sarifReportPath, '--deployment', 'ci']
+  var args = [
+    'scan',
+    sources,
+    '--formats',
+    'sarif',
+    '--output',
+    sarifReportPath,
+    '--deployment',
+    'ci',
+  ]
   if (target === 'push') {
     args.push('--save-results')
   }

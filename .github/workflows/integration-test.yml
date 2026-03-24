@@ -6,14 +6,14 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 7 * * *'
+    - cron: "0 7 * * *"
   workflow_dispatch:
 
 env:
   LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_CAT }}
   LW_API_KEY: ${{ secrets.LW_API_KEY_CAT }}
   LW_API_SECRET: ${{ secrets.LW_API_SECRET_CAT }}
-  DEBUG: 'true'
+  DEBUG: true
 
 jobs:
   build:
@@ -24,8 +24,8 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
       - name: Move action
         run: |
           mkdir ../action

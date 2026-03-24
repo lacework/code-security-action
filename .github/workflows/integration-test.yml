@@ -37,7 +37,7 @@ jobs:
         with:
           target: push
           sources: ${{ github.workspace }}
-          debug: true
+          code-scanning-path: scanning-report.sarif
       - name: Check run succeeded
         env:
           RUN_OUTPUT: ${{ steps.run-action.outputs.push-completed }}
@@ -56,9 +56,14 @@ jobs:
       - name: Check results
         working-directory: artifact
         run: |
-          export SCA_RESULTS=`jq '.runs | map (.results | length) | add' sca.sarif`
-          echo "Got $SCA_RESULTS from SCA"
-          if [ "$SCA_RESULTS" -eq 0 ]; then
-            echo "::error::Expected to have $expectedScaResults SCA results!"
+          if [ -f scanning-report.sarif ]; then
+            export SCA_RESULTS=`jq '.runs | map (.results | length) | add' scanning-report.sarif`
+            echo "Got $SCA_RESULTS from SCA"
+            if [ "$SCA_RESULTS" -eq 0 ]; then
+              echo "::error::Expected to have $expectedScaResults SCA results!"
+              exit 1
+            fi
+          else
+            echo "::error::SCA results not found!"
             exit 1
           fi

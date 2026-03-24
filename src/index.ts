@@ -41,8 +41,6 @@ async function runAnalysis() {
   await callLaceworkCli(...args)
   toUpload.push(sarifReportPath)
 
-  const uploadStart = Date.now()
-
   await uploadArtifact(getArtifactName(target), ...toUpload)
   setOutput(`${target}-completed`, true)
 }

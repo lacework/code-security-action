@@ -23,8 +23,8 @@ permissions:
   pull-requests: write
 
 env:
-  LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_NAME }}
-  LW_SUBACCOUNT_NAME: ${{ secrets.LW_SUBACCOUNT_NAME }}
+  LW_ACCOUNT: ${{ secrets.LW_ACCOUNT }}
+  LW_SUBACCOUNT: ${{ secrets.LW_SUBACCOUNT }}
   LW_API_KEY: ${{ secrets.LW_API_KEY }}
   LW_API_SECRET: ${{ secrets.LW_API_SECRET }}
 

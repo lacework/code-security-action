@@ -1,0 +1,5 @@
+default:
+  sca:
+    enabled: true
+    scan:
+      taintAnalysis: true

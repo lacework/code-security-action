@@ -26,17 +26,17 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "17"
-      - name: Move action
+      - name: Copy action code
         run: |
           mkdir ../action
-          mv * ../action
-          mv ../action/sample-repo/* .
+          rsync -a --exclude='sample-repo' . ../action
+      - run: ls -alh
       - name: Run action
         id: run-action
         uses: ./../action
         with:
           target: push
-          sources: ${{ github.workspace }}
+          sources: sample-repo
           code-scanning-path: scanning-report.sarif
       - name: Check run succeeded
         env:

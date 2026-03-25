@@ -18,6 +18,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: docker://lacework/codesec:stable
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

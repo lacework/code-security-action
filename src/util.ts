@@ -60,22 +60,7 @@ export function getOptionalEnvVariable(name: string, defaultValue: string) {
 }
 
 export async function callLaceworkCli(...args: string[]) {
-  const accountName = getRequiredEnvVariable('LW_ACCOUNT_NAME')
-  const apiKey = getRequiredEnvVariable('LW_API_KEY')
-  const apiSecret = getRequiredEnvVariable('LW_API_SECRET')
-  const expandedArgs = [
-    '--noninteractive',
-    '--account',
-    accountName,
-    '--api_key',
-    apiKey,
-    '--api_secret',
-    apiSecret,
-    'sca',
-    ...args,
-  ]
-  info('Calling lacework ' + expandedArgs.join(' '))
-  await callCommand('lacework', ...expandedArgs)
+  await callCommand('lacework', '--noninteractive', 'sca', ...args)
 }
 
 export function getOrDefault(name: string, defaultValue: string) {
@@ -93,7 +78,7 @@ export function generateUILink() {
 
   if (targetBranch !== defaultBranch) return ''
 
-  let lwAccountName = process.env.LW_ACCOUNT_NAME
+  let lwAccountName = process.env.LW_ACCOUNT
   lwAccountName = lwAccountName?.replace(/\.lacework\.net$/, '')
 
   let url =
@@ -102,8 +87,8 @@ export function generateUILink() {
     `github.com%2F${context.repo.owner}%2F${context.repo.repo}` +
     `/${defaultBranch}`
 
-  if (process.env.LW_SUBACCOUNT_NAME) {
-    url += '?accountName=' + process.env.LW_SUBACCOUNT_NAME
+  if (process.env.LW_SUBACCOUNT) {
+    url += '?accountName=' + process.env.LW_SUBACCOUNT
   }
 
   return url

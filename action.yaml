@@ -81,7 +81,8 @@ runs:
         lacework --noninteractive component install sca
         lacework --noninteractive version
         lacework --noninteractive component install iac
-        lacework iac scan --help
+        lacework iac scan --help && echo "$?"
+        lacework account list
       env:
         CDK_DOWNLOAD_TIMEOUT_MINUTES: 2
     - uses: actions/setup-node@v4

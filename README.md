@@ -77,7 +77,7 @@ on:
     workflow_dispatch:
 
 env:
-  LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_NAME }}
+  LW_ACCOUNT: ${{ secrets.LW_ACCOUNT }}
   LW_API_KEY: ${{ secrets.LW_API_KEY }}
   LW_API_SECRET: ${{ secrets.LW_API_SECRET }}
 

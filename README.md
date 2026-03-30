@@ -8,7 +8,7 @@ This repository contains a GitHub Action for using FortiCNAPP's code security of
 
 ### Creating secrets
 
-Before attempting to run this action, you should add three secrets `LW_ACCOUNT_NAME`, `LW_SUBACCOUNT_NAME` (When using a subaccount) `LW_API_KEY` and `LW_API_SECRET` to your GitHub repository (or, better yet, your GitHub organization so they can be shared across all your repositories). The value for these secrets can be obtained by following the instructions [here](https://docs.lacework.com/console/api-access-keys) to create an API key and then download it.
+Before attempting to run this action, you should add three secrets `LW_ACCOUNT`, `LW_SUBACCOUNT` (When using a subaccount) `LW_API_KEY` and `LW_API_SECRET` to your GitHub repository (or, better yet, your GitHub organization so they can be shared across all your repositories). The value for these secrets can be obtained by following the instructions [here](https://docs.lacework.com/console/api-access-keys) to create an API key and then download it.
 
 ### Running on pull requests
 
@@ -77,7 +77,8 @@ on:
     workflow_dispatch:
 
 env:
-  LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT_NAME }}
+  LW_ACCOUNT_NAME: ${{ secrets.LW_ACCOUNT }}
+  LW_SUBACCOUNT: ${{ secrets.LW_SUBACCOUNT }}
   LW_API_KEY: ${{ secrets.LW_API_KEY }}
   LW_API_SECRET: ${{ secrets.LW_API_SECRET }}
 

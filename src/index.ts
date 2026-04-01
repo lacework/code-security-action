@@ -1,18 +1,17 @@
 import { error, getInput, info, setOutput } from '@actions/core'
-import { existsSync, readFileSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync } from 'fs'
+import * as path from 'path'
 import {
   downloadArtifact,
   postCommentIfInPr,
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import { callLaceworkCli, debug, generateUILink, getOptionalEnvVariable } from './util'
+import { callCommand, codesecRun, getOptionalEnvVariable, readMarkdownFile } from './util'
 
-import path from 'path'
-
-const artifactPrefix = getInput('artifact-prefix')
-const sarifReportPath = getInput('code-scanning-path')
-const comparisonMarkdownPath = 'comparison.md'
+// Global scanner toggles - set to false to disable a scanner globally
+const enableScaRunning = true
+const enableIacRunning = false // TODO: change to true when ready
 
 async function runAnalysis() {
   const target = getInput('target')
@@ -30,85 +29,142 @@ async function runAnalysis() {
   info('Analyzing ' + target)
   const toUpload: string[] = []
 
-  // command to print both sarif and lwjson formats
-  var args = ['scan', '.', '--formats', 'sarif', '--output', sarifReportPath, '--deployment', 'ci']
-  if (target === 'push') {
-    args.push('--save-results')
+  // Run codesec Docker scanner
+  // targetScan: 'new'/'old' for PR mode, 'scan' for push mode (should upload results to db)
+  var targetScan = target
+  if (target == 'push') {
+    targetScan = 'scan'
   }
-  if (debug()) {
-    args.push('--debug')
-  }
-  await callLaceworkCli(...args)
-  toUpload.push(sarifReportPath)
+  const resultsPath = await codesecRun('scan', enableIacRunning, enableScaRunning, targetScan)
 
-  await uploadArtifact(getArtifactName(target), ...toUpload)
+  // Upload SCA SARIF from the returned results path
+  if (enableScaRunning) {
+    const scaSarifFile = path.join(resultsPath, 'sca', `sca-${targetScan}.sarif`)
+    if (existsSync(scaSarifFile)) {
+      info(`Found SCA SARIF file to upload: ${scaSarifFile}`)
+      toUpload.push(scaSarifFile)
+
+      // Copy SARIF to code-scanning-path for backward compatibility
+      const codeScanningPath = getInput('code-scanning-path')
+      if (codeScanningPath) {
+        info(`Copying SARIF to code-scanning-path: ${codeScanningPath}`)
+        copyFileSync(scaSarifFile, codeScanningPath)
+      }
+    } else {
+      info(`SCA SARIF file not found at: ${scaSarifFile}`)
+    }
+  }
+
+  // Upload IAC JSON from the returned results path
+  if (enableIacRunning) {
+    const iacJsonFile = path.join(resultsPath, 'iac', `iac-${targetScan}.json`)
+    if (existsSync(iacJsonFile)) {
+      info(`Found IAC JSON file to upload: ${iacJsonFile}`)
+      toUpload.push(iacJsonFile)
+    } else {
+      info(`IAC JSON file not found at: ${iacJsonFile}`)
+    }
+  }
+
+  const artifactPrefix = getInput('artifact-prefix')
+  const artifactName =
+    artifactPrefix !== '' ? artifactPrefix + '-results-' + target : 'results-' + target
+  info(`Uploading artifact '${artifactName}' with ${toUpload.length} file(s)`)
+  await uploadArtifact(artifactName, ...toUpload)
   setOutput(`${target}-completed`, true)
-}
-
-export async function compareResults(oldReport: string, newReport: string): Promise<string> {
-  const args = [
-    'compare',
-    '--old',
-    oldReport,
-    '--new',
-    newReport,
-    '--output',
-    sarifReportPath,
-    '--markdown',
-    comparisonMarkdownPath,
-    '--markdown-variant',
-    'GitHub',
-    '--deployment',
-    'ci',
-  ]
-  const uiLink = generateUILink()
-  if (uiLink) args.push(...['--ui-link', uiLink])
-  if (debug()) args.push('--debug')
-
-  await callLaceworkCli(...args)
-  await uploadArtifact(getArtifactName('compare'), sarifReportPath, comparisonMarkdownPath)
-
-  return existsSync(comparisonMarkdownPath) ? readFileSync(comparisonMarkdownPath, 'utf8') : ''
 }
 
 async function displayResults() {
   info('Displaying results')
-  const downloadStart = Date.now()
-  const artifactOld = await downloadArtifact(getArtifactName('old'))
-  const artifactNew = await downloadArtifact(getArtifactName('new'))
-  const sarifFileOld = path.join(artifactOld, sarifReportPath)
-  const sarifFileNew = path.join(artifactNew, sarifReportPath)
 
-  var compareMessage: string
-  if (existsSync(sarifFileOld) && existsSync(sarifFileNew)) {
-    compareMessage = await compareResults(sarifFileOld, sarifFileNew)
-  } else {
-    throw new Error('SARIF file not found')
+  // Download artifacts from previous jobs
+  const artifactOld = await downloadArtifact('results-old')
+  const artifactNew = await downloadArtifact('results-new')
+
+  // Create local scan-results directory for compare
+  if (enableScaRunning) {
+    mkdirSync('scan-results/sca', { recursive: true })
+  }
+  if (enableIacRunning) {
+    mkdirSync('scan-results/iac', { recursive: true })
   }
 
-  const commentStart = Date.now()
-  if (compareMessage.length > 0 && getInput('token').length > 0) {
-    info('Posting comment to GitHub PR as there were new issues introduced:')
-    if (getInput('footer') !== '') {
-      compareMessage += '\n\n' + getInput('footer')
+  // Check and copy files for each scanner type
+  const scaAvailable =
+    enableScaRunning && (await prepareScannerFiles('sca', artifactOld, artifactNew))
+  const iacAvailable =
+    enableIacRunning && (await prepareScannerFiles('iac', artifactOld, artifactNew))
+
+  // Need at least one scanner to compare
+  if (!scaAvailable && !iacAvailable) {
+    info('No scanner files available for comparison. Nothing to compare.')
+    setOutput('display-completed', true)
+    return
+  }
+
+  // Run codesec compare mode with available scanners
+  await codesecRun('compare', enableIacRunning && iacAvailable, enableScaRunning && scaAvailable)
+
+  // Read comparison output - check all possible outputs
+  const outputs = [
+    'scan-results/compare/merged-compare.md',
+    'scan-results/compare/sca-compare.md',
+    'scan-results/compare/iac-compare.md',
+  ]
+
+  let message: string | null = null
+  for (const output of outputs) {
+    if (existsSync(output)) {
+      info(`Using comparison output: ${output}`)
+      message = readMarkdownFile(output)
+      break
     }
-    info(compareMessage)
-    const commentUrl = await postCommentIfInPr(compareMessage)
+  }
+
+  if (!message) {
+    info('No comparison output produced. No changes detected.')
+    setOutput('display-completed', true)
+    return
+  }
+
+  // Check if there are new violations (non-zero count in "Found N new potential violations")
+  const hasViolations = /Found\s+[1-9]\d*\s+/.test(message)
+
+  if (hasViolations && getInput('token').length > 0) {
+    info('Posting comment to GitHub PR as there were new issues introduced')
+    const commentUrl = await postCommentIfInPr(message)
     if (commentUrl !== undefined) {
       setOutput('posted-comment', commentUrl)
     }
   } else {
+    // No new violations or no token - resolve existing comment if found
     await resolveExistingCommentIfFound()
   }
-  setOutput(`display-completed`, true)
+
+  setOutput('display-completed', true)
 }
 
-function getArtifactName(target: string): string {
-  var artifactName = 'results-'
-  if (artifactPrefix !== '') {
-    artifactName = artifactPrefix + '-' + artifactName
+async function prepareScannerFiles(
+  scanner: 'sca' | 'iac',
+  artifactOld: string,
+  artifactNew: string
+): Promise<boolean> {
+  const ext = scanner === 'sca' ? 'sarif' : 'json'
+  const oldPath = path.join(artifactOld, 'scan-results', scanner, `${scanner}-old.${ext}`)
+  const newPath = path.join(artifactNew, 'scan-results', scanner, `${scanner}-new.${ext}`)
+
+  const oldExists = existsSync(oldPath)
+  const newExists = existsSync(newPath)
+
+  if (!oldExists || !newExists) {
+    info(`${scanner.toUpperCase()} files not found for compare. old=${oldExists}, new=${newExists}`)
+    return false
   }
-  return artifactName + target
+
+  info(`Copying ${scanner.toUpperCase()} files for compare`)
+  await callCommand('cp', oldPath, path.join('scan-results', scanner, `${scanner}-old.${ext}`))
+  await callCommand('cp', newPath, path.join('scan-results', scanner, `${scanner}-new.${ext}`))
+  return true
 }
 
 async function main() {

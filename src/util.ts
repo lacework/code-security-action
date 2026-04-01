@@ -114,7 +114,7 @@ export function generateUILink() {
   return url
 }
 
-// codesecRun - Docker-based scanner using codesec:latest image
+// runCodesec - Docker-based scanner using codesec:latest image
 //
 // Modes:
 // 1. action='scan', scanTarget='new'/'old' -> produces analysis for PR comment
@@ -124,7 +124,7 @@ export function generateUILink() {
 // Parameters:
 // - runIac/runSca: which scanners to enable (default false - enable when ready to test)
 // - scanTarget: 'new', 'old', or 'scan' depending on mode
-export async function codesecRun(
+export async function runCodesec(
   action: string,
   runIac: boolean = false,
   runSca: boolean = false,

@@ -7,7 +7,7 @@ import {
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import { callCommand, codesecRun, getOptionalEnvVariable, readMarkdownFile } from './util'
+import { callCommand, runCodesec, getOptionalEnvVariable, readMarkdownFile } from './util'
 
 // Global scanner toggles - set to false to disable a scanner globally
 const enableScaRunning = true
@@ -35,7 +35,7 @@ async function runAnalysis() {
   if (target == 'push') {
     targetScan = 'scan'
   }
-  const resultsPath = await codesecRun('scan', enableIacRunning, enableScaRunning, targetScan)
+  const resultsPath = await runCodesec('scan', enableIacRunning, enableScaRunning, targetScan)
 
   // Upload SCA SARIF from the returned results path
   if (enableScaRunning) {
@@ -103,7 +103,7 @@ async function displayResults() {
   }
 
   // Run codesec compare mode with available scanners
-  await codesecRun('compare', enableIacRunning && iacAvailable, enableScaRunning && scaAvailable)
+  await runCodesec('compare', enableIacRunning && iacAvailable, enableScaRunning && scaAvailable)
 
   // Read comparison output - check all possible outputs
   const outputs = [

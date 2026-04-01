@@ -46,14 +46,8 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - if: runner.os == 'Linux'
-      shell: bash
+    - shell: bash
       run: echo "LACEWORK_START_TIME=$(date --rfc-3339=seconds)" >> $GITHUB_ENV
-    - if: runner.os == 'macOS'
-      shell: bash
-      run: |
-        brew install coreutils
-        echo "LACEWORK_START_TIME=$(gdate --rfc-3339=seconds)" >> $GITHUB_ENV
     - id: init
       shell: bash
       env:
@@ -63,7 +57,6 @@ runs:
         echo "Lacework context ID: $LACEWORK_CONTEXT_ID"
         echo "LACEWORK_CONTEXT_ID=$(echo $LACEWORK_CONTEXT_ID)" >> $GITHUB_ENV
         echo "LACEWORK_ACTION_REF=$(echo $LACEWORK_ACTION_REF)" >> $GITHUB_ENV
-        curl https://raw.githubusercontent.com/lacework/go-sdk/main/cli/install.sh | bash
     - name: Sets LW_LOG var for debug
       shell: bash
       if: ${{ inputs.debug == 'true' }}
@@ -75,13 +68,6 @@ runs:
         if [ -n "$LW_ACCOUNT_NAME" ]; then
           echo "LW_ACCOUNT=$LW_ACCOUNT_NAME" >> $GITHUB_ENV
         fi
-    - name: Install Lacework CLI component
-      shell: bash
-      run: |
-        lacework --noninteractive component install sca
-        lacework --noninteractive version
-      env:
-        CDK_DOWNLOAD_TIMEOUT_MINUTES: 2
     - uses: actions/setup-node@v4
       with:
         node-version: 18

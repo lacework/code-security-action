@@ -1,7 +1,31 @@
 import { error, getInput, info, isDebug } from '@actions/core'
 import { context } from '@actions/github'
 import { spawn } from 'child_process'
-import { readFileSync } from 'fs'
+import { readFileSync, mkdirSync, writeFileSync } from 'fs'
+import * as os from 'os'
+import * as path from 'path'
+
+// Gather GITHUB_* and CI env vars for the lacework iac binary to read directly
+function gatherGitHubEnvVars(): string[] {
+  const prefixes = ['GITHUB_', 'CI']
+  const envVars: string[] = []
+
+  for (const [key, value] of Object.entries(process.env)) {
+    if (prefixes.some((p) => key.startsWith(p))) {
+      envVars.push(`${key}=${value}`)
+    }
+  }
+  envVars.push('CI_PLATFORM=github')
+  return envVars
+}
+
+// Create a temp env file with GitHub CI vars for --env-file
+function createEnvFile(): string {
+  const envFile = path.join(os.tmpdir(), `codesec-env-${Date.now()}.list`)
+  const envVars = gatherGitHubEnvVars()
+  writeFileSync(envFile, envVars.join('\n'))
+  return envFile
+}
 
 export function getMsSinceStart(): string {
   const now = Date.now()
@@ -59,10 +83,6 @@ export function getOptionalEnvVariable(name: string, defaultValue: string) {
   return value
 }
 
-export async function callLaceworkCli(...args: string[]) {
-  await callCommand('lacework', '--noninteractive', 'sca', ...args)
-}
-
 export function getOrDefault(name: string, defaultValue: string) {
   const setTo = getInput(name)
   if (setTo !== undefined && setTo.length > 0) return setTo
@@ -92,4 +112,198 @@ export function generateUILink() {
   }
 
   return url
+}
+
+// runCodesec - Docker-based scanner using codesec:latest image
+//
+// Modes:
+// 1. action='scan', scanTarget='new'/'old' -> produces analysis for PR comment
+// 2. action='scan', scanTarget='scan' -> full scan for scheduled events (uploads to Lacework)
+// 3. action='compare' -> compares new/old results, generates diff markdown for PR comment
+//
+// Parameters:
+// - runIac/runSca: which scanners to enable (default false - enable when ready to test)
+// - scanTarget: 'new', 'old', or 'scan' depending on mode
+export async function runCodesec(
+  action: string,
+  runIac: boolean = false,
+  runSca: boolean = false,
+  scanTarget?: string
+): Promise<string> {
+  const lwAccount = getRequiredEnvVariable('LW_ACCOUNT')
+  const lwApiKey = getRequiredEnvVariable('LW_API_KEY')
+  const lwApiSecret = getRequiredEnvVariable('LW_API_SECRET')
+
+  // Create scan-results directory
+  const reportsDir = path.join(process.cwd(), 'scan-results')
+
+  if (action === 'scan') {
+    const containerName = `codesec-scan-${scanTarget || 'default'}`
+
+    info(`Running codesec scan (target: ${scanTarget || 'scan'})`)
+
+    // Create env file with GitHub CI vars for the lacework iac binary
+    const envFile = createEnvFile()
+
+    // Run the scanner
+    const dockerArgs = [
+      'run',
+      '--name',
+      containerName,
+      '-v',
+      `${process.cwd()}:/app/src`,
+      '--env-file',
+      envFile,
+      '-e',
+      `WORKSPACE=src`,
+      '-e',
+      `LW_ACCOUNT=${lwAccount}`,
+      '-e',
+      `LW_API_KEY=${lwApiKey}`,
+      '-e',
+      `LW_API_SECRET=${lwApiSecret}`,
+      '-e',
+      `RUN_SCA=${runSca}`,
+      '-e',
+      `RUN_IAC=${runIac}`,
+      '-e',
+      `SCAN_TARGET=${scanTarget || 'scan'}`,
+      'lacework/codesec:latest',
+      'scan',
+    ]
+
+    await callCommand('docker', ...dockerArgs)
+
+    // Copy results out of container to temp dir
+    if (runSca) {
+      const scaDir = path.join(reportsDir, 'sca')
+      mkdirSync(scaDir, { recursive: true })
+      await callCommand(
+        'docker',
+        'container',
+        'cp',
+        `${containerName}:/tmp/scan-results/sca/sca-${scanTarget || 'scan'}.sarif`,
+        path.join(scaDir, `sca-${scanTarget || 'scan'}.sarif`)
+      )
+    }
+
+    if (runIac) {
+      const iacDir = path.join(reportsDir, 'iac')
+      mkdirSync(iacDir, { recursive: true })
+      await callCommand(
+        'docker',
+        'container',
+        'cp',
+        `${containerName}:/tmp/scan-results/iac/iac-${scanTarget || 'scan'}.json`,
+        path.join(iacDir, `iac-${scanTarget || 'scan'}.json`)
+      )
+    }
+
+    // Cleanup container
+    await callCommand('docker', 'rm', containerName)
+  } else if (action === 'compare') {
+    const containerName = 'codesec-compare'
+
+    info('Running codesec compare')
+
+    // Create env file with GitHub CI vars for the lacework iac binary
+    const envFile = createEnvFile()
+
+    // Append LW_UI_LINK so the image can pass it to `lacework sca compare --ui-link`
+    const uiLink = generateUILink()
+    writeFileSync(envFile, `\nLW_UI_LINK=${uiLink}`, { flag: 'a' })
+
+    // Mounts both the repo and the scan-results directory separately
+    const dockerArgs = [
+      'run',
+      '--name',
+      containerName,
+      '-v',
+      `${process.cwd()}:/app/src`,
+      '-v',
+      `${path.join(process.cwd(), 'scan-results')}:/app/scan-results`,
+      '--env-file',
+      envFile,
+      '-e',
+      `WORKSPACE=src`,
+      '-e',
+      `LW_ACCOUNT=${lwAccount}`,
+      '-e',
+      `LW_API_KEY=${lwApiKey}`,
+      '-e',
+      `LW_API_SECRET=${lwApiSecret}`,
+      '-e',
+      `RUN_SCA=${runSca}`,
+      '-e',
+      `RUN_IAC=${runIac}`,
+      'lacework/codesec:latest',
+      'compare',
+    ]
+
+    await callCommand('docker', ...dockerArgs)
+
+    // Copy comparison results out
+    const compareDir = path.join(reportsDir, 'compare')
+    mkdirSync(compareDir, { recursive: true })
+
+    // Copy all available comparison outputs
+    // merged-compare.md exists when both SCA and IAC comparisons succeed
+    // sca-compare.md / iac-compare.md exist for individual comparisons
+    let copiedAny = false
+
+    try {
+      await callCommand(
+        'docker',
+        'container',
+        'cp',
+        `${containerName}:/tmp/scan-results/compare/merged-compare.md`,
+        path.join(compareDir, 'merged-compare.md')
+      )
+      copiedAny = true
+    } catch {
+      info('Merged compare output not found (partial compare mode)')
+    }
+
+    try {
+      await callCommand(
+        'docker',
+        'container',
+        'cp',
+        `${containerName}:/tmp/scan-results/compare/sca-compare.md`,
+        path.join(compareDir, 'sca-compare.md')
+      )
+      copiedAny = true
+    } catch {
+      info('SCA compare output not found (may have been skipped)')
+    }
+
+    try {
+      await callCommand(
+        'docker',
+        'container',
+        'cp',
+        `${containerName}:/tmp/scan-results/compare/iac-compare.md`,
+        path.join(compareDir, 'iac-compare.md')
+      )
+      copiedAny = true
+    } catch {
+      info('IAC compare output not found (may have been skipped)')
+    }
+
+    if (!copiedAny) {
+      throw new Error('No comparison outputs found in container')
+    }
+
+    // Cleanup container
+    await callCommand('docker', 'rm', containerName)
+  }
+  return reportsDir
+}
+
+export function readMarkdownFile(filePath: string): string {
+  try {
+    return readFileSync(filePath, 'utf-8')
+  } catch (error) {
+    throw new Error(`Failed to read scanner output file: ${error}`)
+  }
 }

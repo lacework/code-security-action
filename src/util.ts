@@ -1,7 +1,7 @@
 import { error, getInput, info, isDebug } from '@actions/core'
 import { context } from '@actions/github'
 import { spawn } from 'child_process'
-import { readFileSync, mkdirSync, writeFileSync } from 'fs'
+import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 
@@ -246,51 +246,20 @@ export async function runCodesec(
     const compareDir = path.join(reportsDir, 'compare')
     mkdirSync(compareDir, { recursive: true })
 
-    // Copy all available comparison outputs
-    // merged-compare.md exists when both SCA and IAC comparisons succeed
-    // sca-compare.md / iac-compare.md exist for individual comparisons
-    let copiedAny = false
+    // Copy the entire compare directory out
+    await callCommand(
+      'docker',
+      'container',
+      'cp',
+      `${containerName}:/tmp/scan-results/compare/.`,
+      compareDir
+    )
 
-    try {
-      await callCommand(
-        'docker',
-        'container',
-        'cp',
-        `${containerName}:/tmp/scan-results/compare/merged-compare.md`,
-        path.join(compareDir, 'merged-compare.md')
-      )
-      copiedAny = true
-    } catch {
-      info('Merged compare output not found (partial compare mode)')
-    }
+    // Verify at least one output was produced
+    const compareFiles = ['merged-compare.md', 'sca-compare.md', 'iac-compare.md']
+    const copied = compareFiles.filter((f) => existsSync(path.join(compareDir, f)))
 
-    try {
-      await callCommand(
-        'docker',
-        'container',
-        'cp',
-        `${containerName}:/tmp/scan-results/compare/sca-compare.md`,
-        path.join(compareDir, 'sca-compare.md')
-      )
-      copiedAny = true
-    } catch {
-      info('SCA compare output not found (may have been skipped)')
-    }
-
-    try {
-      await callCommand(
-        'docker',
-        'container',
-        'cp',
-        `${containerName}:/tmp/scan-results/compare/iac-compare.md`,
-        path.join(compareDir, 'iac-compare.md')
-      )
-      copiedAny = true
-    } catch {
-      info('IAC compare output not found (may have been skipped)')
-    }
-
-    if (!copiedAny) {
+    if (copied.length === 0) {
       throw new Error('No comparison outputs found in container')
     }
 

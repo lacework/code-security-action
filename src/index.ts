@@ -11,7 +11,7 @@ import { callCommand, runCodesec, getOptionalEnvVariable, readMarkdownFile } fro
 
 // Global scanner toggles - set to false to disable a scanner globally
 const enableScaRunning = true
-const enableIacRunning = false // TODO: change to true when ready
+const enableIacRunning = true
 
 async function runAnalysis() {
   const target = getInput('target')

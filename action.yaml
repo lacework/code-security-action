@@ -79,6 +79,29 @@ runs:
         HUSKY=0 npm install
         npm run compile
         yq -i -o yaml 'del(.runs.steps) | del(.outputs) | .runs.using="node16" | .runs.main="dist/src/index.js"' action.yaml
+    # Docker image cache: keyed by date so the first job each day pulls fresh,
+    # subsequent jobs (old, new, display) load from cache. Cache is branch-scoped:
+    # PR branches read from base branch on miss but only write to their own cache.
+    - name: Get date for cache key
+      id: cache-date
+      shell: bash
+      run: echo "cache-date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+    - name: Cache Docker image
+      uses: actions/cache@v4
+      with:
+        path: /tmp/codesec-image.tar
+        key: codesec-image-${{ steps.cache-date.outputs.cache-date }}
+    - name: Load or pull Docker image
+      shell: bash
+      run: |
+        if [ -f /tmp/codesec-image.tar ]; then
+          echo "Loading cached Docker image..."
+          docker load -i /tmp/codesec-image.tar
+        else
+          echo "Pulling Docker image..."
+          docker pull lacework/codesec:latest
+          docker save lacework/codesec:latest -o /tmp/codesec-image.tar
+        fi
     - id: run-analysis
       uses: './../lacework-code-security'
       with:

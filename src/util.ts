@@ -16,6 +16,7 @@ function gatherGitHubEnvVars(): string[] {
     }
   }
   envVars.push('CI_PLATFORM=github')
+  envVars.push(`LW_CODESEC_GIT_BRANCH=${process.env['LW_CODESEC_GIT_BRANCH'] || ''}`)
   return envVars
 }
 

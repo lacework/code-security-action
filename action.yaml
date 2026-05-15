@@ -68,9 +68,9 @@ runs:
         if [ -n "$LW_ACCOUNT_NAME" ]; then
           echo "LW_ACCOUNT=$LW_ACCOUNT_NAME" >> $GITHUB_ENV
         fi
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v6
       with:
-        node-version: 18
+        node-version: 24
     - shell: bash
       run: |
         rm -rf ../lacework-code-security
@@ -78,7 +78,7 @@ runs:
         cd ../lacework-code-security
         HUSKY=0 npm install
         npm run compile
-        yq -i -o yaml 'del(.runs.steps) | del(.outputs) | .runs.using="node16" | .runs.main="dist/src/index.js"' action.yaml
+        yq -i -o yaml 'del(.runs.steps) | del(.outputs) | .runs.using="node24" | .runs.main="dist/src/index.js"' action.yaml
     - id: run-analysis
       uses: './../lacework-code-security'
       with:

@@ -8,7 +8,13 @@ import {
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import { callCommand, runCodesec, getOptionalEnvVariable, readMarkdownFile } from './util'
+import {
+  callCommand,
+  runCodesec,
+  getModifiedFiles,
+  getOptionalEnvVariable,
+  readMarkdownFile,
+} from './util'
 import { simpleGit } from 'simple-git'
 
 // Global scanner toggles - set to false to disable a scanner globally
@@ -38,6 +44,15 @@ async function runAnalysis() {
     targetScan = 'scan'
   }
 
+  // Only pass modified files for PR "new" scans — this optimises scanning to only changed files
+  let modifiedFiles: string | undefined
+  if (currBranch !== '' && target === 'new') {
+    modifiedFiles = getModifiedFiles()
+    if (modifiedFiles) {
+      info(`Modified files for optimised scanning: ${modifiedFiles}`)
+    }
+  }
+
   // Create scan-results directory
   const resultsPath = path.join(process.cwd(), 'scan-results')
 
@@ -61,7 +76,8 @@ async function runAnalysis() {
       enableIacRunning,
       enableScaRunning,
       resultsPath,
-      targetScan
+      targetScan,
+      modifiedFiles
     )
     if (success && targetScan !== 'new') {
       // Save the analysis results when not scanning the PR source branch

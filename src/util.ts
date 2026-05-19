@@ -129,14 +129,12 @@ export async function runCodesec(
   action: string,
   runIac: boolean = false,
   runSca: boolean = false,
+  reportsDir: string,
   scanTarget?: string
-): Promise<string> {
+): Promise<boolean> {
   const lwAccount = getRequiredEnvVariable('LW_ACCOUNT')
   const lwApiKey = getRequiredEnvVariable('LW_API_KEY')
   const lwApiSecret = getRequiredEnvVariable('LW_API_SECRET')
-
-  // Create scan-results directory
-  const reportsDir = path.join(process.cwd(), 'scan-results')
 
   if (action === 'scan') {
     const containerName = `codesec-scan-${scanTarget || 'default'}`
@@ -267,7 +265,7 @@ export async function runCodesec(
     // Cleanup container
     await callCommand('docker', 'rm', containerName)
   }
-  return reportsDir
+  return true
 }
 
 export function readMarkdownFile(filePath: string): string {

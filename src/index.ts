@@ -1,3 +1,4 @@
+import * as cache from '@actions/cache'
 import { error, getInput, info, setOutput } from '@actions/core'
 import { copyFileSync, existsSync, mkdirSync } from 'fs'
 import * as path from 'path'
@@ -8,6 +9,7 @@ import {
   uploadArtifact,
 } from './actions'
 import { callCommand, runCodesec, getOptionalEnvVariable, readMarkdownFile } from './util'
+import { simpleGit } from 'simple-git'
 
 // Global scanner toggles - set to false to disable a scanner globally
 const enableScaRunning = true
@@ -35,7 +37,42 @@ async function runAnalysis() {
   if (target == 'push') {
     targetScan = 'scan'
   }
-  const resultsPath = await runCodesec('scan', enableIacRunning, enableScaRunning, targetScan)
+
+  // Create scan-results directory
+  const resultsPath = path.join(process.cwd(), 'scan-results')
+
+  // Cache the analysis results when scanning the target branch
+  let cacheHit = false
+  const commit = (await simpleGit().revparse(['HEAD'])).trim()
+  let cacheKey = `codesec-${commit}`
+  if (targetScan === 'old') {
+    const restored = await cache.restoreCache([resultsPath], cacheKey)
+    if (restored) {
+      info(`Cache hit for ${cacheKey} — skipping scan`)
+      cacheHit = true
+    } else {
+      info(`Cache miss for ${cacheKey} — running scan`)
+    }
+  }
+
+  if (!cacheHit) {
+    let success = await runCodesec(
+      'scan',
+      enableIacRunning,
+      enableScaRunning,
+      resultsPath,
+      targetScan
+    )
+    if (success && targetScan !== 'new') {
+      // Save the analysis results when not scanning the PR source branch
+      try {
+        await cache.saveCache([resultsPath], cacheKey)
+        info(`Saved analysis results for ${cacheKey}`)
+      } catch (e) {
+        info(`Failed to save cache for ${cacheKey}: ${(e as Error).message}`)
+      }
+    }
+  }
 
   // Upload SCA SARIF from the returned results path
   if (enableScaRunning) {
@@ -103,7 +140,13 @@ async function displayResults() {
   }
 
   // Run codesec compare mode with available scanners
-  await runCodesec('compare', enableIacRunning && iacAvailable, enableScaRunning && scaAvailable)
+  const resultsPath = path.join(process.cwd(), 'scan-results')
+  await runCodesec(
+    'compare',
+    enableIacRunning && iacAvailable,
+    enableScaRunning && scaAvailable,
+    resultsPath
+  )
 
   // Read comparison output - check all possible outputs
   const outputs = [

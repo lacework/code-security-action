@@ -103,9 +103,7 @@ async function runAnalysis() {
     }
   }
 
-  const artifactPrefix = getInput('artifact-prefix')
-  const artifactName =
-    artifactPrefix !== '' ? artifactPrefix + '-results-' + target : 'results-' + target
+  const artifactName = 'results-' + target
   info(`Uploading artifact '${artifactName}' with ${toUpload.length} file(s)`)
   await uploadArtifact(artifactName, ...toUpload)
   setOutput(`${target}-completed`, true)

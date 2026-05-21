@@ -1,6 +1,6 @@
 import * as cache from '@actions/cache'
 import { error, getInput, info, setOutput } from '@actions/core'
-import { copyFileSync, existsSync, mkdirSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync, renameSync } from 'fs'
 import * as path from 'path'
 import {
   downloadArtifact,
@@ -86,6 +86,29 @@ async function runAnalysis() {
         info(`Saved analysis results for ${cacheKey}`)
       } catch (e) {
         info(`Failed to save cache for ${cacheKey}: ${(e as Error).message}`)
+      }
+    }
+  } else {
+    // Cache restored — rename files to match current targetScan if needed
+    const possibleNames = ['old', 'scan']
+    if (enableScaRunning) {
+      const scaDir = path.join(resultsPath, 'sca')
+      for (const name of possibleNames) {
+        const existing = path.join(scaDir, `sca-${name}.sarif`)
+        if (existsSync(existing) && name !== targetScan) {
+          renameSync(existing, path.join(scaDir, `sca-${targetScan}.sarif`))
+          break
+        }
+      }
+    }
+    if (enableIacRunning) {
+      const iacDir = path.join(resultsPath, 'iac')
+      for (const name of possibleNames) {
+        const existing = path.join(iacDir, `iac-${name}.json`)
+        if (existsSync(existing) && name !== targetScan) {
+          renameSync(existing, path.join(iacDir, `iac-${targetScan}.json`))
+          break
+        }
       }
     }
   }

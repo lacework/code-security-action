@@ -194,7 +194,7 @@ export async function runCodesec(
       '-e',
       `SCAN_TARGET=${scanTarget || 'scan'}`,
       ...(modifiedFiles ? ['-e', `MODIFIED_FILES=${modifiedFiles}`] : []),
-      'lacework/codesec:test',
+      'lacework/codesec:latest',
       'scan',
     ]
 
@@ -262,7 +262,7 @@ export async function runCodesec(
       `RUN_SCA=${runSca}`,
       '-e',
       `RUN_IAC=${runIac}`,
-      'lacework/codesec:test',
+      'lacework/codesec:latest',
       'compare',
     ]
 

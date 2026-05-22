@@ -14,12 +14,13 @@ import {
   getModifiedFiles,
   getOptionalEnvVariable,
   readMarkdownFile,
+  shouldRunIaCScanner,
 } from './util'
 import { simpleGit } from 'simple-git'
 
 // Global scanner toggles - set to false to disable a scanner globally
 const enableScaRunning = true
-const enableIacRunning = true
+let enableIacRunning = false
 
 async function runAnalysis() {
   const target = getInput('target')
@@ -50,6 +51,13 @@ async function runAnalysis() {
     modifiedFiles = getModifiedFiles()
     if (modifiedFiles) {
       info(`Modified files for optimised scanning: ${modifiedFiles}`)
+    }
+  }
+
+  // Skip the IaC scan if there no IaC-related files have been modified in the PR
+  if (modifiedFiles && target == 'new') {
+    if (shouldRunIaCScanner(modifiedFiles)) {
+      enableIacRunning = true
     }
   }
 

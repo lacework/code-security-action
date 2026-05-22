@@ -140,6 +140,36 @@ export function getModifiedFiles(): string | undefined {
   return files || undefined
 }
 
+export function shouldRunIaCScanner(modifiedFiles: string): boolean {
+  const iacFileExtensions = ['.tf', '.hcl', '.yaml', '.yml', '.json']
+  const nonIaCFilenames = [
+    'package.json',
+    'package-lock.json',
+    'tsconfig.json',
+    'tsconfig.build.json',
+    'tslint.json',
+    'jest.config.json',
+    '.eslintrc.json',
+    '.prettierrc.json',
+    '.prettierrc.yaml',
+    '.prettierrc.yml',
+    'renovate.json',
+    'lerna.json',
+    'bower.json',
+    'composer.json',
+    'composer.lock',
+    'Pipfile.lock',
+    'cargo.lock',
+  ]
+  return modifiedFiles.split(',').some((file) => {
+    const filename = file.split('/').pop() || ''
+    if (nonIaCFilenames.includes(filename.toLowerCase())) {
+      return false
+    }
+    return iacFileExtensions.some((ext) => file.endsWith(ext))
+  })
+}
+
 // runCodesec - Docker-based scanner using codesec:latest image
 //
 // Modes:

@@ -1,6 +1,6 @@
 import { error, getInput, info, isDebug } from '@actions/core'
 import { context } from '@actions/github'
-import { spawn } from 'child_process'
+import { spawn, spawnSync } from 'child_process'
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
@@ -115,6 +115,31 @@ export function generateUILink() {
   return url
 }
 
+export function getModifiedFiles(): string | undefined {
+  const eventPath = process.env.GITHUB_EVENT_PATH
+  if (!eventPath) return undefined
+
+  let eventData: any
+  try {
+    eventData = JSON.parse(readFileSync(eventPath, 'utf8'))
+  } catch (e) {
+    info(`Failed to parse GitHub event file: ${e}`)
+    return undefined
+  }
+
+  const baseSha = eventData.pull_request?.base?.sha
+  if (!baseSha) return undefined
+
+  const result = spawnSync('git', ['diff', '--name-only', `${baseSha}...HEAD`])
+  if (result.status !== 0) {
+    info(`Failed to get modified files: ${result.stderr?.toString()}`)
+    return undefined
+  }
+
+  const files = result.stdout.toString().trim().split('\n').filter(Boolean).join(',')
+  return files || undefined
+}
+
 // runCodesec - Docker-based scanner using codesec:latest image
 //
 // Modes:
@@ -130,7 +155,8 @@ export async function runCodesec(
   runIac: boolean = false,
   runSca: boolean = false,
   reportsDir: string,
-  scanTarget?: string
+  scanTarget?: string,
+  modifiedFiles?: string
 ): Promise<boolean> {
   const lwAccount = getRequiredEnvVariable('LW_ACCOUNT')
   const lwApiKey = getRequiredEnvVariable('LW_API_KEY')
@@ -167,6 +193,7 @@ export async function runCodesec(
       `RUN_IAC=${runIac}`,
       '-e',
       `SCAN_TARGET=${scanTarget || 'scan'}`,
+      ...(modifiedFiles ? ['-e', `MODIFIED_FILES=${modifiedFiles}`] : []),
       'lacework/codesec:latest',
       'scan',
     ]

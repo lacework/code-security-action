@@ -1,6 +1,6 @@
 import * as cache from '@actions/cache'
 import { error, getInput, info, setOutput } from '@actions/core'
-import { copyFileSync, existsSync, mkdirSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync, renameSync } from 'fs'
 import * as path from 'path'
 import {
   downloadArtifact,
@@ -8,7 +8,13 @@ import {
   resolveExistingCommentIfFound,
   uploadArtifact,
 } from './actions'
-import { callCommand, runCodesec, getOptionalEnvVariable, readMarkdownFile } from './util'
+import {
+  callCommand,
+  runCodesec,
+  getModifiedFiles,
+  getOptionalEnvVariable,
+  readMarkdownFile,
+} from './util'
 import { simpleGit } from 'simple-git'
 
 // Global scanner toggles - set to false to disable a scanner globally
@@ -38,6 +44,15 @@ async function runAnalysis() {
     targetScan = 'scan'
   }
 
+  // Only pass modified files for PR "new" scans — this optimises scanning to only changed files
+  let modifiedFiles: string | undefined
+  if (currBranch !== '' && target === 'new') {
+    modifiedFiles = getModifiedFiles()
+    if (modifiedFiles) {
+      info(`Modified files for optimised scanning: ${modifiedFiles}`)
+    }
+  }
+
   // Create scan-results directory
   const resultsPath = path.join(process.cwd(), 'scan-results')
 
@@ -61,7 +76,8 @@ async function runAnalysis() {
       enableIacRunning,
       enableScaRunning,
       resultsPath,
-      targetScan
+      targetScan,
+      modifiedFiles
     )
     if (success && targetScan !== 'new') {
       // Save the analysis results when not scanning the PR source branch
@@ -70,6 +86,29 @@ async function runAnalysis() {
         info(`Saved analysis results for ${cacheKey}`)
       } catch (e) {
         info(`Failed to save cache for ${cacheKey}: ${(e as Error).message}`)
+      }
+    }
+  } else {
+    // Cache restored — rename files to match current targetScan if needed
+    const possibleNames = ['old', 'scan']
+    if (enableScaRunning) {
+      const scaDir = path.join(resultsPath, 'sca')
+      for (const name of possibleNames) {
+        const existing = path.join(scaDir, `sca-${name}.sarif`)
+        if (existsSync(existing) && name !== targetScan) {
+          renameSync(existing, path.join(scaDir, `sca-${targetScan}.sarif`))
+          break
+        }
+      }
+    }
+    if (enableIacRunning) {
+      const iacDir = path.join(resultsPath, 'iac')
+      for (const name of possibleNames) {
+        const existing = path.join(iacDir, `iac-${name}.json`)
+        if (existsSync(existing) && name !== targetScan) {
+          renameSync(existing, path.join(iacDir, `iac-${targetScan}.json`))
+          break
+        }
       }
     }
   }

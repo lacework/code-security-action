@@ -1,9 +1,10 @@
 import { error, getInput, info, isDebug } from '@actions/core'
 import { context } from '@actions/github'
-import { spawn, spawnSync } from 'child_process'
+import { spawn } from 'child_process'
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
+import { simpleGit } from 'simple-git'
 
 // Gather GITHUB_* and CI env vars for the lacework iac binary to read directly
 function gatherGitHubEnvVars(): string[] {
@@ -115,29 +116,15 @@ export function generateUILink() {
   return url
 }
 
-export function getModifiedFiles(): string | undefined {
-  const eventPath = process.env.GITHUB_EVENT_PATH
-  if (!eventPath) return undefined
-
-  let eventData: any
+export async function getModifiedFiles(): Promise<string | undefined> {
   try {
-    eventData = JSON.parse(readFileSync(eventPath, 'utf8'))
+    const diff = await simpleGit().diff(['--name-only', 'HEAD^1...HEAD'])
+    const files = diff.trim().split('\n').filter(Boolean).join(',')
+    return files || undefined
   } catch (e) {
-    info(`Failed to parse GitHub event file: ${e}`)
+    info(`Failed to get modified files: ${e}`)
     return undefined
   }
-
-  const baseSha = eventData.pull_request?.base?.sha
-  if (!baseSha) return undefined
-
-  const result = spawnSync('git', ['diff', '--name-only', `${baseSha}...HEAD`])
-  if (result.status !== 0) {
-    info(`Failed to get modified files: ${result.stderr?.toString()}`)
-    return undefined
-  }
-
-  const files = result.stdout.toString().trim().split('\n').filter(Boolean).join(',')
-  return files || undefined
 }
 
 export function shouldRunIaCScanner(modifiedFiles: string): boolean {

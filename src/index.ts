@@ -48,7 +48,7 @@ async function runAnalysis() {
   // Only pass modified files for PR "new" scans — this optimises scanning to only changed files
   let modifiedFiles: string | undefined
   if (currBranch !== '' && target === 'new') {
-    modifiedFiles = getModifiedFiles()
+    modifiedFiles = await getModifiedFiles()
     if (modifiedFiles) {
       info(`Modified files for optimised scanning: ${modifiedFiles}`)
     }

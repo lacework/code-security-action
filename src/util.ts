@@ -1,7 +1,7 @@
 import { error, getInput, info, isDebug } from '@actions/core'
 import { context } from '@actions/github'
 import { spawn } from 'child_process'
-import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs'
+import { existsSync, readFileSync, mkdirSync, writeFileSync, unlinkSync } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { simpleGit } from 'simple-git'
@@ -167,22 +167,30 @@ export function shouldRunIaCScanner(modifiedFiles: string): boolean {
 // Parameters:
 // - runIac/runSca: which scanners to enable (default false - enable when ready to test)
 // - scanTarget: 'new', 'old', or 'scan' depending on mode
+// - computeCacheKey: if true, runs GENERATE_CACHE_KEY mode instead of scanning
 export async function runCodesec(
   action: string,
   runIac: boolean = false,
   runSca: boolean = false,
   reportsDir: string,
   scanTarget?: string,
-  modifiedFiles?: string
+  modifiedFiles?: string,
+  computeCacheKey: boolean = false
 ): Promise<boolean> {
   const lwAccount = getRequiredEnvVariable('LW_ACCOUNT')
   const lwApiKey = getRequiredEnvVariable('LW_API_KEY')
   const lwApiSecret = getRequiredEnvVariable('LW_API_SECRET')
 
   if (action === 'scan') {
-    const containerName = `codesec-scan-${scanTarget || 'default'}`
+    const containerName = computeCacheKey
+      ? `codesec-cache-key-${Date.now()}`
+      : `codesec-scan-${scanTarget || 'default'}`
 
-    info(`Running codesec scan (target: ${scanTarget || 'scan'})`)
+    info(
+      computeCacheKey
+        ? 'Running codesec cache key generation'
+        : `Running codesec scan (target: ${scanTarget || 'scan'})`
+    )
 
     // Create env file with GitHub CI vars for the lacework iac binary
     const envFile = createEnvFile()
@@ -211,11 +219,31 @@ export async function runCodesec(
       '-e',
       `SCAN_TARGET=${scanTarget || 'scan'}`,
       ...(modifiedFiles ? ['-e', `MODIFIED_FILES=${modifiedFiles}`] : []),
+      ...(computeCacheKey ? ['-e', 'GENERATE_CACHE_KEY=true'] : []),
       'lacework/codesec:latest',
       'scan',
     ]
 
     await callCommand('docker', ...dockerArgs)
+
+    if (computeCacheKey) {
+      // Copy cache key out and cleanup
+      const outputFile = path.join(reportsDir, 'cache-key.txt')
+      mkdirSync(reportsDir, { recursive: true })
+      await callCommand(
+        'docker',
+        'container',
+        'cp',
+        `${containerName}:/tmp/scan-results/sca/cache-key.txt`,
+        outputFile
+      )
+      try {
+        await callCommand('docker', 'rm', containerName)
+      } catch {
+        // Best-effort cleanup — CI runner will discard everything on exit
+      }
+      return true
+    }
 
     // Copy results out of container to temp dir
     if (runSca) {
@@ -318,4 +346,37 @@ export function readMarkdownFile(filePath: string): string {
   } catch (error) {
     throw new Error(`Failed to read scanner output file: ${error}`)
   }
+}
+
+export async function generateCacheKey(
+  runIac: boolean,
+  runSca: boolean,
+  scanTarget?: string,
+  modifiedFiles?: string
+): Promise<string | undefined> {
+  const reportsDir = path.join(os.tmpdir(), `codesec-cache-${Date.now()}`)
+
+  try {
+    await runCodesec('scan', runIac, runSca, reportsDir, scanTarget, modifiedFiles, true)
+  } catch (e) {
+    info(`Cache key generation failed: ${(e as Error).message}`)
+    return undefined
+  }
+
+  const outputFile = path.join(reportsDir, 'cache-key.txt')
+  if (!existsSync(outputFile)) {
+    info('Cache key file not found after generation')
+    return undefined
+  }
+
+  const cacheKey = readFileSync(outputFile, 'utf-8').trim()
+  unlinkSync(outputFile)
+
+  if (!/^[a-f0-9]{64}$/.test(cacheKey)) {
+    info(`Cache key format invalid: ${cacheKey}`)
+    return undefined
+  }
+
+  info(`Generated cache key: ${cacheKey}`)
+  return `codesec-${cacheKey}`
 }

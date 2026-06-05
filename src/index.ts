@@ -10,10 +10,10 @@ import {
 } from './actions'
 import {
   callCommand,
-  runCodesec,
+  runCodesecScan,
+  runCodesecCompare,
   getModifiedFiles,
   getOptionalEnvVariable,
-  readMarkdownFile,
   shouldRunIaCScanner,
   generateCacheKey,
 } from './util'
@@ -83,8 +83,7 @@ async function runAnalysis() {
   }
 
   if (!cacheHit) {
-    let success = await runCodesec(
-      'scan',
+    let success = await runCodesecScan(
       enableIacRunning,
       enableScaRunning,
       resultsPath,
@@ -201,29 +200,10 @@ async function displayResults() {
   }
 
   // Run codesec compare mode with available scanners
-  const resultsPath = path.join(process.cwd(), 'scan-results')
-  await runCodesec(
-    'compare',
+  const message = await runCodesecCompare(
     enableIacRunning && iacAvailable,
-    enableScaRunning && scaAvailable,
-    resultsPath
+    enableScaRunning && scaAvailable
   )
-
-  // Read comparison output - check all possible outputs
-  const outputs = [
-    'scan-results/compare/merged-compare.md',
-    'scan-results/compare/sca-compare.md',
-    'scan-results/compare/iac-compare.md',
-  ]
-
-  let message: string | null = null
-  for (const output of outputs) {
-    if (existsSync(output)) {
-      info(`Using comparison output: ${output}`)
-      message = readMarkdownFile(output)
-      break
-    }
-  }
 
   if (!message) {
     info('No comparison output produced. No changes detected.')

@@ -131,20 +131,13 @@ export async function getModifiedFiles(): Promise<string | undefined> {
   }
 }
 
-// runCodesec - Docker-based scanner using codesec:latest image
-//
-// Modes:
-// 1. action='scan', scanTarget='new'/'old' -> produces analysis for PR comment
-// 2. action='scan', scanTarget='scan' -> full scan for scheduled events (uploads to Lacework)
-// 3. action='compare' -> compares new/old results, generates diff markdown for PR comment
+// runCodesecScan - Docker-based scanner using codesec:latest image
 //
 // Parameters:
-// - runIac: whether to enable the IaC scanner
+// - reportsDir: directory to write scan results to
 // - scanTarget: 'new', 'old', or 'scan' depending on mode
 // - computeCacheKey: if true, runs GENERATE_CACHE_KEY mode instead of scanning
-export async function runCodesec(
-  action: string,
-  runIac: boolean = false,
+export async function runCodesecScan(
   reportsDir: string,
   scanTarget?: string,
   modifiedFiles?: string,
@@ -154,172 +147,165 @@ export async function runCodesec(
   const lwApiKey = getRequiredEnvVariable('LW_API_KEY')
   const lwApiSecret = getRequiredEnvVariable('LW_API_SECRET')
 
-  if (action === 'scan') {
-    const containerName = computeCacheKey
-      ? `codesec-cache-key-${Date.now()}`
-      : `codesec-scan-${scanTarget || 'default'}`
+  const containerName = computeCacheKey
+    ? `codesec-cache-key-${Date.now()}`
+    : `codesec-scan-${scanTarget || 'default'}`
 
-    info(
-      computeCacheKey
-        ? 'Running codesec cache key generation'
-        : `Running codesec scan (target: ${scanTarget || 'scan'})`
-    )
+  info(
+    computeCacheKey
+      ? 'Running codesec cache key generation'
+      : `Running codesec scan (target: ${scanTarget || 'scan'})`
+  )
 
-    // Create env file with GitHub CI vars for the lacework iac binary
-    const envFile = createEnvFile()
+  const envFile = createEnvFile()
 
-    // Run the scanner
-    const dockerArgs = [
-      'run',
-      '--name',
-      containerName,
-      '-v',
-      `${process.cwd()}:/app/src`,
-      '--env-file',
-      envFile,
-      '-e',
-      `WORKSPACE=src`,
-      '-e',
-      `LW_ACCOUNT=${lwAccount}`,
-      '-e',
-      `LW_API_KEY=${lwApiKey}`,
-      '-e',
-      `LW_API_SECRET=${lwApiSecret}`,
-      '-e',
-      `RUN_SCA=true`,
-      '-e',
-      `RUN_IAC=${runIac}`,
-      '-e',
-      `SCAN_TARGET=${scanTarget || 'scan'}`,
-      ...(modifiedFiles ? ['-e', `MODIFIED_FILES=${modifiedFiles}`] : []),
-      ...(computeCacheKey ? ['-e', 'GENERATE_CACHE_KEY=true'] : []),
-      'lacework/codesec:latest',
-      'scan',
-    ]
+  const dockerArgs = [
+    'run',
+    '--name',
+    containerName,
+    '-v',
+    `${process.cwd()}:/app/src`,
+    '--env-file',
+    envFile,
+    '-e',
+    `WORKSPACE=src`,
+    '-e',
+    `LW_ACCOUNT=${lwAccount}`,
+    '-e',
+    `LW_API_KEY=${lwApiKey}`,
+    '-e',
+    `LW_API_SECRET=${lwApiSecret}`,
+    '-e',
+    `RUN_SCA=true`,
+    '-e',
+    `RUN_IAC=true`,
+    '-e',
+    `SCAN_TARGET=${scanTarget || 'scan'}`,
+    ...(modifiedFiles ? ['-e', `MODIFIED_FILES=${modifiedFiles}`] : []),
+    ...(computeCacheKey ? ['-e', 'GENERATE_CACHE_KEY=true'] : []),
+    'lacework/codesec:latest',
+    'scan',
+  ]
 
-    await callCommand('docker', ...dockerArgs)
+  await callCommand('docker', ...dockerArgs)
 
-    if (computeCacheKey) {
-      // Copy cache key out and cleanup
-      const outputFile = path.join(reportsDir, 'cache-key.txt')
-      mkdirSync(reportsDir, { recursive: true })
-      await callCommand(
-        'docker',
-        'container',
-        'cp',
-        `${containerName}:/tmp/scan-results/sca/cache-key.txt`,
-        outputFile
-      )
-      try {
-        await callCommand('docker', 'rm', containerName)
-      } catch {
-        // Best-effort cleanup — CI runner will discard everything on exit
-      }
-      return true
-    }
-
-    // Copy results out of container to temp dir
-    const scaDir = path.join(reportsDir, 'sca')
-    mkdirSync(scaDir, { recursive: true })
+  if (computeCacheKey) {
+    const outputFile = path.join(reportsDir, 'cache-key.txt')
+    mkdirSync(reportsDir, { recursive: true })
     await callCommand(
       'docker',
       'container',
       'cp',
-      `${containerName}:/tmp/scan-results/sca/sca-${scanTarget || 'scan'}.sarif`,
-      path.join(scaDir, `sca-${scanTarget || 'scan'}.sarif`)
+      `${containerName}:/tmp/scan-results/sca/cache-key.txt`,
+      outputFile
     )
-
-    if (runIac) {
-      const iacDir = path.join(reportsDir, 'iac')
-      mkdirSync(iacDir, { recursive: true })
-      const copied = await tryCallCommand(
-        'docker',
-        'container',
-        'cp',
-        `${containerName}:/tmp/scan-results/iac/iac-${scanTarget || 'scan'}.json`,
-        path.join(iacDir, `iac-${scanTarget || 'scan'}.json`)
-      )
-      if (!copied) {
-        info('IaC results not produced — scanner likely skipped IaC')
-      }
+    try {
+      await callCommand('docker', 'rm', containerName)
+    } catch {
+      // Best-effort cleanup — CI runner will discard everything on exit
     }
-
-    // Cleanup container
-    await callCommand('docker', 'rm', containerName)
-  } else if (action === 'compare') {
-    const containerName = 'codesec-compare'
-
-    info('Running codesec compare')
-
-    // Create env file with GitHub CI vars for the lacework iac binary
-    const envFile = createEnvFile()
-
-    // Append LW_UI_LINK so the image can pass it to `lacework sca compare --ui-link`
-    const uiLink = generateUILink()
-    writeFileSync(envFile, `\nLW_UI_LINK=${uiLink}`, { flag: 'a' })
-
-    // Mounts both the repo and the scan-results directory separately
-    const dockerArgs = [
-      'run',
-      '--name',
-      containerName,
-      '-v',
-      `${process.cwd()}:/app/src`,
-      '-v',
-      `${path.join(process.cwd(), 'scan-results')}:/app/scan-results`,
-      '--env-file',
-      envFile,
-      '-e',
-      `WORKSPACE=src`,
-      '-e',
-      `LW_ACCOUNT=${lwAccount}`,
-      '-e',
-      `LW_API_KEY=${lwApiKey}`,
-      '-e',
-      `LW_API_SECRET=${lwApiSecret}`,
-      '-e',
-      `RUN_SCA=true`,
-      '-e',
-      `RUN_IAC=${runIac}`,
-      'lacework/codesec:latest',
-      'compare',
-    ]
-
-    await callCommand('docker', ...dockerArgs)
-
-    // Copy comparison results out
-    const compareDir = path.join(reportsDir, 'compare')
-    mkdirSync(compareDir, { recursive: true })
-
-    // Copy the entire compare directory out
-    await callCommand(
-      'docker',
-      'container',
-      'cp',
-      `${containerName}:/tmp/scan-results/compare/.`,
-      compareDir
-    )
-
-    // Verify at least one output was produced
-    const compareFiles = ['merged-compare.md', 'sca-compare.md', 'iac-compare.md']
-    const copied = compareFiles.filter((f) => existsSync(path.join(compareDir, f)))
-
-    if (copied.length === 0) {
-      throw new Error('No comparison outputs found in container')
-    }
-
-    // Cleanup container
-    await callCommand('docker', 'rm', containerName)
+    return true
   }
+
+  // Copy results out of container to temp dir
+  const scaDir = path.join(reportsDir, 'sca')
+  mkdirSync(scaDir, { recursive: true })
+  await callCommand(
+    'docker',
+    'container',
+    'cp',
+    `${containerName}:/tmp/scan-results/sca/sca-${scanTarget || 'scan'}.sarif`,
+    path.join(scaDir, `sca-${scanTarget || 'scan'}.sarif`)
+  )
+
+  const iacDir = path.join(reportsDir, 'iac')
+  mkdirSync(iacDir, { recursive: true })
+  const copied = await tryCallCommand(
+    'docker',
+    'container',
+    'cp',
+    `${containerName}:/tmp/scan-results/iac/iac-${scanTarget || 'scan'}.json`,
+    path.join(iacDir, `iac-${scanTarget || 'scan'}.json`)
+  )
+  if (!copied) {
+    info('IaC results not produced — scanner likely skipped IaC')
+  }
+
+  // Cleanup container
+  await callCommand('docker', 'rm', containerName)
   return true
 }
 
-export function readMarkdownFile(filePath: string): string {
-  try {
-    return readFileSync(filePath, 'utf-8')
-  } catch (error) {
-    throw new Error(`Failed to read scanner output file: ${error}`)
+export async function runCodesecCompare(): Promise<string | null> {
+  const lwAccount = getRequiredEnvVariable('LW_ACCOUNT')
+  const lwApiKey = getRequiredEnvVariable('LW_API_KEY')
+  const lwApiSecret = getRequiredEnvVariable('LW_API_SECRET')
+
+  const containerName = 'codesec-compare'
+
+  info('Running codesec compare')
+
+  const envFile = createEnvFile()
+
+  const uiLink = generateUILink()
+  writeFileSync(envFile, `\nLW_UI_LINK=${uiLink}`, { flag: 'a' })
+
+  const dockerArgs = [
+    'run',
+    '--name',
+    containerName,
+    '-v',
+    `${process.cwd()}:/app/src`,
+    '-v',
+    `${path.join(process.cwd(), 'scan-results')}:/app/scan-results`,
+    '--env-file',
+    envFile,
+    '-e',
+    `WORKSPACE=src`,
+    '-e',
+    `LW_ACCOUNT=${lwAccount}`,
+    '-e',
+    `LW_API_KEY=${lwApiKey}`,
+    '-e',
+    `LW_API_SECRET=${lwApiSecret}`,
+    '-e',
+    `RUN_SCA=true`,
+    '-e',
+    `RUN_IAC=true`,
+    'lacework/codesec:latest',
+    'compare',
+  ]
+
+  await callCommand('docker', ...dockerArgs)
+
+  const compareDir = path.join(os.tmpdir(), `codesec-compare-${Date.now()}`)
+  mkdirSync(compareDir, { recursive: true })
+
+  await callCommand(
+    'docker',
+    'container',
+    'cp',
+    `${containerName}:/tmp/scan-results/compare/.`,
+    compareDir
+  )
+
+  await callCommand('docker', 'rm', containerName)
+
+  const outputs = ['merged-compare.md', 'sca-compare.md', 'iac-compare.md']
+
+  let message: string | null = null
+  for (const output of outputs) {
+    const outputPath = path.join(compareDir, output)
+    if (existsSync(outputPath)) {
+      info(`Using comparison output: ${output}`)
+      message = readFileSync(outputPath, 'utf-8')
+      if (message.trim().length > 0) {
+        return message
+      }
+    }
   }
+
+  return message
 }
 
 export async function generateCacheKey(
@@ -329,7 +315,7 @@ export async function generateCacheKey(
   const reportsDir = path.join(os.tmpdir(), `codesec-cache-${Date.now()}`)
 
   try {
-    await runCodesec('scan', true, reportsDir, scanTarget, modifiedFiles, true)
+    await runCodesecScan(reportsDir, scanTarget, modifiedFiles, true)
   } catch (e) {
     info(`Cache key generation failed: ${(e as Error).message}`)
     return undefined

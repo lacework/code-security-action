@@ -10,10 +10,10 @@ import {
 } from './actions'
 import {
   callCommand,
-  runCodesec,
+  runCodesecScan,
+  runCodesecCompare,
   getModifiedFiles,
   getOptionalEnvVariable,
-  readMarkdownFile,
   generateCacheKey,
 } from './util'
 
@@ -71,7 +71,7 @@ async function runAnalysis() {
   }
 
   if (!cacheHit) {
-    let success = await runCodesec('scan', true, resultsPath, targetScan, modifiedFiles)
+    let success = await runCodesecScan(resultsPath, targetScan, modifiedFiles)
     if (success && targetScan !== 'new') {
       // Save the analysis results when not scanning the PR source branch
       if (!cacheKey) {
@@ -154,27 +154,10 @@ async function displayResults() {
     error('SCA files not found. Cannot perform compare.')
     return
   }
-  const iacAvailable = await prepareScannerFiles('iac', artifactOld, artifactNew)
+  await prepareScannerFiles('iac', artifactOld, artifactNew)
 
   // Run codesec compare mode with available scanners
-  const resultsPath = path.join(process.cwd(), 'scan-results')
-  await runCodesec('compare', iacAvailable, resultsPath)
-
-  // Read comparison output - check all possible outputs
-  const outputs = [
-    'scan-results/compare/merged-compare.md',
-    'scan-results/compare/sca-compare.md',
-    'scan-results/compare/iac-compare.md',
-  ]
-
-  let message: string | null = null
-  for (const output of outputs) {
-    if (existsSync(output)) {
-      info(`Using comparison output: ${output}`)
-      message = readMarkdownFile(output)
-      break
-    }
-  }
+  const message = await runCodesecCompare()
 
   if (!message) {
     info('No comparison output produced. No changes detected.')

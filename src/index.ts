@@ -15,8 +15,8 @@ import {
   getOptionalEnvVariable,
   readMarkdownFile,
   shouldRunIaCScanner,
+  generateCacheKey,
 } from './util'
-import { simpleGit } from 'simple-git'
 
 // Global scanner toggles - set to false to disable a scanner globally
 const enableScaRunning = true
@@ -66,15 +66,19 @@ async function runAnalysis() {
 
   // Cache the analysis results when scanning the target branch
   let cacheHit = false
-  const commit = (await simpleGit().revparse(['HEAD'])).trim()
-  let cacheKey = `codesec-${commit}`
+  let cacheKey: string | undefined
   if (targetScan === 'old') {
-    const restored = await cache.restoreCache([resultsPath], cacheKey)
-    if (restored) {
-      info(`Cache hit for ${cacheKey} — skipping scan`)
-      cacheHit = true
+    cacheKey = await generateCacheKey(enableIacRunning, enableScaRunning, targetScan, modifiedFiles)
+    if (cacheKey) {
+      const restored = await cache.restoreCache([resultsPath], cacheKey)
+      if (restored) {
+        info(`Cache hit for ${cacheKey} — skipping scan`)
+        cacheHit = true
+      } else {
+        info(`Cache miss for ${cacheKey} — running scan`)
+      }
     } else {
-      info(`Cache miss for ${cacheKey} — running scan`)
+      info('Cache key generation failed — running scan without cache')
     }
   }
 
@@ -89,11 +93,21 @@ async function runAnalysis() {
     )
     if (success && targetScan !== 'new') {
       // Save the analysis results when not scanning the PR source branch
-      try {
-        await cache.saveCache([resultsPath], cacheKey)
-        info(`Saved analysis results for ${cacheKey}`)
-      } catch (e) {
-        info(`Failed to save cache for ${cacheKey}: ${(e as Error).message}`)
+      if (!cacheKey) {
+        cacheKey = await generateCacheKey(
+          enableIacRunning,
+          enableScaRunning,
+          targetScan,
+          modifiedFiles
+        )
+      }
+      if (cacheKey) {
+        try {
+          await cache.saveCache([resultsPath], cacheKey)
+          info(`Saved analysis results for ${cacheKey}`)
+        } catch (e) {
+          info(`Failed to save cache for ${cacheKey}: ${(e as Error).message}`)
+        }
       }
     }
   } else {

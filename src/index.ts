@@ -18,9 +18,8 @@ import {
   generateCacheKey,
 } from './util'
 
-// Global scanner toggles - set to false to disable a scanner globally
+// Set to false to disable SCA globally
 const enableScaRunning = true
-let enableIacRunning = false
 
 async function runAnalysis() {
   const target = getInput('target')
@@ -55,9 +54,10 @@ async function runAnalysis() {
   }
 
   // Skip the IaC scan if there no IaC-related files have been modified in the PR
+  let enableIacRunning = true
   if (modifiedFiles && target == 'new') {
-    if (shouldRunIaCScanner(modifiedFiles)) {
-      enableIacRunning = true
+    if (!shouldRunIaCScanner(modifiedFiles)) {
+      enableIacRunning = false
     }
   }
 
@@ -171,6 +171,8 @@ async function runAnalysis() {
 }
 
 async function displayResults() {
+  const enableIacRunning = true
+
   info('Displaying results')
 
   // Download artifacts from previous jobs

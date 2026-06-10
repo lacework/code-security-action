@@ -69,16 +69,11 @@ export async function callCommand(command: string, ...args: string[]) {
 }
 
 export async function tryCallCommand(command: string, ...args: string[]): Promise<boolean> {
-  info('Invoking ' + command + ' ' + args.join(' '))
-  const child = spawn(command, args, { stdio: 'inherit' })
+  const child = spawn(command, args, { stdio: 'ignore' })
   const exitCode = await new Promise((resolve, _) => {
     child.on('close', resolve)
   })
-  if (exitCode !== 0) {
-    info(`Command exited with status ${exitCode}`)
-    return false
-  }
-  return true
+  return exitCode === 0
 }
 
 export function getRequiredEnvVariable(name: string) {

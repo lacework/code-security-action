@@ -68,6 +68,19 @@ export async function callCommand(command: string, ...args: string[]) {
   }
 }
 
+export async function tryCallCommand(command: string, ...args: string[]): Promise<boolean> {
+  info('Invoking ' + command + ' ' + args.join(' '))
+  const child = spawn(command, args, { stdio: 'inherit' })
+  const exitCode = await new Promise((resolve, _) => {
+    child.on('close', resolve)
+  })
+  if (exitCode !== 0) {
+    info(`Command exited with status ${exitCode}`)
+    return false
+  }
+  return true
+}
+
 export function getRequiredEnvVariable(name: string) {
   const value = process.env[name]
   if (!value) {
@@ -231,13 +244,16 @@ export async function runCodesec(
     if (runIac) {
       const iacDir = path.join(reportsDir, 'iac')
       mkdirSync(iacDir, { recursive: true })
-      await callCommand(
+      const copied = await tryCallCommand(
         'docker',
         'container',
         'cp',
         `${containerName}:/tmp/scan-results/iac/iac-${scanTarget || 'scan'}.json`,
         path.join(iacDir, `iac-${scanTarget || 'scan'}.json`)
       )
+      if (!copied) {
+        info('IaC results not produced — scanner likely skipped IaC')
+      }
     }
 
     // Cleanup container

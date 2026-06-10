@@ -127,7 +127,6 @@ export async function getModifiedFiles(): Promise<string | undefined> {
   }
 }
 
-
 // runCodesec - Docker-based scanner using codesec:latest image
 //
 // Modes:

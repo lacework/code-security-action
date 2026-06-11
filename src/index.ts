@@ -18,9 +18,6 @@ import {
   generateCacheKey,
 } from './util'
 
-// Set to false to disable SCA globally
-const enableScaRunning = true
-
 async function runAnalysis() {
   const target = getInput('target')
 
@@ -68,7 +65,7 @@ async function runAnalysis() {
   let cacheHit = false
   let cacheKey: string | undefined
   if (targetScan === 'old') {
-    cacheKey = await generateCacheKey(enableIacRunning, enableScaRunning, targetScan, modifiedFiles)
+    cacheKey = await generateCacheKey(enableIacRunning, targetScan, modifiedFiles)
     if (cacheKey) {
       const restored = await cache.restoreCache([resultsPath], cacheKey)
       if (restored) {
@@ -83,23 +80,11 @@ async function runAnalysis() {
   }
 
   if (!cacheHit) {
-    let success = await runCodesec(
-      'scan',
-      enableIacRunning,
-      enableScaRunning,
-      resultsPath,
-      targetScan,
-      modifiedFiles
-    )
+    let success = await runCodesec('scan', enableIacRunning, resultsPath, targetScan, modifiedFiles)
     if (success && targetScan !== 'new') {
       // Save the analysis results when not scanning the PR source branch
       if (!cacheKey) {
-        cacheKey = await generateCacheKey(
-          enableIacRunning,
-          enableScaRunning,
-          targetScan,
-          modifiedFiles
-        )
+        cacheKey = await generateCacheKey(enableIacRunning, targetScan, modifiedFiles)
       }
       if (cacheKey) {
         try {
@@ -113,14 +98,12 @@ async function runAnalysis() {
   } else {
     // Cache restored — rename files to match current targetScan if needed
     const possibleNames = ['old', 'scan']
-    if (enableScaRunning) {
-      const scaDir = path.join(resultsPath, 'sca')
-      for (const name of possibleNames) {
-        const existing = path.join(scaDir, `sca-${name}.sarif`)
-        if (existsSync(existing) && name !== targetScan) {
-          renameSync(existing, path.join(scaDir, `sca-${targetScan}.sarif`))
-          break
-        }
+    const scaDir = path.join(resultsPath, 'sca')
+    for (const name of possibleNames) {
+      const existing = path.join(scaDir, `sca-${name}.sarif`)
+      if (existsSync(existing) && name !== targetScan) {
+        renameSync(existing, path.join(scaDir, `sca-${targetScan}.sarif`))
+        break
       }
     }
     if (enableIacRunning) {
@@ -136,21 +119,19 @@ async function runAnalysis() {
   }
 
   // Upload SCA SARIF from the returned results path
-  if (enableScaRunning) {
-    const scaSarifFile = path.join(resultsPath, 'sca', `sca-${targetScan}.sarif`)
-    if (existsSync(scaSarifFile)) {
-      info(`Found SCA SARIF file to upload: ${scaSarifFile}`)
-      toUpload.push(scaSarifFile)
+  const scaSarifFile = path.join(resultsPath, 'sca', `sca-${targetScan}.sarif`)
+  if (existsSync(scaSarifFile)) {
+    info(`Found SCA SARIF file to upload: ${scaSarifFile}`)
+    toUpload.push(scaSarifFile)
 
-      // Copy SARIF to code-scanning-path for backward compatibility
-      const codeScanningPath = getInput('code-scanning-path')
-      if (codeScanningPath) {
-        info(`Copying SARIF to code-scanning-path: ${codeScanningPath}`)
-        copyFileSync(scaSarifFile, codeScanningPath)
-      }
-    } else {
-      info(`SCA SARIF file not found at: ${scaSarifFile}`)
+    // Copy SARIF to code-scanning-path for backward compatibility
+    const codeScanningPath = getInput('code-scanning-path')
+    if (codeScanningPath) {
+      info(`Copying SARIF to code-scanning-path: ${codeScanningPath}`)
+      copyFileSync(scaSarifFile, codeScanningPath)
     }
+  } else {
+    info(`SCA SARIF file not found at: ${scaSarifFile}`)
   }
 
   // Upload IAC JSON from the returned results path
@@ -180,16 +161,13 @@ async function displayResults() {
   const artifactNew = await downloadArtifact('results-new')
 
   // Create local scan-results directory for compare
-  if (enableScaRunning) {
-    mkdirSync('scan-results/sca', { recursive: true })
-  }
+  mkdirSync('scan-results/sca', { recursive: true })
   if (enableIacRunning) {
     mkdirSync('scan-results/iac', { recursive: true })
   }
 
   // Check and copy files for each scanner type
-  const scaAvailable =
-    enableScaRunning && (await prepareScannerFiles('sca', artifactOld, artifactNew))
+  const scaAvailable = await prepareScannerFiles('sca', artifactOld, artifactNew)
   const iacAvailable =
     enableIacRunning && (await prepareScannerFiles('iac', artifactOld, artifactNew))
 
@@ -202,12 +180,7 @@ async function displayResults() {
 
   // Run codesec compare mode with available scanners
   const resultsPath = path.join(process.cwd(), 'scan-results')
-  await runCodesec(
-    'compare',
-    enableIacRunning && iacAvailable,
-    enableScaRunning && scaAvailable,
-    resultsPath
-  )
+  await runCodesec('compare', enableIacRunning && iacAvailable, resultsPath)
 
   // Read comparison output - check all possible outputs
   const outputs = [

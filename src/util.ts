@@ -165,13 +165,12 @@ export function shouldRunIaCScanner(modifiedFiles: string): boolean {
 // 3. action='compare' -> compares new/old results, generates diff markdown for PR comment
 //
 // Parameters:
-// - runIac/runSca: which scanners to enable (default false - enable when ready to test)
+// - runIac: whether to enable the IaC scanner
 // - scanTarget: 'new', 'old', or 'scan' depending on mode
 // - computeCacheKey: if true, runs GENERATE_CACHE_KEY mode instead of scanning
 export async function runCodesec(
   action: string,
   runIac: boolean = false,
-  runSca: boolean = false,
   reportsDir: string,
   scanTarget?: string,
   modifiedFiles?: string,
@@ -213,7 +212,7 @@ export async function runCodesec(
       '-e',
       `LW_API_SECRET=${lwApiSecret}`,
       '-e',
-      `RUN_SCA=${runSca}`,
+      `RUN_SCA=true`,
       '-e',
       `RUN_IAC=${runIac}`,
       '-e',
@@ -246,17 +245,15 @@ export async function runCodesec(
     }
 
     // Copy results out of container to temp dir
-    if (runSca) {
-      const scaDir = path.join(reportsDir, 'sca')
-      mkdirSync(scaDir, { recursive: true })
-      await callCommand(
-        'docker',
-        'container',
-        'cp',
-        `${containerName}:/tmp/scan-results/sca/sca-${scanTarget || 'scan'}.sarif`,
-        path.join(scaDir, `sca-${scanTarget || 'scan'}.sarif`)
-      )
-    }
+    const scaDir = path.join(reportsDir, 'sca')
+    mkdirSync(scaDir, { recursive: true })
+    await callCommand(
+      'docker',
+      'container',
+      'cp',
+      `${containerName}:/tmp/scan-results/sca/sca-${scanTarget || 'scan'}.sarif`,
+      path.join(scaDir, `sca-${scanTarget || 'scan'}.sarif`)
+    )
 
     if (runIac) {
       const iacDir = path.join(reportsDir, 'iac')
@@ -304,7 +301,7 @@ export async function runCodesec(
       '-e',
       `LW_API_SECRET=${lwApiSecret}`,
       '-e',
-      `RUN_SCA=${runSca}`,
+      `RUN_SCA=true`,
       '-e',
       `RUN_IAC=${runIac}`,
       'lacework/codesec:latest',
@@ -350,14 +347,13 @@ export function readMarkdownFile(filePath: string): string {
 
 export async function generateCacheKey(
   runIac: boolean,
-  runSca: boolean,
   scanTarget?: string,
   modifiedFiles?: string
 ): Promise<string | undefined> {
   const reportsDir = path.join(os.tmpdir(), `codesec-cache-${Date.now()}`)
 
   try {
-    await runCodesec('scan', runIac, runSca, reportsDir, scanTarget, modifiedFiles, true)
+    await runCodesec('scan', runIac, reportsDir, scanTarget, modifiedFiles, true)
   } catch (e) {
     info(`Cache key generation failed: ${(e as Error).message}`)
     return undefined

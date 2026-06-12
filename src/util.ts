@@ -68,6 +68,14 @@ export async function callCommand(command: string, ...args: string[]) {
   }
 }
 
+export async function tryCallCommand(command: string, ...args: string[]): Promise<boolean> {
+  const child = spawn(command, args, { stdio: 'ignore' })
+  const exitCode = await new Promise((resolve, _) => {
+    child.on('close', resolve)
+  })
+  return exitCode === 0
+}
+
 export function getRequiredEnvVariable(name: string) {
   const value = process.env[name]
   if (!value) {
@@ -125,36 +133,6 @@ export async function getModifiedFiles(): Promise<string | undefined> {
     info(`Failed to get modified files: ${e}`)
     return undefined
   }
-}
-
-export function shouldRunIaCScanner(modifiedFiles: string): boolean {
-  const iacFileExtensions = ['.tf', '.hcl', '.yaml', '.yml', '.json']
-  const nonIaCFilenames = [
-    'package.json',
-    'package-lock.json',
-    'tsconfig.json',
-    'tsconfig.build.json',
-    'tslint.json',
-    'jest.config.json',
-    '.eslintrc.json',
-    '.prettierrc.json',
-    '.prettierrc.yaml',
-    '.prettierrc.yml',
-    'renovate.json',
-    'lerna.json',
-    'bower.json',
-    'composer.json',
-    'composer.lock',
-    'Pipfile.lock',
-    'cargo.lock',
-  ]
-  return modifiedFiles.split(',').some((file) => {
-    const filename = file.split('/').pop() || ''
-    if (nonIaCFilenames.includes(filename.toLowerCase())) {
-      return false
-    }
-    return iacFileExtensions.some((ext) => file.endsWith(ext))
-  })
 }
 
 // runCodesec - Docker-based scanner using codesec:latest image
@@ -261,13 +239,16 @@ export async function runCodesec(
     if (runIac) {
       const iacDir = path.join(reportsDir, 'iac')
       mkdirSync(iacDir, { recursive: true })
-      await callCommand(
+      const copied = await tryCallCommand(
         'docker',
         'container',
         'cp',
         `${containerName}:/tmp/scan-results/iac/iac-${scanTarget || 'scan'}.json`,
         path.join(iacDir, `iac-${scanTarget || 'scan'}.json`)
       )
+      if (!copied) {
+        info('IaC results not produced — scanner likely skipped IaC')
+      }
     }
 
     // Cleanup container

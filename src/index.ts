@@ -14,7 +14,6 @@ import {
   getModifiedFiles,
   getOptionalEnvVariable,
   readMarkdownFile,
-  shouldRunIaCScanner,
   generateCacheKey,
 } from './util'
 
@@ -53,13 +52,7 @@ async function runAnalysis() {
     }
   }
 
-  // Skip the IaC scan if there no IaC-related files have been modified in the PR
-  let enableIacRunning = true
-  if (modifiedFiles && target == 'new') {
-    if (!shouldRunIaCScanner(modifiedFiles)) {
-      enableIacRunning = false
-    }
-  }
+  const enableIacRunning = true
 
   // Create scan-results directory
   const resultsPath = path.join(process.cwd(), 'scan-results')

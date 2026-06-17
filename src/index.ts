@@ -49,8 +49,6 @@ async function runAnalysis() {
     }
   }
 
-  const enableIacRunning = true
-
   // Create scan-results directory
   const resultsPath = path.join(process.cwd(), 'scan-results')
 
@@ -58,7 +56,7 @@ async function runAnalysis() {
   let cacheHit = false
   let cacheKey: string | undefined
   if (targetScan === 'old') {
-    cacheKey = await generateCacheKey(enableIacRunning, targetScan, modifiedFiles)
+    cacheKey = await generateCacheKey(targetScan, modifiedFiles)
     if (cacheKey) {
       const restored = await cache.restoreCache([resultsPath], cacheKey)
       if (restored) {
@@ -73,11 +71,11 @@ async function runAnalysis() {
   }
 
   if (!cacheHit) {
-    let success = await runCodesec('scan', enableIacRunning, resultsPath, targetScan, modifiedFiles)
+    let success = await runCodesec('scan', true, resultsPath, targetScan, modifiedFiles)
     if (success && targetScan !== 'new') {
       // Save the analysis results when not scanning the PR source branch
       if (!cacheKey) {
-        cacheKey = await generateCacheKey(enableIacRunning, targetScan, modifiedFiles)
+        cacheKey = await generateCacheKey(targetScan, modifiedFiles)
       }
       if (cacheKey) {
         try {
@@ -99,14 +97,12 @@ async function runAnalysis() {
         break
       }
     }
-    if (enableIacRunning) {
-      const iacDir = path.join(resultsPath, 'iac')
-      for (const name of possibleNames) {
-        const existing = path.join(iacDir, `iac-${name}.json`)
-        if (existsSync(existing) && name !== targetScan) {
-          renameSync(existing, path.join(iacDir, `iac-${targetScan}.json`))
-          break
-        }
+    const iacDir = path.join(resultsPath, 'iac')
+    for (const name of possibleNames) {
+      const existing = path.join(iacDir, `iac-${name}.json`)
+      if (existsSync(existing) && name !== targetScan) {
+        renameSync(existing, path.join(iacDir, `iac-${targetScan}.json`))
+        break
       }
     }
   }
@@ -128,14 +124,12 @@ async function runAnalysis() {
   }
 
   // Upload IAC JSON from the returned results path
-  if (enableIacRunning) {
-    const iacJsonFile = path.join(resultsPath, 'iac', `iac-${targetScan}.json`)
-    if (existsSync(iacJsonFile)) {
-      info(`Found IAC JSON file to upload: ${iacJsonFile}`)
-      toUpload.push(iacJsonFile)
-    } else {
-      info(`IAC JSON file not found at: ${iacJsonFile}`)
-    }
+  const iacJsonFile = path.join(resultsPath, 'iac', `iac-${targetScan}.json`)
+  if (existsSync(iacJsonFile)) {
+    info(`Found IAC JSON file to upload: ${iacJsonFile}`)
+    toUpload.push(iacJsonFile)
+  } else {
+    info(`IAC JSON file not found at: ${iacJsonFile}`)
   }
 
   const artifactName = 'results-' + target
@@ -145,8 +139,6 @@ async function runAnalysis() {
 }
 
 async function displayResults() {
-  const enableIacRunning = true
-
   info('Displaying results')
 
   // Download artifacts from previous jobs
@@ -155,21 +147,18 @@ async function displayResults() {
 
   // Create local scan-results directory for compare
   mkdirSync('scan-results/sca', { recursive: true })
-  if (enableIacRunning) {
-    mkdirSync('scan-results/iac', { recursive: true })
-  }
+  mkdirSync('scan-results/iac', { recursive: true })
 
   // Check and copy files for each scanner type
   if (!(await prepareScannerFiles('sca', artifactOld, artifactNew))) {
     error('SCA files not found. Cannot perform compare.')
     return
   }
-  const iacAvailable =
-    enableIacRunning && (await prepareScannerFiles('iac', artifactOld, artifactNew))
+  const iacAvailable = await prepareScannerFiles('iac', artifactOld, artifactNew)
 
   // Run codesec compare mode with available scanners
   const resultsPath = path.join(process.cwd(), 'scan-results')
-  await runCodesec('compare', enableIacRunning && iacAvailable, resultsPath)
+  await runCodesec('compare', iacAvailable, resultsPath)
 
   // Read comparison output - check all possible outputs
   const outputs = [

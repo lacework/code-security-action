@@ -39,10 +39,6 @@ function getBooleanInput(name: string) {
   return getInput(name).toLowerCase() === 'true'
 }
 
-export function debug() {
-  return getBooleanInput('debug') || isDebug()
-}
-
 export function getActionRef(): string {
   return getOptionalEnvVariable('LACEWORK_ACTION_REF', 'unknown')
 }
@@ -327,14 +323,13 @@ export function readMarkdownFile(filePath: string): string {
 }
 
 export async function generateCacheKey(
-  runIac: boolean,
   scanTarget?: string,
   modifiedFiles?: string
 ): Promise<string | undefined> {
   const reportsDir = path.join(os.tmpdir(), `codesec-cache-${Date.now()}`)
 
   try {
-    await runCodesec('scan', runIac, reportsDir, scanTarget, modifiedFiles, true)
+    await runCodesec('scan', true, reportsDir, scanTarget, modifiedFiles, true)
   } catch (e) {
     info(`Cache key generation failed: ${(e as Error).message}`)
     return undefined

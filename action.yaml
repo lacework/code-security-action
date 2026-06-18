@@ -9,10 +9,6 @@ inputs:
   target:
     description: 'One of push, old or new to represent which is being analyzed'
     required: false
-  debug:
-    description: 'Set to true to enable debug logging'
-    required: false
-    default: false
   token:
     description: 'Set to a GitHub token for the repository with write permissions for PRs to enable PR comments'
     required: false
@@ -53,11 +49,6 @@ runs:
         echo "Lacework context ID: $LACEWORK_CONTEXT_ID"
         echo "LACEWORK_CONTEXT_ID=$(echo $LACEWORK_CONTEXT_ID)" >> $GITHUB_ENV
         echo "LACEWORK_ACTION_REF=$(echo $LACEWORK_ACTION_REF)" >> $GITHUB_ENV
-    - name: Sets LW_LOG var for debug
-      shell: bash
-      if: ${{ inputs.debug == 'true' }}
-      run: |
-        echo "LW_LOG=debug" >> $GITHUB_ENV
     - name: Set Lacework account environment variable
       shell: bash
       run: |
@@ -80,7 +71,6 @@ runs:
       with:
         sources: '${{ inputs.sources }}'
         target: '${{ inputs.target }}'
-        debug: '${{ inputs.debug }}'
         token: '${{ inputs.token || github.token }}'
         footer: '${{ inputs.footer }}'
         code-scanning-path: '${{ inputs.code-scanning-path }}'

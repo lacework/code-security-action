@@ -131,6 +131,44 @@ export async function getModifiedFiles(): Promise<string | undefined> {
   }
 }
 
+// gitWorkspaceDockerArgs - mount the checkout and expose GitHub credentials to
+// git inside the container.
+//
+// The scanner runs `git remote show origin` to determine the repository's
+// default branch, which needs working GitHub credentials. actions/checkout wires
+// these by writing an `http.<host>.extraheader` AUTHORIZATION entry into a config
+// file under RUNNER_TEMP and referencing it from the repo's .git/config with an
+// `includeIf.gitdir:<host checkout path>/.git` entry. To make that resolve inside
+// the container we:
+//   - mount the checkout at its original host path so the gitdir condition matches
+//   - mount RUNNER_TEMP so the referenced credentials file is reachable
+//   - point WORKSPACE at the host path and mark it a safe directory (the image's
+//     built-in `/app/${WORKSPACE}` safe.directory no longer applies)
+function gitWorkspaceDockerArgs(): string[] {
+  const workspace = process.cwd()
+  const args = ['-v', `${workspace}:${workspace}`]
+
+  const runnerTemp = process.env.RUNNER_TEMP
+  if (runnerTemp && existsSync(runnerTemp)) {
+    args.push('-v', `${runnerTemp}:${runnerTemp}`)
+  } else {
+    info('RUNNER_TEMP not set — git credentials may be unavailable inside the container')
+  }
+
+  args.push(
+    '-e',
+    `WORKSPACE=${workspace}`,
+    '-e',
+    'GIT_CONFIG_COUNT=1',
+    '-e',
+    'GIT_CONFIG_KEY_0=safe.directory',
+    '-e',
+    `GIT_CONFIG_VALUE_0=${workspace}`
+  )
+
+  return args
+}
+
 // runCodesecScan - Docker-based scanner using codesec:latest image
 //
 // Parameters:
@@ -163,12 +201,9 @@ export async function runCodesecScan(
     'run',
     '--name',
     containerName,
-    '-v',
-    `${process.cwd()}:/app/src`,
+    ...gitWorkspaceDockerArgs(),
     '--env-file',
     envFile,
-    '-e',
-    `WORKSPACE=src`,
     '-e',
     `LW_ACCOUNT=${lwAccount}`,
     '-e',
@@ -254,14 +289,11 @@ export async function runCodesecCompare(): Promise<string | null> {
     'run',
     '--name',
     containerName,
-    '-v',
-    `${process.cwd()}:/app/src`,
+    ...gitWorkspaceDockerArgs(),
     '-v',
     `${path.join(process.cwd(), 'scan-results')}:/app/scan-results`,
     '--env-file',
     envFile,
-    '-e',
-    `WORKSPACE=src`,
     '-e',
     `LW_ACCOUNT=${lwAccount}`,
     '-e',

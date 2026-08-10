@@ -1,0 +1,64 @@
+name: 'lacework-code-security'
+description: "Scan code with Lacework's Code Security offering"
+author: 'Lacework'
+
+inputs:
+  account:
+    description: 'Lacework account'
+    required: true
+  api-key:
+    description: 'Lacework API key'
+    required: true
+  secret:
+    description: 'Lacework secret'
+    required: true
+  run-sca:
+    description: 'Enable sca scanning'
+    default: 'false'
+  run-iac:
+    description: 'Enable iac scanning'
+    default: 'false'
+  # github-token:
+  #   description: 'GitHub token for PR comments'
+  #   required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Login to Docker 
+      uses: docker/login-action@v3 
+      with: 
+        username: ${{ secrets.DOCKERHUB_USERNAME }} # should be lwdevops
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Run Lacework Scan
+      run: |
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          -v ${{ github.workspace }}:/workspace \
+          -e HOST_REPO_PATH=${{ github.workspace }} \
+          -e LW_ACCOUNT=${{ inputs.account }} \
+          -e LW_API_KEY=${{ inputs.api-key }} \
+          -e LW_SECRET=${{ inputs.secret }} \
+          -e RUN_SCA=${{ inputs.run-sca }} \
+          -e RUN_IAC=${{ inputs.run-iac }} \
+          -e GITHUB_EVENT_NAME=${{ github.event_name }} \
+          lacework/codesec-integrations:test
+      shell: bash
+    
+    # - name: Comment on PR
+    #   if: github.event_name == 'pull_request'
+    #   uses: actions/github-script@v7
+    #   with:
+    #     github-token: ${{ inputs.github-token }}
+    #     script: |
+    #       const fs = require('fs');
+    #       if (fs.existsSync('output_markdown.md')) {
+    #         const comment = fs.readFileSync('output_markdown.md', 'utf8');
+    #         github.rest.issues.createComment({
+    #           owner: context.repo.owner,
+    #           repo: context.repo.repo,
+    #           issue_number: context.issue.number,
+    #           body: comment
+    #         });
+    #       }
